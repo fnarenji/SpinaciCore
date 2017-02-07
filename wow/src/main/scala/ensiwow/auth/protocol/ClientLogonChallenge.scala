@@ -37,8 +37,8 @@ case class ClientLogonChallenge(opCode: Int,
 
 object ClientLogonChallenge {
   val reversedAscii = reverse(ascii)
-  val reversedCString = reverse(cstring)
-  final val GameName = reversedCString encode "WoW" require
+  val reversedFixedCString = reverse(fixedCString)
+  final val GameName = reversedFixedCString encode "WoW" require
 
   final val PlatformLength = 4
   final val OSLength = 4
@@ -53,9 +53,9 @@ object ClientLogonChallenge {
       ("versionMinor" | uint8L) ::
       ("versionPatch" | uint8L) ::
       ("build" | uint16L) ::
-      ("platform" | fixedSizeBytes(PlatformLength, reversedCString)) ::
-      ("os" | fixedSizeBytes(OSLength, reversedCString)) ::
-      ("country" | fixedSizeBytes(CountryLength, reversedAscii)) ::
+      ("platform" | fixedSizeBytes(PlatformLength, reversedFixedCString)) ::
+      ("os" | fixedSizeBytes(OSLength, reversedFixedCString)) ::
+      ("country" | fixedSizeBytes(CountryLength, reversedFixedCString)) ::
       ("timezoneBias" | uint32L) ::
       ("ip" | uint32L) ::
       ("login" | variableSizeBytes(uint8, "login" | ascii))

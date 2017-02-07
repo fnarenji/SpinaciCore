@@ -15,15 +15,18 @@ package object codecs {
     */
   def reverse(codec: Codec[String]) : Codec[String] = new ReversedStringCodec(codec)
 
+  /**
+    * Codec that stops a string at the first nul occurence or until all is consumed
+    */
   val fixedCString: Codec[String] = filtered(ascii, new Codec[BitVector] {
-    val nul = BitVector.lowByte
+    private val nul = BitVector.lowByte
     override def sizeBound: SizeBound = SizeBound.unknown
     override def encode(bits: BitVector): Attempt[BitVector] = Attempt.successful(bits ++ nul)
     override def decode(bits: BitVector): Attempt[DecodeResult[BitVector]] = {
       bits.bytes.indexOfSlice(nul.bytes) match {
-        case -1 => Attempt.failure(Err("Does not contain a 'NUL' termination byte."))
+        case -1 => Attempt.successful(DecodeResult(bits, BitVector.empty))
         case i => Attempt.successful(DecodeResult(bits.take(i * 8L), bits.drop(i * 8L + 8L)))
       }
     }
-  }).withToString("cstring")
+  }).withToString("fixedCString")
 }
