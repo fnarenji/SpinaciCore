@@ -4,3 +4,5 @@ jdk:
 version:
     - 2.12.1
 script: cd wow && sbt test
+notifications:
+    email: false
