@@ -1,0 +1,6 @@
+language: scala
+jdk:
+    - oraclejdk8
+version:
+    - 2.12.1
+script: cd wow && sbt test
