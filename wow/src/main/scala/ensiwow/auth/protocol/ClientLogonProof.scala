@@ -9,17 +9,11 @@ import scodec.codecs._
   */
 case class ClientLogonProof(opCode: Int,
                                 error: Int,
-                                size: Int,
-                                versionMajor: Int,
-                                versionMinor: Int,
-                                versionPatch: Int,
-                                build: Int,
-                                platform: String,
-                                os: String,
-                                country: String,
-                                timezoneBias: Long,
-                                ip: Long,
-                                login: String) {
+                                M2: String,
+                                accountflag: Long,
+                                surveyId: Long,
+                                unk3: Int
+                           ) {
   object WotlkVersionInfo {
     final val Major = 3
     final val Minor = 3
