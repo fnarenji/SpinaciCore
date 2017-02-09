@@ -1,7 +1,6 @@
 package ensiwow.auth.network
 
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 
 import org.scalatest.FlatSpec
 import akka.testkit.TestActorRef
@@ -10,7 +9,6 @@ import akka.pattern.ask
 import scala.util.{Failure, Success}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.{ByteString, Timeout}
-import com.sun.javaws.exceptions.InvalidArgumentException
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -18,9 +16,9 @@ import scala.concurrent.{Await, Future}
 /**
   * Created by yanncolina on 09/02/17.
   */
-class TCPServerTest extends FlatSpec  {
+class TCPServerTest extends FlatSpec {
 
-    implicit val timeout : Timeout = 5 seconds
+    implicit val timeout : Timeout = 2 seconds
     implicit val system = ActorSystem()
 
     val serverRef = TestActorRef(new TCPServer)
@@ -59,7 +57,6 @@ class TCPServerTest extends FlatSpec  {
         val data = ByteString("hello world")
         clientRef ! data
         val bufferSize = getBufferSize
-        assert(false)
         // assert(result === ByteString("hello world"))
     }
 }
