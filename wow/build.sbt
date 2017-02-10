@@ -11,3 +11,5 @@ libraryDependencies += "org.scodec" % "scodec-core_2.12" % "1.10.3"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+
+logBuffered in Test := false
