@@ -8,50 +8,28 @@ import scodec.codecs._
   * Created by sknz on 2/7/17.
   */
 case class ClientLogonProof(opCode: Int,
-                                error: Int,
-                                M2: String,
-                                accountflag: Long,
-                                surveyId: Long,
-                                unk3: Int
+                                A: String,
+                                M1: String,
+                                crc_hash: String,
+                            number_of_keys: Int,
+                            securityFlags: Int
                            ) {
-  object WotlkVersionInfo {
-    final val Major = 3
-    final val Minor = 3
-    final val Patch = 5
-    final val Build = 12340
   }
-
-  require(versionMajor == WotlkVersionInfo.Major)
-  require(versionMinor == WotlkVersionInfo.Minor)
-  require(versionPatch == WotlkVersionInfo.Patch)
-  require(build == WotlkVersionInfo.Build)
-
-  require(!login.isEmpty)
-}
 
 object ClientLogonProof {
   val reversedAscii = reverse(ascii)
   val reversedFixedCString = reverse(fixedCString)
-  final val GameName = reversedFixedCString encode "WoW" require
 
-  final val PlatformLength = 4
-  final val OSLength = 4
-  final val CountryLength = 4
+  final val ALength = 32
+  final val M1Length = 20
+  final val CRCLength = 20
 
   implicit val codec: Codec[ClientLogonProof] = {
-    ("opCode" | uint8L) ::
-      ("error" | uint8L) :: 
-      ("size" | int16L) ::
-      constant(GameName) ::
-      ("versionMajor" | uint8L) ::
-      ("versionMinor" | uint8L) ::
-      ("versionPatch" | uint8L) ::
-      ("build" | uint16L) ::
-      ("platform" | fixedSizeBytes(PlatformLength, reversedFixedCString)) ::
-      ("os" | fixedSizeBytes(OSLength, reversedFixedCString)) ::
-      ("country" | fixedSizeBytes(CountryLength, reversedFixedCString)) ::
-      ("timezoneBias" | uint32L) ::
-      ("ip" | uint32L) ::
-      ("login" | variableSizeBytes(uint8, "login" | ascii))
+      ("opCode" | uint8L) ::
+      ("A" | Array[Int](32)) ::
+      ("M1" | Array[Int](20)) ::
+      ("crc_hash" | Array[Int](20)) ::
+      ("number_of_keys" | uint8L) ::
+      ("securityFlags" | uint8L)
   }.as[ClientLogonProof]
 }
