@@ -29,4 +29,13 @@ package object codecs {
       }
     }
   }).withToString("fixedCString")
+
+  /**
+    * Converts an instance of T to constant codec
+    * @param t expected constant
+    * @param codec codec to encode constant
+    * @tparam T type of constant
+    * @return constant codec
+    */
+  def constantE[T](t: T)(implicit codec : Codec[T]): Codec[Unit] = constant(codec.encode(t).require)
 }
