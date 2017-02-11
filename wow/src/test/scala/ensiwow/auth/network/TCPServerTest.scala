@@ -13,6 +13,8 @@ import akka.util.{ByteString, Timeout}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 /**
   * Created by yanncolina on 09/02/17.
   */
@@ -24,9 +26,11 @@ class TCPServerTest extends FlatSpec {
     val serverRef = TestActorRef(new TCPServer)
 
     "A server" should "be binded when created" in {
-        val future : Future[String] = (serverRef ? GetAddress).mapTo[String]
-        val Success(result: String) = future.value.get
-        assert(result === "127.0.0.1")
+        val future: Future[String] = (serverRef ? GetAddress).mapTo[String]
+        future onComplete {
+            case Success(result: String) => assert(result === "127.0.0.1")
+            case Failure(t)              => println(s"Something went wrong: $t")
+        }
     }
 
     it should "return 42 when 42 is sent to it" in {
@@ -39,7 +43,6 @@ class TCPServerTest extends FlatSpec {
 
     it should "be able to receive data from a client" in {
         def getBufferSize: Unit = {
-            import scala.concurrent.ExecutionContext.Implicits.global
             val future: Future[Int] = (serverRef ? GetBufferSize).mapTo[Int]
             future onComplete {
                 case Success(size) if size != 0 =>
