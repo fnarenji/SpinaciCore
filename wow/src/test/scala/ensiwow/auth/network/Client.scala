@@ -3,6 +3,7 @@ package ensiwow.auth.network
 import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorRef, Props}
+import akka.event.Logging
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
 
@@ -21,6 +22,7 @@ object Client {
 class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor {
     import akka.io.Tcp._
     import context.system
+    val log = Logging.getLogger(context.system, this)
 
     IO(Tcp) ! Connect(remote)
 
@@ -30,16 +32,20 @@ class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor {
             context stop self
 
         case c @ Connected(remote, local) =>
+            log.debug("[CLIENT] Connected from: " + local + " to: " + remote)
             listener ! c
             val connection = sender()
             connection ! Register(self)
             context become {
+                case 42 => sender() ! 42
                 case data: ByteString =>
+                    log.debug("[CLIENT] Sent : " + data)
                     connection ! Write(data)
                 case CommandFailed(w: Write) =>
                     // O/S buffer was full
                     listener ! "write failed"
                 case Received(data) =>
+                    log.debug("[CLIENT] Received : " + data)
                     listener ! data
                 case "close" =>
                     connection ! Close
