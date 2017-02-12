@@ -18,37 +18,12 @@ abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
     val attempt = codec.decode(packetBits)
     attempt match {
       case Failure(err) => fail(err.toString())
-      case Successful(DecodeResult(packet, BitVector.empty)) =>
-        packet shouldEqual reference
+      case Successful(DecodeResult(packet, BitVector.empty)) => packet shouldEqual reference
+      case Successful(DecodeResult(_, remainder)) => fail(s"non empty remainder: $remainder")
 
         val encode = codec.encode(reference)
         encode match {
-          case Successful(bits) =>
-            bits shouldEqual packetBits
-          case Failure(err) => fail(err.toString())
-        }
-    }
-  }
-}
-
-abstract class SPacketTest[T](bytes: ByteVector, reference: T)
-                                (implicit val m: reflect.Manifest[T],
-                                 implicit val codec: Codec[T]) extends FlatSpec with Matchers {
-  private val packetBits = bytes.bits
-
-  m.runtimeClass.getSimpleName must "be fully and correctly hydrated" in {
-    val attempt = codec.encode(reference)
-    attempt match {
-      case Failure(err) => fail(err.toString())
-      case Successful(bits) =>
-        val hex = bits.toHex
-        val hex1 = packetBits.toHex
-        assert(hex === hex1)
-
-        val encode = codec.decode(bits)
-        encode match {
-          case Successful(DecodeResult(packet, BitVector.empty)) =>
-            packet shouldEqual reference
+          case Successful(bits) => bits shouldEqual packetBits
           case Failure(err) => fail(err.toString())
         }
     }
@@ -73,7 +48,7 @@ class ClientLogonChallengeTest extends AuthPacketTest[ClientLogonChallenge](
   )
 )
 
-class ServerLogonChallengeTest extends SPacketTest[ServerLogonChallenge](
+class ServerLogonChallengeTest extends AuthPacketTest[ServerLogonChallenge](
   hex"00000053EB4E8B205D34F2536521D6FAC362808CB7106224459654A9928A28B502380E010720B79B3E2A87823CAB8F5EBFBF8EB10108535006298B5BADBD5B53E1895E644B897364905AA2F2ED120418BA50F1826244F5694F533F71DE9B0CE359303B8708B7ED5D7B90BA7A4BA3D40C147E496AC8F600",
   ServerLogonChallenge(AuthResults.Success,
     Some(ServerLogonChallengeSuccess(
