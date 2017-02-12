@@ -4,12 +4,20 @@ import scodec.bits.BitVector
 import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 
 /**
-  * Created by sknz on 2/7/17.
+  * Encodes a unsigned big integer in a fixed number of bytes
   */
 private[codecs] final class FixedUnsignedBigIntCodec(sizeInBytes: Long) extends Codec[BigInt] {
-  val sizeInBits = sizeInBytes * 8L
+  require(sizeInBytes > 0, "size must be non null")
 
-  val maxValue = BigInt(2).pow(sizeInBits.toInt)
+  /**
+    * Size in bits
+    */
+  private val sizeInBits = sizeInBytes * 8L
+
+  /**
+    * Max value that can be stored on an unsigned big int of sizeInBits size
+    */
+  private val maxValue = BigInt(2).pow(sizeInBits.toInt)
 
   override def sizeBound: SizeBound = SizeBound.exact(sizeInBits)
 
