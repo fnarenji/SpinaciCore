@@ -18,14 +18,15 @@ abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
     val attempt = codec.decode(packetBits)
     attempt match {
       case Failure(err) => fail(err.toString())
-      case Successful(DecodeResult(packet, BitVector.empty)) => packet shouldEqual reference
-      case Successful(DecodeResult(_, remainder)) => fail(s"non empty remainder: $remainder")
+      case Successful(DecodeResult(packet, BitVector.empty)) =>
+        packet shouldEqual reference
 
-        val encode = codec.encode(reference)
+        val encode = codec.encode(packet)
         encode match {
           case Successful(bits) => bits shouldEqual packetBits
           case Failure(err) => fail(err.toString())
         }
+      case Successful(DecodeResult(_, remainder)) => fail(s"non empty remainder: $remainder")
     }
   }
 }
