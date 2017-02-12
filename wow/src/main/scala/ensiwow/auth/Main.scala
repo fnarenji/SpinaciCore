@@ -1,6 +1,6 @@
 package ensiwow.auth
 
-import ensiwow.auth.protocol.ClientLogonChallenge
+import ensiwow.auth.protocol.packets.ClientLogonChallenge
 import scodec._
 import scodec.bits._
 
