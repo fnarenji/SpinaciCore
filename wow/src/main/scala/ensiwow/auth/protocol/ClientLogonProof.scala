@@ -1,25 +1,20 @@
 package ensiwow.auth.protocol
 
+import ensiwow.auth.protocol.codecs._
 import scodec._
 import scodec.codecs._
-import ensiwow.auth.protocol.AuthResults.AuthResult
-import ensiwow.auth.protocol.codecs._
-import ensiwow.auth.protocol.{AuthResults, OpCodes}
 
 /**
   * Created by sknz on 2/7/17.
   */
 case class ClientLogonProof(opCode: Int,
-                                A: BigInt,
-                                M1: BigInt,
-                                crc_hash: BigInt,
+                            A: BigInt,
+                            M1: BigInt,
+                            crc_hash: BigInt,
                             number_of_keys: Int,
-                            securityFlags: Int
-                           ) {
-  }
+                            securityFlags: Int)
 
 object ClientLogonProof {
-
   final val ALength = 32
   final val M1Length = 20
   final val CRCLength = 20
