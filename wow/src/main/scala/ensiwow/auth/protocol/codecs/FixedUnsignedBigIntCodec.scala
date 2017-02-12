@@ -31,6 +31,8 @@ private[codecs] final class FixedUnsignedBigIntCodec(sizeInBytes: Long) extends 
 
     val littleEndian = bits.reverseByteOrder
 
+    // Remove leading zero bits that are used to indicate sign
+    // Scala BigInts are signed but here we want to treat them as unsigned
     var unsignedBits = littleEndian
     while (unsignedBits.endsWith(BitVector.zero))
       unsignedBits = unsignedBits.dropRight(1)
@@ -46,6 +48,8 @@ private[codecs] final class FixedUnsignedBigIntCodec(sizeInBytes: Long) extends 
 
   override def decode(bits: BitVector): Attempt[DecodeResult[BigInt]] = {
     val usableBits = bits.take(sizeInBits)
+
+    // Add back a leading sign zero
     val signedBits = usableBits ++ BitVector.lowByte
 
     val bigEndianBytes = signedBits.reverseByteOrder
