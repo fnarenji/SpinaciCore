@@ -12,18 +12,17 @@ class FixedUnsignedBigIntCodecTest extends FlatSpec with Matchers {
   "A FixedUnsignedBigIntCodec" must "fail on negative number" in {
     val codec = fixedUBigIntL(32)
     val value = BigInt("-983129873182379123791298731289319723712798318927379123725")
-    assertThrows[IllegalArgumentException] {
-      codec.encode(value)
-    }
+
+    val encode = codec.encode(value)
+    assert(encode.isFailure)
   }
 
   it must "fail on over-capacity number" in {
     val codec = fixedUBigIntL(4)
     val value = BigInt(Long.MaxValue)
 
-    assertThrows[IllegalArgumentException] {
-      codec.encode(value)
-    }
+    val encode = codec.encode(value)
+    assert(encode.isFailure)
   }
 
   it must "succeed on max number" in {
