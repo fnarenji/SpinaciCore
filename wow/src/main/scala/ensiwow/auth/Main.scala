@@ -1,7 +1,11 @@
 package ensiwow.auth
 
+<<<<<<< HEAD
 import ensiwow.auth.protocol.ClientLogonChallenge
 import ensiwow.auth.protocol.ClientLogonProof
+=======
+import ensiwow.auth.protocol.packets.ClientLogonChallenge
+>>>>>>> 8c542e46edf4a9e257e5176dff697f063a848e20
 import scodec._
 import scodec.bits._
 
