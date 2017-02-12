@@ -31,16 +31,14 @@ package object codecs {
     }
 
     override def decode(bits: BitVector): Attempt[DecodeResult[BitVector]] = {
-      bits.bytes.indexOfSlice(nul.bytes) match {
-        case i if i <= sizeInBytes =>
-          val take = bits.take(i * 8L)
-          val drop = bits.drop(sizeInBytes * 8L)
-          Attempt.successful(DecodeResult(take, drop))
-        case _ =>
-          val take = bits.take(sizeInBytes * 8L)
-          val drop = bits.drop(sizeInBytes * 8L)
-          Attempt.successful(DecodeResult(take, drop))
+      val actualSize = bits.bytes.indexOfSlice(nul.bytes) match {
+        case i if i <= sizeInBytes => i
+        case _ => sizeInBytes
       }
+
+      val take = bits.take(actualSize * 8L)
+      val drop = bits.drop(sizeInBytes * 8L)
+      Attempt.successful(DecodeResult(take, drop))
     }
   }).withToString("fixedCString")
 
