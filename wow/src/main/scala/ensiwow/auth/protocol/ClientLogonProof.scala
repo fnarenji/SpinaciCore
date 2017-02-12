@@ -26,9 +26,9 @@ object ClientLogonProof {
 
   implicit val codec: Codec[ClientLogonProof] = {
       ("opCode" | uint8L) ::
-      ("A" | fixedUBigIntL(32)) ::
-      ("M1" | fixedUBigIntL(20)) ::
-      ("crc_hash" | fixedUBigIntL(20)) ::
+      ("A" | fixedUBigIntL(ALength)) ::
+      ("M1" | fixedUBigIntL(M1Length)) ::
+      ("crc_hash" | fixedUBigIntL(CRCLength)) ::
       ("number_of_keys" | uint8L) ::
       ("securityFlags" | uint8L)
   }.as[ClientLogonProof]
