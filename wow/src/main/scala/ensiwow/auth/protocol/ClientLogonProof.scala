@@ -1,24 +1,22 @@
 package ensiwow.auth.protocol
 
-import ensiwow.auth.protocol.codecs._
 import scodec._
 import scodec.codecs._
+
 
 /**
   * Created by sknz on 2/7/17.
   */
 case class ClientLogonProof(opCode: Int,
-                                A: Vector[Int],
-                                M1: Vector[Int],
-                                crc_hash: Vector[Int],
+                                A: BigInt,
+                                M1: BigInt,
+                                crc_hash: BigInt,
                             number_of_keys: Int,
                             securityFlags: Int
                            ) {
   }
 
 object ClientLogonProof {
-  val reversedAscii = reverse(ascii)
-  val reversedFixedCString = reverse(fixedCString)
 
   final val ALength = 32
   final val M1Length = 20
@@ -26,9 +24,9 @@ object ClientLogonProof {
 
   implicit val codec: Codec[ClientLogonProof] = {
       ("opCode" | uint8L) ::
-      ("A" | vectorOfN(provide(32), uint8L)) ::
-      ("M1" | vectorOfN(provide(20), uint8L)) ::
-      ("crc_hash" | vectorOfN(provide(20), uint8L)) ::
+      ("A" | fixedUBigIntL(32)) ::
+      ("M1" | fixedUBigIntL(20)) ::
+      ("crc_hash" | fixedUBigIntL(20)) ::
       ("number_of_keys" | uint8L) ::
       ("securityFlags" | uint8L)
   }.as[ClientLogonProof]
