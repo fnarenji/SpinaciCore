@@ -55,15 +55,6 @@ package object codecs {
   def constantE[T](t: T)(implicit codec: Codec[T]): Codec[Unit] = constant(codec.encode(t).require)
 
   /**
-    * Builds a one way encoder for an option t
-    *
-    * @param codec codec for t
-    * @tparam T type to encode
-    * @return a one way encoder that encodes if Some, outputs nothing if None
-    */
-  def option[T](implicit codec: Codec[T]): Codec[Option[T]] = new OptionalOneWayCodec[T](codec)
-
-  /**
     * Codec for big integers
     */
   def fixedUBigIntL(sizeInBytes: Long): Codec[BigInt] = new FixedUnsignedBigIntCodec(sizeInBytes)
