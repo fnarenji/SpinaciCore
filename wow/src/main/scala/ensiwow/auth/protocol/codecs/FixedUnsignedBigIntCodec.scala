@@ -1,7 +1,7 @@
 package ensiwow.auth.protocol.codecs
 
 import scodec.bits.BitVector
-import scodec.{Attempt, Codec, DecodeResult, SizeBound}
+import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 
 /**
   * Encodes a unsigned big integer in a fixed number of bytes
@@ -23,7 +23,7 @@ private[codecs] final class FixedUnsignedBigIntCodec(sizeInBytes: Long) extends 
 
   override def encode(value: BigInt): Attempt[BitVector] = {
     if (value < 0 || value >= maxValue) {
-      throw new IllegalArgumentException(s"Big number exceeds allowed range (0 <= bn < 2^$sizeInBits)")
+      return Attempt.failure(Err(s"Big number exceeds allowed range (0 <= bn < 2^$sizeInBits)"))
     }
 
     val byteArray = value.toByteArray
@@ -38,7 +38,7 @@ private[codecs] final class FixedUnsignedBigIntCodec(sizeInBytes: Long) extends 
       unsignedBits = unsignedBits.dropRight(1)
 
     if (unsignedBits sizeGreaterThan sizeInBits) {
-      throw new IllegalArgumentException(s"Big number exceeds max bits count of $sizeInBits (is ${littleEndian.size})")
+      Attempt.failure(Err(s"Big number exceeds max bits count of $sizeInBits (is ${littleEndian.size})"))
     }
 
     val resizedVector = unsignedBits.padRight(sizeInBits)
@@ -47,16 +47,18 @@ private[codecs] final class FixedUnsignedBigIntCodec(sizeInBytes: Long) extends 
   }
 
   override def decode(bits: BitVector): Attempt[DecodeResult[BigInt]] = {
-    val usableBits = bits.take(sizeInBits)
+     bits.acquire(sizeInBits) match {
+      case Left(err) => Attempt.failure(Err(err))
+      case Right(usableBits) =>
+        // Add back a leading sign zero
+        val signedBits = usableBits ++ BitVector.lowByte
 
-    // Add back a leading sign zero
-    val signedBits = usableBits ++ BitVector.lowByte
+        val bigEndianBytes = signedBits.reverseByteOrder
 
-    val bigEndianBytes = signedBits.reverseByteOrder
+        val bigInt = BigInt(bigEndianBytes.toByteArray)
 
-    val bigInt = BigInt(bigEndianBytes.toByteArray)
-
-    Attempt.successful(DecodeResult[BigInt](bigInt, bits.drop(sizeInBits)))
+        Attempt.successful(DecodeResult[BigInt](bigInt, bits.drop(sizeInBits)))
+    }
   }
 
   override def toString = s"BigIntCodec"
