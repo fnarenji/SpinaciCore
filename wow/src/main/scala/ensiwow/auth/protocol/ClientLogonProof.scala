@@ -8,9 +8,9 @@ import scodec.codecs._
   * Created by sknz on 2/7/17.
   */
 case class ClientLogonProof(opCode: Int,
-                                A: String,
-                                M1: String,
-                                crc_hash: String,
+                                A: Vector[Int],
+                                M1: Vector[Int],
+                                crc_hash: Vector[Int],
                             number_of_keys: Int,
                             securityFlags: Int
                            ) {
@@ -26,9 +26,9 @@ object ClientLogonProof {
 
   implicit val codec: Codec[ClientLogonProof] = {
       ("opCode" | uint8L) ::
-      ("A" | Array[Int](32)) ::
-      ("M1" | Array[Int](20)) ::
-      ("crc_hash" | Array[Int](20)) ::
+      ("A" | vectorOfN(provide(32), uint8L)) ::
+      ("M1" | vectorOfN(provide(20), uint8L)) ::
+      ("crc_hash" | vectorOfN(provide(20), uint8L)) ::
       ("number_of_keys" | uint8L) ::
       ("securityFlags" | uint8L)
   }.as[ClientLogonProof]
