@@ -2,7 +2,7 @@ package ensiwow.auth.session
 
 import akka.actor.{FSM, Props}
 import ensiwow.auth._
-import ensiwow.auth.handlers.LogonChallenge
+import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
 import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientPacket, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
@@ -14,6 +14,7 @@ import scodec.{Codec, DecodeResult}
   */
 class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonChallengeHandler = context.actorSelection(AuthServer.LogonChallengeHandlerPath)
+  private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
 
   // First packet that we expect from client is logon challenge
   startWith(StateChallenge, InitData)
@@ -43,7 +44,14 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   when(StateProof) {
     case Event(EventPacket(bits), challengeData) =>
       log.debug("Received proof")
+      logonProofHandler ! LogonProof()
       stay using challengeData
+    case Event(EventLogonFailure(packet), _) =>
+      log.debug(s"Sending failed logon $packet")
+      val bits = serialize(packet)
+
+      context.parent ! OutgoingPacket(bits)
+      goto(StateFailed)
   }
 
   when(StateFailed)(FSM.NullFunction)

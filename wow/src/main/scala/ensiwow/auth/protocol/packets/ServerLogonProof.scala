@@ -28,7 +28,7 @@ object ServerLogonProofSuccess {
 
 case class ServerLogonProof(authResult: AuthResult,
                             success: Option[ServerLogonProofSuccess],
-                            failure: Option[ServerLogonProofFailure]) {
+                            failure: Option[ServerLogonProofFailure]) extends ServerPacket {
   require((authResult == AuthResults.Success) == success.nonEmpty)
   require((authResult != AuthResults.Success) == failure.nonEmpty)
 }
