@@ -21,7 +21,7 @@ abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
       case Successful(DecodeResult(packet, BitVector.empty)) =>
         packet shouldEqual reference
 
-        val encode = codec.encode(packet)
+        val encode = codec.encode(reference)
         encode match {
           case Successful(bits) => bits shouldEqual packetBits
           case Failure(err) => fail(err.toString())
