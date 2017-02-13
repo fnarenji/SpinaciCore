@@ -1,6 +1,6 @@
 package ensiwow.auth.session
 
-import ensiwow.auth.protocol.packets.ServerLogonChallenge
+import ensiwow.auth.protocol.packets.{ServerLogonChallenge, ServerLogonProof}
 import scodec.bits.BitVector
 
 /**
@@ -15,3 +15,4 @@ case class EventChallengeSuccess(packet: ServerLogonChallenge,
 
 case class EventChallengeFailure(packet: ServerLogonChallenge) extends AuthSessionEvent
 
+case class EventLogonFailure(packet: ServerLogonProof) extends AuthSessionEvent
