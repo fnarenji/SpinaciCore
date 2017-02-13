@@ -2,8 +2,7 @@ package ensiwow.auth.network
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Actor, ActorRef, Props}
-import akka.event.Logging
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.io.{IO, Tcp}
 import akka.io.Tcp._
 import akka.util.Timeout
@@ -17,12 +16,11 @@ import scala.concurrent.duration._
   */
 
 case class GetAddress()
-class TCPServer extends Actor {
+class TCPServer extends Actor with ActorLogging {
     import context.system
 
     implicit val timeout : Timeout = 2 seconds
 
-    val log = Logging.getLogger(context.system, this)
     var address = ""
 
     log.debug("[TCPSERVER] Binding server with socket")
@@ -41,7 +39,7 @@ class TCPServer extends Actor {
         case Connected(remote, local) =>
             log.debug("[TCPSERVER] Remote connection set from: " + local + " to: " + remote)
             val connection = sender()
-            val handlerRef: ActorRef = context.actorOf(Props(classOf[BasicHandler], connection))
+            val handlerRef: ActorRef = context.actorOf(BasicHandler.props(connection))
             connection ! Register(handlerRef)
 
         case CommandFailed(_: Bind) => context stop self

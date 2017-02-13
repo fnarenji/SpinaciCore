@@ -1,17 +1,15 @@
 package ensiwow.auth.network
 
-import java.net.InetSocketAddress
-
 import org.scalatest.FlatSpec
 import akka.testkit.TestActorRef
 import akka.pattern.ask
 
 import scala.util.{Failure, Success}
-import akka.actor.{ActorRef, ActorSystem}
-import akka.util.{ByteString, Timeout}
+import akka.actor.ActorSystem
+import akka.util.Timeout
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -31,7 +29,7 @@ class TCPServerTest extends FlatSpec {
         val future: Future[String] = (serverRef ? GetAddress).mapTo[String]
         future onComplete {
             case Success(result: String) => assert(result === "127.0.0.1")
-            case Failure(t)              => throw ServerNotBoundException(s"The server has not been bound: $t")
+            case Failure(t)              => fail("Server not bound")
         }
     }
 }
