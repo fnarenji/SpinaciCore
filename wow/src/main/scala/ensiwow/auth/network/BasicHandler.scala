@@ -8,8 +8,6 @@ import akka.util.ByteString
   * Created by yanncolina on 10/02/17.
   */
 
-case class EmptyBufferException(message: String) extends Exception(message)
-
 object BasicHandler {
     def props(connection: ActorRef): Props = Props(new BasicHandler(connection))
 }

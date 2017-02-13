@@ -2,7 +2,7 @@ package ensiwow.auth.network
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.Logging
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
@@ -19,10 +19,9 @@ object Client {
   * @param remote the ip address and port of the socket.
   * @param listener the server's actor reference to which the messages are sent and received.
   */
-class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor {
+class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor with ActorLogging {
     import akka.io.Tcp._
     import context.system
-    val log = Logging.getLogger(context.system, this)
 
     IO(Tcp) ! Connect(remote)
 
