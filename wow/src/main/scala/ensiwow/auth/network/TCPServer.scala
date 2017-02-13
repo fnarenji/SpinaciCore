@@ -2,9 +2,9 @@ package ensiwow.auth.network
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
-import akka.io.{IO, Tcp}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.Tcp._
+import akka.io.{IO, Tcp}
 import akka.util.Timeout
 
 import scala.concurrent.duration._
@@ -12,37 +12,46 @@ import scala.concurrent.duration._
 /**
   * Created by yanncolina on 08/02/17.
   * This class defines the behaviour of the main TCP server.
+  *
   * @constructor send a Bind command to the TCP manager
   */
 
 case class GetAddress()
+
 class TCPServer extends Actor with ActorLogging {
-    import context.system
+  val bindAddress = "127.0.0.1"
+  val bindPort = 3724
 
-    implicit val timeout : Timeout = 2 seconds
+  implicit val timeout: Timeout = 2 seconds
 
-    var address = ""
+  var address = ""
 
-    log.debug("[TCPSERVER] Binding server with socket")
-    IO(Tcp) ! Bind(self, new InetSocketAddress("localhost", 3724))
+  log.debug("Binding server with socket")
+  IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(bindAddress, bindPort))
 
-    override def postStop(): Unit = log.info("[TCPSERVER] Stopped")
+  override def postStop(): Unit = log.debug("Stopped")
 
-    def receive = {
+  def receive = {
 
-        case GetAddress => sender() ! address
+    case GetAddress => sender() ! address
 
-        case Bound(localAddress) =>
-            log.debug("[TCPSERVER] TCP port opened at: " + localAddress.getPort)
-            address = localAddress.getHostString
+    case Bound(localAddress) =>
+      log.debug(s"TCP port opened at: ${localAddress.getPort}")
+      address = localAddress.getHostString
 
-        case Connected(remote, local) =>
-            log.debug("[TCPSERVER] Remote connection set from: " + local + " to: " + remote)
-            val connection = sender()
-            val handlerRef: ActorRef = context.actorOf(BasicHandler.props(connection))
-            connection ! Register(handlerRef)
+    case Connected(remote, local) =>
+      log.debug(s"Remote connection set from: $local to: $remote")
+      val handlerRef = context.actorOf(TCPHandler.props(sender), TCPHandler.PreferredName(remote))
+      sender ! Register(handlerRef)
 
-        case CommandFailed(_: Bind) => context stop self
-    }
+    case CommandFailed(_: Bind) => context stop self
+  }
 }
+
+object TCPServer {
+  def props: Props = Props(new TCPServer)
+
+  val PreferredName = "TCP"
+}
+
 
