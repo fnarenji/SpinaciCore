@@ -1,6 +1,6 @@
 package ensiwow.auth.protocol.packets
 
-import ensiwow.auth.protocol.OpCodes
+import ensiwow.auth.protocol.{OpCodes, WotlkVersionInfo}
 import ensiwow.auth.protocol.codecs._
 import scodec._
 import scodec.codecs._
@@ -21,22 +21,8 @@ case class ClientLogonChallenge(error: Int,
                                 country: String,
                                 timezoneBias: Long,
                                 ip: Vector[Int],
-                                login: String) {
-
-  object WotlkVersionInfo {
-    final val Major = 3
-    final val Minor = 3
-    final val Patch = 5
-    final val Build = 12340
-  }
-
-  require(versionMajor == WotlkVersionInfo.Major)
-  require(versionMinor == WotlkVersionInfo.Minor)
-  require(versionPatch == WotlkVersionInfo.Patch)
-  require(build == WotlkVersionInfo.Build)
-
+                                login: String) extends ClientPacket {
   require(ip.length == 4)
-
   require(!login.isEmpty)
 }
 
