@@ -24,7 +24,7 @@ class TCPServer extends Actor with ActorLogging {
     var address = ""
 
     log.debug("[TCPSERVER] Binding server with socket")
-    IO(Tcp) ! Bind(self, new InetSocketAddress("localhost", 5555))
+    IO(Tcp) ! Bind(self, new InetSocketAddress("localhost", 3724))
 
     override def postStop(): Unit = log.info("[TCPSERVER] Stopped")
 
