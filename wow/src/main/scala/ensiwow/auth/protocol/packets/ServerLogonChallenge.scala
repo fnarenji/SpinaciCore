@@ -22,7 +22,7 @@ object ServerLogonChallengeSuccess {
 }
 
 case class ServerLogonChallenge(authResult: AuthResult,
-                                success: Option[ServerLogonChallengeSuccess]) {
+                                success: Option[ServerLogonChallengeSuccess]) extends ServerPacket {
   require((authResult == AuthResults.Success) == success.nonEmpty)
 }
 
