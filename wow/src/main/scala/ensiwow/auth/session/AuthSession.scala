@@ -8,6 +8,7 @@ import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientPacket, Server
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult}
+import scala.concurrent.duration._
 
 /**
   * Handles an auth session
@@ -46,12 +47,11 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       stay using challengeData
   }
 
-  when(StateFailed)(FSM.NullFunction)
-
-  onTransition {
-    case _ -> StateFailed =>
-      log.debug("Entering failed state, disconnecting")
+  when(StateFailed, stateTimeout = 1 second) {
+    case Event(StateTimeout, _) =>
+      log.debug("Failed state expired, disconnecting")
       context.parent ! Disconnect
+      stop
   }
 
   /**
