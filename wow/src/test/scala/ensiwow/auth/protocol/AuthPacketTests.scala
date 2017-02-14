@@ -36,10 +36,7 @@ class ClientLogonChallengeTest extends AuthPacketTest[ClientLogonChallenge](
   ClientLogonChallenge(
     error = 8,
     size = 40,
-    versionMajor = 3,
-    versionMinor = 3,
-    versionPatch = 5,
-    build = 12340,
+    versionInfo = VersionInfo(3, 3, 5, 12340),
     platform = "x86",
     os = "Win",
     country = "enUS",

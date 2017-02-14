@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.auth.protocol.AuthResults.AuthResult
 import ensiwow.auth.protocol.codecs.fixedUBigIntL
 import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ServerLogonChallenge, ServerLogonChallengeSuccess}
-import ensiwow.auth.protocol.{AuthResults, WotlkVersionInfo}
+import ensiwow.auth.protocol.{AuthResults, VersionInfo}
 import ensiwow.auth.session.{ChallengeData, EventChallengeFailure, EventChallengeSuccess}
 import scodec.bits.BitVector
 
@@ -114,10 +114,7 @@ class LogonChallengeHandler extends Actor with ActorLogging {
   }
 
   private def validateVersion(packet: ClientLogonChallenge): Option[AuthResult] = {
-    val valid = packet.versionMajor == WotlkVersionInfo.Major &&
-      packet.versionMinor == WotlkVersionInfo.Minor &&
-      packet.versionPatch == WotlkVersionInfo.Patch &&
-      packet.build == WotlkVersionInfo.Build
+    val valid = packet.versionInfo == VersionInfo.SupportedVersionInfo
 
     if (!valid) {
       Some(AuthResults.FailVersionInvalid)
