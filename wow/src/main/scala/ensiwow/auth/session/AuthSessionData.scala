@@ -12,5 +12,5 @@ trait InitData extends AuthSessionData {
 
 case object InitData extends InitData
 
-case class ChallengeData(s: BigInt, v: BigInt, b: BigInt, B: BigInt) extends InitData
+case class ChallengeData(s: BigInt, v: BigInt, smallB: BigInt, bigB: BigInt) extends InitData
 
