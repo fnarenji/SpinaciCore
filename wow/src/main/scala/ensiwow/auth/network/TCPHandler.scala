@@ -3,7 +3,7 @@ package ensiwow.auth.network
 import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.io.Tcp._
+import akka.io.Tcp.{Close, ConnectionClosed, Received, Write}
 import akka.util.ByteString
 import ensiwow.auth.session.{AuthSession, EventPacket}
 import scodec.bits.BitVector
@@ -30,9 +30,13 @@ class TCPHandler(connection: ActorRef) extends Actor with ActorLogging {
       connection ! Write(byteString)
 
     // Flushes pending writes and gracefully closes the connection
-    case Disconnect => connection ! Close
+    case Disconnect =>
+      log.debug("Closing")
+      connection ! Close
 
-    case PeerClosed => context stop self
+    case closed: ConnectionClosed =>
+      log.debug(s"Connection closed ($closed)")
+      context stop self
   }
 }
 
