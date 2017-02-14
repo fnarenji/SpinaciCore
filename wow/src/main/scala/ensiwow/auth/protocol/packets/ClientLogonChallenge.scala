@@ -1,7 +1,7 @@
 package ensiwow.auth.protocol.packets
 
-import ensiwow.auth.protocol.{OpCodes, WotlkVersionInfo}
 import ensiwow.auth.protocol.codecs._
+import ensiwow.auth.protocol.{OpCodes, VersionInfo}
 import scodec._
 import scodec.codecs._
 
@@ -12,10 +12,7 @@ import scala.language.postfixOps
   **/
 case class ClientLogonChallenge(error: Int,
                                 size: Int,
-                                versionMajor: Int,
-                                versionMinor: Int,
-                                versionPatch: Int,
-                                build: Int,
+                                versionInfo: VersionInfo,
                                 platform: String,
                                 os: String,
                                 country: String,
@@ -40,10 +37,7 @@ object ClientLogonChallenge {
       ("error" | uint8L) ::
       ("size" | int16L) ::
       constantE(GameName)(reversedFixedSizeCString(GameNameLength)) ::
-      ("versionMajor" | uint8L) ::
-      ("versionMinor" | uint8L) ::
-      ("versionPatch" | uint8L) ::
-      ("build" | uint16L) ::
+      ("versionInfo" | Codec[VersionInfo]) ::
       ("platform" | reversedFixedSizeCString(PlatformLength)) ::
       ("os" | reversedFixedSizeCString(OSLength)) ::
       ("country" | reversedFixedSizeCString(CountryLength)) ::

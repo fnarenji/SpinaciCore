@@ -1,13 +1,20 @@
 package ensiwow.auth.protocol
 
+import scodec.Codec
+import scodec.codecs._
+
 /**
   * Supported version info
   */
-object WotlkVersionInfo {
-  final val Major = 3
-  final val Minor = 3
-  final val Patch = 5
-  final val Build = 12340
+case class VersionInfo(Major: Int, Minor: Int, Patch: Int, Build: Int)
 
-  override def toString = s"WotlkVersionInfo($Major.$Minor.$Patch $Build)"
+object VersionInfo {
+  val SupportedVersionInfo = VersionInfo(3, 3, 5, 12340)
+
+  implicit val codec: Codec[VersionInfo] = {
+    ("versionMajor" | uint8L) ::
+      ("versionMinor" | uint8L) ::
+      ("versionPatch" | uint8L) ::
+      ("build" | uint16L)
+  }.as[VersionInfo]
 }

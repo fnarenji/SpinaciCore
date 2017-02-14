@@ -29,7 +29,10 @@ class TCPHandler(connection: ActorRef) extends Actor with ActorLogging {
       log.debug(s"Sending: $byteString")
       connection ! Write(byteString)
 
-    case PeerClosed | Disconnect => context stop self
+    // Flushes pending writes and gracefully closes the connection
+    case Disconnect => connection ! Close
+
+    case PeerClosed => context stop self
   }
 }
 
