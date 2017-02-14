@@ -44,9 +44,6 @@ class LogonChallengeHandler extends Actor with ActorLogging {
   }
 
   private def computeResponse(packet: ClientLogonChallenge, g: BigInt, N: BigInt) = {
-    def toHexB(vl: BigInt) = fixedUBigIntL(32).encode(vl).require.reverseByteOrder.toHex
-    def toHexA(vl: Array[Byte]) = BitVector(vl).toHex
-
     def bigIntEncode(size : Int, value: BigInt) = fixedUBigIntL(size).encode(value).require.toByteArray
     def bigIntDecode(value: Array[Byte]) = fixedUBigIntL(value.length).decode(BitVector(value)).require.value
 
