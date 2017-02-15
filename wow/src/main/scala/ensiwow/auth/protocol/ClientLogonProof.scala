@@ -9,9 +9,7 @@ import scodec.codecs._
   */
 case class ClientLogonProof(A: BigInt,
                             M1: BigInt,
-                            crcHash: BigInt,
-                            keyCount: Int,
-                            securityFlags: Int)
+                            crcHash: BigInt)
 
 object ClientLogonProof {
   final val ALength = 32
@@ -19,11 +17,11 @@ object ClientLogonProof {
   final val CRCLength = 20
 
   implicit val codec: Codec[ClientLogonProof] = {
-      constantE(OpCodes.LogonProof) ::
+    constantE(OpCodes.LogonProof) ::
       ("A" | fixedUBigIntL(ALength)) ::
       ("M1" | fixedUBigIntL(M1Length)) ::
       ("crcHash" | fixedUBigIntL(CRCLength)) ::
-      ("keyCount" | uint8L) ::
-      ("securityFlags" | uint8L)
+      constantE(0)(uint8L) :: // key count
+      constantE(0)(uint8L)    // security flags
   }.as[ClientLogonProof]
 }
