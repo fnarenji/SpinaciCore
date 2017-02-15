@@ -7,11 +7,10 @@ import scodec.codecs._
 /**
   * Created by sknz on 2/7/17.
   */
-case class ClientLogonProof(opCode: Int,
-                            A: BigInt,
+case class ClientLogonProof(A: BigInt,
                             M1: BigInt,
-                            crc_hash: BigInt,
-                            number_of_keys: Int,
+                            crcHash: BigInt,
+                            keyCount: Int,
                             securityFlags: Int)
 
 object ClientLogonProof {
@@ -20,11 +19,11 @@ object ClientLogonProof {
   final val CRCLength = 20
 
   implicit val codec: Codec[ClientLogonProof] = {
-      ("opCode" | uint8L) ::
+      constantE(OpCodes.LogonProof) ::
       ("A" | fixedUBigIntL(ALength)) ::
       ("M1" | fixedUBigIntL(M1Length)) ::
-      ("crc_hash" | fixedUBigIntL(CRCLength)) ::
-      ("number_of_keys" | uint8L) ::
+      ("crcHash" | fixedUBigIntL(CRCLength)) ::
+      ("keyCount" | uint8L) ::
       ("securityFlags" | uint8L)
   }.as[ClientLogonProof]
 }
