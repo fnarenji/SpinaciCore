@@ -9,6 +9,7 @@ import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * Handles an auth session
