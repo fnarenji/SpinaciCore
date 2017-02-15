@@ -8,7 +8,7 @@ import ensiwow.auth.session.EventLogonFailure
 case class LogonProof()
 
 /**
-  * Handles logon challenges
+  * Handles logon proofs
   */
 class LogonProofHandler extends Actor with ActorLogging {
   override def receive: PartialFunction[Any, Unit] = {
