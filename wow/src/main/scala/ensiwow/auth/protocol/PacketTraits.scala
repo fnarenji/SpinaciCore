@@ -1,4 +1,4 @@
-package ensiwow.auth.protocol.packets
+package ensiwow.auth.protocol
 
 /**
   * Simple trait signaling a client packet
