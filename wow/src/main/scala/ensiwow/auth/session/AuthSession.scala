@@ -4,10 +4,12 @@ import akka.actor.{FSM, Props}
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
-import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientPacket, ServerPacket}
+import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof}
+import ensiwow.auth.protocol.{ClientPacket, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult}
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -19,23 +21,23 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
 
   // First packet that we expect from client is logon challenge
-  startWith(StateChallenge, InitData)
+  startWith(StateChallenge, NoData)
 
   when(StateChallenge) {
-    case Event(EventPacket(bits), InitData) =>
+    case Event(EventPacket(bits), NoData) =>
       log.debug("Received challenge")
       val packet = deserialize[ClientLogonChallenge](bits)
       log.debug(packet.toString)
 
-      logonChallengeHandler ! LogonChallenge(packet, InitData.g, InitData.N)
-      stay using InitData
-    case Event(EventChallengeSuccess(packet, challengeData), InitData) =>
+      logonChallengeHandler ! LogonChallenge(packet)
+      stay using NoData
+    case Event(EventChallengeSuccess(packet, challengeData: ChallengeData), NoData) =>
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
 
       goto(StateProof) using challengeData
-    case Event(EventChallengeFailure(packet), InitData) =>
+    case Event(EventChallengeFailure(packet), NoData) =>
       log.debug(s"Sending failed challenge $packet")
       val bits = serialize(packet)
 
@@ -44,10 +46,19 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateProof) {
-    case Event(EventPacket(bits), challengeData) =>
+    case Event(EventPacket(bits), challengeData: ChallengeData) =>
       log.debug("Received proof")
-      logonProofHandler ! LogonProof()
+      val packet = deserialize[ClientLogonProof](bits)
+      log.debug(packet.toString)
+
+      logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
+    case Event(EventLogonSuccess(packet), proofData: ProofData) =>
+      log.debug(s"Sending successful logon $packet")
+      val bits = serialize(packet)
+
+      context.parent ! OutgoingPacket(bits)
+      goto(StateRealmlist) using proofData
     case Event(EventLogonFailure(packet), _) =>
       log.debug(s"Sending failed logon $packet")
       val bits = serialize(packet)
@@ -56,7 +67,18 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       goto(StateFailed)
   }
 
-  when(StateFailed, stateTimeout = 1 second) {
+  when(StateRealmlist) {
+    case Event(EventPacket(bits), _: ProofData) =>
+      import scodec.bits._
+      assert(bits == hex"1000000000".bits)
+      log.debug("Realmlist R&R.")
+      context.parent !
+        OutgoingPacket(hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000"
+          .bits)
+      stay
+  }
+
+  when(StateFailed, stateTimeout = 5 second) {
     case Event(StateTimeout, _) =>
       log.debug("Failed state expired, disconnecting")
       context.parent ! Disconnect
