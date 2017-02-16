@@ -1,16 +1,16 @@
 package ensiwow.auth.session
 
+import ensiwow.auth.crypto.{Srp6Challenge, Srp6Identity}
+
 /**
   * Data
   */
 sealed trait AuthSessionData
 
-trait InitData extends AuthSessionData {
-  val g = BigInt(7)
-  val N = BigInt("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7", 16)
-}
+case object NoData extends AuthSessionData
 
-case object InitData extends InitData
+case class ChallengeData(login: String,
+                         srp6Identity: Srp6Identity,
+                         srp6Challenge: Srp6Challenge) extends AuthSessionData
 
-case class ChallengeData(s: BigInt, v: BigInt, smallB: BigInt, bigB: BigInt) extends InitData
-
+case class ProofData(challengeData: ChallengeData, sessionKey: BigInt) extends AuthSessionData

@@ -1,5 +1,6 @@
-package ensiwow.auth.protocol
+package ensiwow.auth.protocol.packets
 
+import ensiwow.auth.protocol.{ClientPacket, OpCodes}
 import ensiwow.auth.protocol.codecs._
 import scodec._
 import scodec.codecs._
@@ -7,9 +8,9 @@ import scodec.codecs._
 /**
   * Created by sknz on 2/7/17.
   */
-case class ClientLogonProof(A: BigInt,
-                            M1: BigInt,
-                            crcHash: BigInt)
+case class ClientLogonProof(clientKey: BigInt,
+                            clientProof: BigInt,
+                            crcHash: BigInt) extends ClientPacket
 
 object ClientLogonProof {
   final val ALength = 32
@@ -18,8 +19,8 @@ object ClientLogonProof {
 
   implicit val codec: Codec[ClientLogonProof] = {
     constantE(OpCodes.LogonProof) ::
-      ("A" | fixedUBigIntL(ALength)) ::
-      ("M1" | fixedUBigIntL(M1Length)) ::
+      ("clientKey" | fixedUBigIntL(ALength)) ::
+      ("clientProof" | fixedUBigIntL(M1Length)) ::
       ("crcHash" | fixedUBigIntL(CRCLength)) ::
       constantE(0)(uint8L) :: // key count
       constantE(0)(uint8L)    // security flags

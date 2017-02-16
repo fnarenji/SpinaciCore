@@ -16,3 +16,5 @@ case class EventChallengeSuccess(packet: ServerLogonChallenge,
 case class EventChallengeFailure(packet: ServerLogonChallenge) extends AuthSessionEvent
 
 case class EventLogonFailure(packet: ServerLogonProof) extends AuthSessionEvent
+
+case class EventLogonSuccess(packet: ServerLogonProof) extends AuthSessionEvent

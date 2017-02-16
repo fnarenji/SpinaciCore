@@ -2,8 +2,9 @@ package ensiwow.auth.protocol.packets
 
 import ensiwow.auth.protocol.AuthResults.AuthResult
 import ensiwow.auth.protocol.codecs._
-import ensiwow.auth.protocol.{AuthResults, OpCodes}
+import ensiwow.auth.protocol.{AuthResults, OpCodes, ServerPacket}
 import scodec._
+import scodec.bits.ByteVector
 import scodec.codecs._
 
 case class ServerLogonProofFailure()
@@ -15,11 +16,13 @@ object ServerLogonProofFailure {
   }.as[ServerLogonProofFailure]
 }
 
-case class ServerLogonProofSuccess(M2: BigInt)
+case class ServerLogonProofSuccess(serverLogonProof: ByteVector)
 
 object ServerLogonProofSuccess {
+  private val ShaDigestLength = java.security.MessageDigest.getInstance("SHA-1").getDigestLength
+
   implicit val codec: Codec[ServerLogonProofSuccess] = {
-    ("M2" | fixedUBigIntL(20)) ::
+    ("serverLogonProof" | bytes(ShaDigestLength)) ::
       constantE(0x01L)(uint32L) ::
       constantE(0L)(uint32L) ::
       constantE(0)(uint16L)

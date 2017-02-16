@@ -1,6 +1,6 @@
 package ensiwow.auth
 
-import ensiwow.auth.protocol.ClientLogonProof
+import ensiwow.auth.protocol.packets.ClientLogonProof
 import scodec._
 import scodec.bits._
 
