@@ -7,6 +7,9 @@ import scodec._
 import scodec.bits.ByteVector
 import scodec.codecs._
 
+/**
+  * Empty case class used for serialization purposes
+  */
 case class ServerLogonProofFailure()
 
 object ServerLogonProofFailure {
@@ -16,6 +19,9 @@ object ServerLogonProofFailure {
   }.as[ServerLogonProofFailure]
 }
 
+/**
+  * Packet containing information about successful logon proof.
+  */
 case class ServerLogonProofSuccess(serverLogonProof: ByteVector)
 
 object ServerLogonProofSuccess {
@@ -29,6 +35,9 @@ object ServerLogonProofSuccess {
   }.as[ServerLogonProofSuccess]
 }
 
+/**
+  * Server logon proof packet, after client logon proof.
+  */
 case class ServerLogonProof(authResult: AuthResult,
                             success: Option[ServerLogonProofSuccess],
                             failure: Option[ServerLogonProofFailure]) extends ServerPacket {

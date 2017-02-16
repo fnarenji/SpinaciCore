@@ -14,7 +14,7 @@ case class OutgoingPacket(bits: BitVector)
 case object Disconnect
 
 /**
-  * Created by yanncolina on 10/02/17.
+  * Handles an open TCP connection.
   */
 class TCPHandler(connection: ActorRef) extends Actor with ActorLogging {
   val authSession = context.actorOf(AuthSession.props, AuthSession.PreferredName)

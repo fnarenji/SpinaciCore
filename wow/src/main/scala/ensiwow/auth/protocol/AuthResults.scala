@@ -4,7 +4,7 @@ import scodec.Codec
 import scodec.codecs._
 
 /**
-  * Created by sknz on 2/10/17.
+  * Enumeration of authentication results.
   */
 object AuthResults {
   final case class AuthResult(code : Int)

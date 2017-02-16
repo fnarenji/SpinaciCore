@@ -25,6 +25,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
   when(StateChallenge) {
     case Event(EventPacket(bits), NoData) =>
+      // TODO: here we should distinguish between LogonChallenge and ReconnectChallenge by using the opcode
       log.debug("Received challenge")
       val packet = deserialize[ClientLogonChallenge](bits)
       log.debug(packet.toString)

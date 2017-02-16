@@ -9,6 +9,9 @@ import scodec.codecs._
 case class VersionInfo(Major: Int, Minor: Int, Patch: Int, Build: Int)
 
 object VersionInfo {
+  /**
+    * Version for which this server accepts connections
+    */
   val SupportedVersionInfo = VersionInfo(3, 3, 5, 12340)
 
   implicit val codec: Codec[VersionInfo] = {
