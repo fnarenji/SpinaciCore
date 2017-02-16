@@ -10,15 +10,13 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
+case object GetAddress
+
 /**
-  * Created by yanncolina on 08/02/17.
   * This class defines the behaviour of the main TCP server.
   *
   * @constructor send a Bind command to the TCP manager
   */
-
-case class GetAddress()
-
 class TCPServer extends Actor with ActorLogging {
   val bindAddress = "127.0.0.1"
   val bindPort = 3724
@@ -33,7 +31,6 @@ class TCPServer extends Actor with ActorLogging {
   override def postStop(): Unit = log.debug("Stopped")
 
   def receive = {
-
     case GetAddress => sender() ! address
 
     case Bound(localAddress) =>

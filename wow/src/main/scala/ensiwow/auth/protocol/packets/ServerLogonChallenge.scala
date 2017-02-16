@@ -6,6 +6,9 @@ import ensiwow.auth.protocol.{AuthResults, OpCodes, ServerPacket}
 import scodec._
 import scodec.codecs._
 
+/**
+  * Packet values for successful challenge.
+  */
 case class ServerLogonChallengeSuccess(serverKey: BigInt, g: Int, N: BigInt, salt: BigInt, unk3: BigInt)
 
 object ServerLogonChallengeSuccess {
@@ -21,6 +24,9 @@ object ServerLogonChallengeSuccess {
   }.as[ServerLogonChallengeSuccess]
 }
 
+/**
+  * Server logon challenge
+  */
 case class ServerLogonChallenge(authResult: AuthResult,
                                 success: Option[ServerLogonChallengeSuccess]) extends ServerPacket {
   require((authResult == AuthResults.Success) == success.nonEmpty)

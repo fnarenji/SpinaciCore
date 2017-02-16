@@ -3,6 +3,9 @@ package ensiwow.auth.protocol
 import scodec._
 import scodec.codecs._
 
+/**
+  * Enumeration of OpCodes.
+  */
 object OpCodes {
   final case class OpCode(opCode : Int)
 

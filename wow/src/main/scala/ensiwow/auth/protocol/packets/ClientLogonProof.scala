@@ -6,7 +6,7 @@ import scodec._
 import scodec.codecs._
 
 /**
-  * Created by sknz on 2/7/17.
+  * Client logon proof packet, sent in response to server challenge.
   */
 case class ClientLogonProof(clientKey: BigInt,
                             clientProof: BigInt,
