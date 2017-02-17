@@ -14,19 +14,24 @@ abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
                                  implicit val codec: Codec[T]) extends FlatSpec with Matchers {
   private val packetBits = bytes.bits
 
-  m.runtimeClass.getSimpleName must "be fully and correctly hydrated" in {
-    val attempt = codec.decode(packetBits)
-    attempt match {
-      case Failure(err) => fail(err.toString())
-      case Successful(DecodeResult(packet, BitVector.empty)) =>
-        packet shouldEqual reference
+  behavior of m.runtimeClass.getSimpleName
 
-        val encode = codec.encode(reference)
-        encode match {
-          case Successful(bits) => bits shouldEqual packetBits
-          case Failure(err) => fail(err.toString())
-        }
+  it must "serialize as expected" in {
+    val encode = codec.encode(reference)
+
+    encode match {
+      case Successful(bits) => bits shouldEqual packetBits
+      case Failure(err) => fail(err.toString())
+    }
+  }
+
+  it must "deserialize as expected" in {
+    val attempt = codec.decode(packetBits)
+
+    attempt match {
+      case Successful(DecodeResult(packet, BitVector.empty)) => packet shouldEqual reference
       case Successful(DecodeResult(packet, remainder)) => fail(s"non empty remainder: $packet / $remainder")
+      case Failure(err) => fail(err.toString())
     }
   }
 }

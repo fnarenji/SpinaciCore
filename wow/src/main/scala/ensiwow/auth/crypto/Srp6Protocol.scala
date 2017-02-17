@@ -3,7 +3,6 @@ package ensiwow.auth.crypto
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
-import ensiwow.auth.handlers.LogonChallengeHandler
 import ensiwow.utils.BigIntExtensions._
 import scodec.bits.ByteVector
 
@@ -33,6 +32,14 @@ case class Srp6Challenge(smallB: BigInt, serverKey: BigInt)
   */
 case class Srp6Proof(serverProof: ByteVector, sharedKey: BigInt)
 
+trait RandomBigInt {
+  def next(sizeInBits: Int): BigInt
+}
+
+class DefaultRandomBigInt(random: Random = Random) extends RandomBigInt {
+  def next(sizeInBits: Int) = BigInt(sizeInBits, random)
+}
+
 /**
   * SRP6 protocol implementation.
   * This class keeps no state about ongoing SRP6 computation (i.e. all state is stored in SRP6*Data objects)
@@ -42,9 +49,7 @@ case class Srp6Proof(serverProof: ByteVector, sharedKey: BigInt)
   *
   * @note Due to the presence of the MessageDigest instance, this class is NOT thread safe.
   */
-class Srp6Protocol {
-  import Srp6Protocol.FixedRandomMode
-
+class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
   // Obtains a SHA-1 digest instance
   // Note that each call to getInstance returns a different instance
   private val messageDigest = MessageDigest.getInstance("SHA-1")
@@ -80,11 +85,7 @@ class Srp6Protocol {
     // Compute authBytes SHA digest
     val authDigest = messageDigest.digest(authBytes)
 
-    val salt = if (FixedRandomMode) {
-      LogonChallengeHandler.FixedSessionKey
-    } else {
-      BigInt(SaltSizeBits, Random)
-    }
+    val salt = randomBigInt.next(SaltSizeBits)
     assert(salt > 0)
 
     val saltBytes = salt.toNetworkBytes(SaltSize)
@@ -94,10 +95,6 @@ class Srp6Protocol {
     messageDigest.update(authDigest)
     val saltedPasswordHash = messageDigest.digest
     val saltedPassword = BigInt.fromNetworkBytes(saltedPasswordHash)
-
-    if (FixedRandomMode) {
-      assert(saltedPassword == BigInt("550943625525122196566962046154797572093457682231"))
-    }
 
     val verifier = Srp6Constants.g.modPow(saltedPassword, Srp6Constants.N)
 
@@ -113,24 +110,11 @@ class Srp6Protocol {
   def computeChallenge(identity: Srp6Identity): Srp6Challenge = {
     val verifier = identity.verifier
 
-    val smallB = if (FixedRandomMode) {
-      // TODO: with some proper mocking this could be safely moved to unit tests
-      LogonChallengeHandler.FixedSmallB
-    } else {
-      BigInt(SmallBBitCount, Random)
-    }
-
+    val smallB = randomBigInt.next(SmallBBitCount)
     assert(smallB > 0)
 
     val gPowSmallB = Srp6Constants.g.modPow(smallB, Srp6Constants.N)
     val serverKey = ((verifier * Srp6Constants.legacyMultiplier) + gPowSmallB) % Srp6Constants.N
-
-    // TODO: with some proper mocking this could be safely moved to unit tests
-    if (FixedRandomMode) {
-      assert(verifier == BigInt("22075422366936545515674385768650057420632007409200282980604073279761866516199"))
-      assert(gPowSmallB == BigInt("29939248540161975887379129838367961798422604125188925685493670515789973246671"))
-      assert(serverKey == BigInt("34065449131815595092332791003415184197068868016788977698739449184781844147149"))
-    }
 
     Srp6Challenge(smallB, serverKey)
   }
@@ -272,15 +256,4 @@ class Srp6Protocol {
     (clientKey * verifier.modPow(u, Srp6Constants.N)).modPow(smallB, Srp6Constants.N)
   }
 
-}
-
-object Srp6Protocol {
-  /**
-    * Indicates whether random number generation is disabled and fixed values are being used.
-    * This is only for debugging purposes and makes the SRP6 protocol completely unsafe.
-    *
-    * @todo remove and replace with unit tests
-    * @note UNSAFE FOR PRODUCTION, SET TO FALSE
-    */
-  val FixedRandomMode = true
 }
