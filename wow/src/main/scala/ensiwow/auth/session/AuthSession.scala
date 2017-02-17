@@ -32,7 +32,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       logonChallengeHandler ! LogonChallenge(packet)
       stay using NoData
-    case Event(EventChallengeSuccess(packet, challengeData: ChallengeData), NoData) =>
+    case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
@@ -54,7 +54,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
-    case Event(EventLogonSuccess(packet), proofData: ProofData) =>
+    case Event(EventLogonSuccess(packet, proofData), challengeData: ChallengeData) =>
       log.debug(s"Sending successful logon $packet")
       val bits = serialize(packet)
 

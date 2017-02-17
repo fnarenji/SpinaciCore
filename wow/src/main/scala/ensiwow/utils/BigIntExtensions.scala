@@ -7,19 +7,45 @@ import scodec.bits.BitVector
   * Additional functions for unsigned BigInt little endian serialization/deserialization
   */
 object BigIntExtensions {
-  implicit class RichBigInt(value: BigInt) {
-    def toNetworkBytes(size: Int) : Array[Byte] = {
-      fixedUBigIntL(size).encode(value).require.toByteArray
+  implicit class RichBigInt(val value: BigInt) extends AnyVal {
+    private def requiredSize = (value.bitLength + 7) / 8
+
+    def toUnsignedLBytes(): Array[Byte] = {
+      toUnsignedLBytes(requiredSize)
     }
 
-    def toNetworkBytes() : Array[Byte] = {
-      // Round up to closest multiple of 8 (excl. sign bit) and deduce size in bytes
-      val size = (value.bitLength + 7) / 8
-      toNetworkBytes(size)
+    def toUnsignedLBytes(fixedSize: Int): Array[Byte] = {
+      if (requiredSize > fixedSize) {
+        throw new IllegalArgumentException("Value is bigger than can be encoded in specified size")
+      }
+
+      if (value < 0) {
+        throw new IllegalArgumentException("Value < 0 can not be encoded by unsigned encoder")
+      }
+
+      val byteArray = value.toByteArray
+
+      val trimmed = byteArray.drop(byteArray.length - requiredSize)
+
+      val paddingSize = fixedSize - trimmed.length
+      val padding = Array.fill[Byte](paddingSize.toInt)(0)
+
+      val padded = padding ++ trimmed
+
+      val reversed = padded.reverse
+
+      reversed
     }
   }
 
   implicit class RichBigIntCompanion(value: BigInt.type) {
-    def fromNetworkBytes(bytes: Array[Byte]) = fixedUBigIntL(bytes.length).decode(BitVector(bytes)).require.value
+    def fromUnsignedLBytes(bytes: Array[Byte]) = {
+      val reversed = bytes.reverse
+
+      val signed = Array[Byte](0) ++ reversed
+
+      BigInt(signed)
+    }
   }
+
 }

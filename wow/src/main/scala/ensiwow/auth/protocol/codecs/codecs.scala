@@ -55,5 +55,5 @@ package object codecs {
   /**
     * Codec for big integers
     */
-  def fixedUBigIntL(sizeInBytes: Long): Codec[BigInt] = new FixedUnsignedBigIntCodec(sizeInBytes)
+  def fixedUBigIntL(sizeInBytes: Long): Codec[BigInt] = new FixedUnsignedLBigIntCodec(sizeInBytes)
 }

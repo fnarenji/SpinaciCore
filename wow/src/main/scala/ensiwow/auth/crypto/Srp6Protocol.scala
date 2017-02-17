@@ -88,13 +88,13 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     val salt = randomBigInt.next(SaltSizeBits)
     assert(salt > 0)
 
-    val saltBytes = salt.toNetworkBytes(SaltSize)
+    val saltBytes = salt.toUnsignedLBytes(SaltSize)
 
     // x is sha hash of s and auth digest
     messageDigest.update(saltBytes)
     messageDigest.update(authDigest)
     val saltedPasswordHash = messageDigest.digest
-    val saltedPassword = BigInt.fromNetworkBytes(saltedPasswordHash)
+    val saltedPassword = BigInt.fromUnsignedLBytes(saltedPasswordHash)
 
     val verifier = Srp6Constants.g.modPow(saltedPassword, Srp6Constants.N)
 
@@ -134,13 +134,13 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
              clientProof: BigInt,
              identity: Srp6Identity,
              challenge: Srp6Challenge): Option[Srp6Proof] = {
-    val clientKeyBytes = clientKey.toNetworkBytes()
-    val serverKeyBytes = challenge.serverKey.toNetworkBytes()
+    val clientKeyBytes = clientKey.toUnsignedLBytes()
+    val serverKeyBytes = challenge.serverKey.toUnsignedLBytes()
 
     val sessionKey = computeSessionKey(challenge.smallB, identity.verifier, clientKey, clientKeyBytes, serverKeyBytes)
 
     val sharedKeyBytes = computeSharedKey(sessionKey)
-    val sharedKey = BigInt.fromNetworkBytes(sharedKeyBytes)
+    val sharedKey = BigInt.fromUnsignedLBytes(sharedKeyBytes)
 
     val loginDigest = messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
 
@@ -150,7 +150,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
       sharedKeyBytes,
       loginDigest)
 
-    val clientProofBytes = clientProof.toNetworkBytes()
+    val clientProofBytes = clientProof.toUnsignedLBytes()
 
     if (clientProofBytes sameElements expectedProofBytes) {
       val serverProof = computeServerProof(clientKeyBytes, sharedKeyBytes, clientProofBytes)
@@ -198,7 +198,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
                                    loginDigest: Array[Byte]): Array[Byte] = {
     messageDigest.update(Srp6Constants.gDigestXorNDigest)
     messageDigest.update(loginDigest)
-    messageDigest.update(salt.toNetworkBytes())
+    messageDigest.update(salt.toUnsignedLBytes())
     messageDigest.update(clientKeyBytes)
     messageDigest.update(serverKeyBytes)
     messageDigest.update(sharedKeyBytes)
@@ -214,7 +214,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     * @return shared key
     */
   private def computeSharedKey(sessionKey: BigInt) = {
-    val sessionKeyBytes = sessionKey.toNetworkBytes()
+    val sessionKeyBytes = sessionKey.toUnsignedLBytes()
     val evenBytes = sessionKeyBytes.sliding(1, 2).flatten.toArray
     val oddBytes = sessionKeyBytes.drop(1).sliding(1, 2).flatten.toArray
 
@@ -251,7 +251,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     messageDigest.update(clientKeyBytes)
     messageDigest.update(serverKeyBytes)
     val shaDigest = messageDigest.digest
-    val u = BigInt.fromNetworkBytes(shaDigest)
+    val u = BigInt.fromUnsignedLBytes(shaDigest)
 
     (clientKey * verifier.modPow(u, Srp6Constants.N)).modPow(smallB, Srp6Constants.N)
   }

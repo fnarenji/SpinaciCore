@@ -7,7 +7,7 @@ import scodec.bits._
 import scala.collection.mutable
 
 /**
-  * Created by sknz on 2/17/17.
+  * Tests the validity of the SRP6 implementation by comparing produced values against expected values
   */
 class Srp6ProtocolTest extends FlatSpec with Matchers {
   behavior of "Srp6ProtocolTest"
