@@ -54,13 +54,13 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
-    case Event(EventLogonSuccess(packet, proofData), challengeData: ChallengeData) =>
+    case Event(EventLogonSuccess(packet, proofData), _ : ChallengeData) =>
       log.debug(s"Sending successful logon $packet")
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
       goto(StateRealmlist) using proofData
-    case Event(EventLogonFailure(packet), _) =>
+    case Event(EventLogonFailure(packet), _ : ChallengeData) =>
       log.debug(s"Sending failed logon $packet")
       val bits = serialize(packet)
 
