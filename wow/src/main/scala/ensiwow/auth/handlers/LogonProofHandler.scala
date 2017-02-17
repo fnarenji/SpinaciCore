@@ -1,15 +1,10 @@
 package ensiwow.auth.handlers
 
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
-
 import akka.actor.{Actor, ActorLogging, Props}
-import ensiwow.auth.crypto.{Srp6Challenge, Srp6Constants, Srp6Identity, Srp6Protocol}
-import ensiwow.auth.protocol.packets.{ClientLogonProof, ServerLogonProof, ServerLogonProofFailure, ServerLogonProofSuccess}
+import ensiwow.auth.crypto.Srp6Protocol
 import ensiwow.auth.protocol.AuthResults
+import ensiwow.auth.protocol.packets.{ClientLogonProof, ServerLogonProof, ServerLogonProofFailure, ServerLogonProofSuccess}
 import ensiwow.auth.session.{ChallengeData, EventLogonFailure, EventLogonSuccess}
-import ensiwow.utils.BigIntExtensions._
-import scodec.bits.ByteVector
 
 case class LogonProof(packet: ClientLogonProof, challengeData: ChallengeData)
 

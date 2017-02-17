@@ -17,7 +17,7 @@ case object NoData extends AuthSessionData
   *
   * @param login         user login
   * @param srp6Identity  identity
-  * @param srp6Challenge emited challenge
+  * @param srp6Challenge emitted challenge
   */
 case class ChallengeData(login: String,
                          srp6Identity: Srp6Identity,

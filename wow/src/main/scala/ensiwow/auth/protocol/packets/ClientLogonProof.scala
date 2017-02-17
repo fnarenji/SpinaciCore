@@ -13,14 +13,14 @@ case class ClientLogonProof(clientKey: BigInt,
                             crcHash: BigInt) extends ClientPacket
 
 object ClientLogonProof {
-  final val ALength = 32
-  final val M1Length = 20
+  final val clientKeyLength = 32
+  final val clientProofLength = 20
   final val CRCLength = 20
 
   implicit val codec: Codec[ClientLogonProof] = {
     constantE(OpCodes.LogonProof) ::
-      ("clientKey" | fixedUBigIntL(ALength)) ::
-      ("clientProof" | fixedUBigIntL(M1Length)) ::
+      ("clientKey" | fixedUBigIntL(clientKeyLength)) ::
+      ("clientProof" | fixedUBigIntL(clientProofLength)) ::
       ("crcHash" | fixedUBigIntL(CRCLength)) ::
       constantE(0)(uint8L) :: // key count
       constantE(0)(uint8L)    // security flags

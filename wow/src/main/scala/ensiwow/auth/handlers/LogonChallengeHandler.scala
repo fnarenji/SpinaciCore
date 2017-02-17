@@ -43,7 +43,7 @@ class LogonChallengeHandler extends Actor with ActorLogging {
           val challengeData = ChallengeData(packet.login, srp6Identity, srp6Challenge)
 
           val Unk3BitCount = 16 * 8
-          val unk3 = if (Srp6Protocol.FixedRandomMode) LogonChallengeHandler.FixedUnk3 else BigInt(Unk3BitCount, Random)
+          val unk3 = BigInt(Unk3BitCount, Random)
           assert(unk3 > 0)
 
           val success = ServerLogonChallengeSuccess(srp6Challenge.serverKey, Srp6Constants.g.toInt, Srp6Constants.N,
@@ -72,12 +72,6 @@ class LogonChallengeHandler extends Actor with ActorLogging {
 
 object LogonChallengeHandler {
   val PreferredName = "LogonChallengeHandler"
-
-  // These are fixed values for s, b and unk3.
-  // This is only used for testing purposes, otherwise these values should absolutely be randomly generated
-  val FixedSmallB = BigInt("5698844817725982222235344496777980655886111343")
-  val FixedUnk3 = BigInt("194942597757323744367948666173918899059")
-  val FixedSessionKey = BigInt("78823503796391676434485569088161368409945032487538050771151147647624579312285")
 
   def props: Props = Props(classOf[LogonChallengeHandler])
 }

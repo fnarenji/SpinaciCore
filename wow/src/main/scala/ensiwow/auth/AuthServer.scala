@@ -15,11 +15,6 @@ import ensiwow.auth.protocol.VersionInfo
 class AuthServer extends Actor with ActorLogging {
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
-  if (Srp6Protocol.FixedRandomMode) {
-    log.error("ATTENTION: SRP6 fixed random mode is enabled. This feature is for debugging purposes only and is " +
-          "OTHERWISE UNSAFE.")
-  }
-
   // TODO: handlers should be put in a pool so that they scale according to the load
   context.actorOf(LogonChallengeHandler.props, LogonChallengeHandler.PreferredName)
   context.actorOf(LogonProofHandler.props, LogonProofHandler.PreferredName)
