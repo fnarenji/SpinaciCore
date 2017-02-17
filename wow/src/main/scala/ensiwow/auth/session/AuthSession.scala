@@ -4,11 +4,12 @@ import akka.actor.{FSM, Props}
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
+import ensiwow.auth.protocol.OpCodes.OpCode
 import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof}
-import ensiwow.auth.protocol.{ClientPacket, ServerPacket}
+import ensiwow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
-import scodec.{Codec, DecodeResult}
+import scodec.{Codec, DecodeResult, Err}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -21,11 +22,24 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
 
   // First packet that we expect from client is logon challenge
-  startWith(StateChallenge, NoData)
+  startWith(StateNoData, NoData)
+
+  when(StateNoData) {
+    case Event(e @ EventPacket(bits), NoData) =>
+      val state = Codec[OpCode].decode(bits) match {
+        case Successful(DecodeResult(OpCodes.LogonChallenge, _)) => StateChallenge
+        case Successful(DecodeResult(OpCodes.ReconnectChallenge, _)) => StateReconnectChallenge
+        case Failure(err) => throw MalformedPacketHeaderException(err)
+        case _ => throw MalformedPacketHeaderException(Err("Expected either logon or reconnect challenge"))
+      }
+      log.debug(s"Got first packet, going to $state")
+
+      self ! e
+      goto(state)
+  }
 
   when(StateChallenge) {
     case Event(EventPacket(bits), NoData) =>
-      // TODO: here we should distinguish between LogonChallenge and ReconnectChallenge by using the opcode
       log.debug("Received challenge")
       val packet = deserialize[ClientLogonChallenge](bits)
       log.debug(packet.toString)
@@ -54,13 +68,13 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
-    case Event(EventLogonSuccess(packet, proofData), _ : ChallengeData) =>
+    case Event(EventLogonSuccess(packet, proofData), _: ChallengeData) =>
       log.debug(s"Sending successful logon $packet")
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
       goto(StateRealmlist) using proofData
-    case Event(EventLogonFailure(packet), _ : ChallengeData) =>
+    case Event(EventLogonFailure(packet), _: ChallengeData) =>
       log.debug(s"Sending failed logon $packet")
       val bits = serialize(packet)
 
