@@ -11,8 +11,8 @@ object Srp6Constants {
   val N = BigInt("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7", 16)
 
   // Byte arrays
-  val NBytes = N.toNetworkBytes()
-  val gBytes = g.toNetworkBytes()
+  val NBytes = N.toUnsignedLBytes()
+  val gBytes = g.toUnsignedLBytes()
 
   // Obtains a SHA-1 digest instance
   // Note that each call to getInstance returns a different instance

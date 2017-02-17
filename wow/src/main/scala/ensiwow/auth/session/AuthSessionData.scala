@@ -27,6 +27,6 @@ case class ChallengeData(login: String,
   * Validated proof related data
   *
   * @param challengeData challenge data
-  * @param sessionKey    session key
+  * @param sharedKey     shared key
   */
-case class ProofData(challengeData: ChallengeData, sessionKey: BigInt) extends AuthSessionData
+case class ProofData(challengeData: ChallengeData, sharedKey: BigInt) extends AuthSessionData

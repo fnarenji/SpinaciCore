@@ -8,7 +8,7 @@ import scodec.bits._
 /**
   * Created by sknz on 2/12/17.
   */
-class FixedUnsignedBigIntCodecTest extends FlatSpec with Matchers {
+class FixedUnsignedLBigIntCodecTest extends FlatSpec with Matchers {
   "A FixedUnsignedBigIntCodec" must "fail on negative number" in {
     val codec = fixedUBigIntL(32)
     val value = BigInt("-983129873182379123791298731289319723712798318927379123725")
