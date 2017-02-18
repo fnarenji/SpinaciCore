@@ -11,7 +11,7 @@ import scala.language.postfixOps
   * Created by yanncolina on 15/02/17.
   */
 
-case class ServerRealmPacket(realmType: Int,
+case class ServerRealmlistPacketEntry(realmType: Int,
                            lock: Int,
                            flags: Int,
                            name: String,
@@ -19,39 +19,35 @@ case class ServerRealmPacket(realmType: Int,
                            populationLevel: Float,
                            characterCount: Int,
                            timezone: Int,
-                           id: Int,
-                           versionInfo: VersionInfo) {
-  require(versionInfo == VersionInfo.SupportedVersionInfo)
-}
+                           id: Int)
 
 case class ServerRealmlistPacket(packetSize: Int,
-                                 nbrRealms: Int,
-                                 realms: Vector[ServerRealmPacket]) extends ServerPacket {
-  require(nbrRealms == realms.size)
+                                 realmsCount: Int,
+                                 realms: Vector[ServerRealmlistPacketEntry]) extends ServerPacket {
+  require(realmsCount == realms.size)
 }
 
-object ServerRealmPacket {
-  implicit val codec: Codec[ServerRealmPacket] = {
+object ServerRealmlistPacketEntry {
+  implicit val codec: Codec[ServerRealmlistPacketEntry] = {
     ("realmType" | uint8L) ::
       ("lock" | uint8L) ::
       ("flag" | uint8L) ::
-      ("name" | reverse(cstring)) ::
-      ("ip" | reverse(cstring)) ::
+      ("name" | cstring) ::
+      ("ip" | cstring) ::
       ("populationLevel" | floatL) ::
       ("characterCount" | uint8L) ::
       ("timezone" | uint8L) ::
-      ("id" | uint8L) ::
-      ("versionInfo" | Codec[VersionInfo])
-  }.as[ServerRealmPacket]
+      ("id" | uint8L)
+  }.as[ServerRealmlistPacketEntry]
 }
 
 object ServerRealmlistPacket {
   implicit val codec: Codec[ServerRealmlistPacket] = {
     constantE(OpCodes.RealmList) ::
-      ("packetSize" | uint8L) ::
+      ("packetSize" | uint16L) ::
       constantE(0L)(uint32L) ::
-      (("nbrRealms" | uint16L) >>:~ { nbrRealms =>
-        ("realms" | vectorOfN(provide(nbrRealms), Codec[ServerRealmPacket])) ::
+      (("realmsCount" | uint16L) >>:~ { realmsCount =>
+        ("realms" | vectorOfN(provide(realmsCount), Codec[ServerRealmlistPacketEntry])) ::
           constantE(0x10)(uint8L) ::
           constantE(0x00)(uint8L)
       })

@@ -98,3 +98,30 @@ class ServerLogonProofFailureTest extends AuthPacketTest[ServerLogonProof](
   hex"01040300",
   ServerLogonProof(AuthResults.FailUnknownAccount, None, Some(ServerLogonProofFailure()))
 )
+
+class ClientRealmlistPacketTest extends AuthPacketTest[ClientRealmlistPacket](
+  hex"1000000000",
+  ClientRealmlistPacket()
+)
+
+class ServerRealmlistPacketTest extends AuthPacketTest[ServerRealmlistPacket](
+  hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000",
+  ServerRealmlistPacket(
+    packetSize = 0x29,
+    realmsCount = 1,
+    realms = Vector(
+      ServerRealmlistPacketEntry(
+        realmType = 1,
+        lock = 0,
+        flags = 0x2,
+        name = "Trinity",
+        ip = "127.0.0.1:8085",
+        populationLevel = 0.0f,
+        characterCount = 1,
+        timezone = 1,
+        id = 1
+      )
+    )
+  )
+)
+
