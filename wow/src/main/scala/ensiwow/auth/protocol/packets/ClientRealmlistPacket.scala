@@ -1,10 +1,9 @@
 package ensiwow.auth.protocol.packets
 
 import ensiwow.auth.protocol.codecs._
-import ensiwow.auth.protocol.OpCodes
+import ensiwow.auth.protocol.{ClientPacket, OpCodes}
 import scodec._
 import scodec.codecs._
-import shapeless.HNil
 
 import scala.language.postfixOps
 
