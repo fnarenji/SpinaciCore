@@ -41,15 +41,14 @@ class RealmlistPacketTest[T](bytes: ByteVector, reference: T)
 
 class ClientRealmlistPacketTest extends RealmlistPacketTest[ClientRealmlistPacket](
   hex"1000000000",
-  ClientRealmlistPacket(nullBytes = Vector(0, 0, 0, 0))
+  ClientRealmlistPacket()
 )
 
 /*
 class ServerRealmlistPacketTest extends RealmlistPacketTest[ServerRealmlistPacket](
   hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000",
   ServerRealmlistPacket(
-    packetSize = 1,
-    voidInt = 0,
+    packetSize = 0x29,
     nbrRealms = 1,
     realms = Vector(
       RealmlistPacket(
@@ -63,9 +62,7 @@ class ServerRealmlistPacketTest extends RealmlistPacketTest[ServerRealmlistPacke
         timezone = 1,
         id = 1,
         versionInfo = VersionInfo.SupportedVersionInfo)
-      ),
-    fixedSlot1 = 0x10,
-    fixedSlot2 = 0x0
+      )
   )
 )
 */
