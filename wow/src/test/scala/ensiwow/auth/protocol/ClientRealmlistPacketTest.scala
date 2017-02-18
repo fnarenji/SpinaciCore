@@ -1,9 +1,7 @@
 package ensiwow.auth.protocol
 
-import ensiwow.auth.protocol.packets.ClientRealmlistPacket
-
+import ensiwow.auth.protocol.packets.{ClientRealmlistPacket, ServerRealmlistPacket, ServerRealmPacket}
 import org.scalatest.{FlatSpec, Matchers}
-
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits._
 import scodec.{Codec, DecodeResult}
@@ -44,18 +42,19 @@ class ClientRealmlistPacketTest extends RealmlistPacketTest[ClientRealmlistPacke
   ClientRealmlistPacket()
 )
 
-/*
 class ServerRealmlistPacketTest extends RealmlistPacketTest[ServerRealmlistPacket](
   hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000",
   ServerRealmlistPacket(
     packetSize = 0x29,
     nbrRealms = 1,
     realms = Vector(
-      RealmlistPacket(
+      ServerRealmPacket(
         realmType = 1,
         lock = 0,
         flags = 0x2,
-        name = "Trinity",
+        name = s"""Trinity(${VersionInfo.SupportedVersionInfo.Major}." +
+                          ${VersionInfo.SupportedVersionInfo.Minor}." +
+                          ${VersionInfo.SupportedVersionInfo.Patch})""",
         ip = "127.0.0.1:8085",
         populationLevel = 0.0f,
         characterCount = 1,
@@ -65,4 +64,3 @@ class ServerRealmlistPacketTest extends RealmlistPacketTest[ServerRealmlistPacke
       )
   )
 )
-*/

@@ -11,7 +11,7 @@ import scala.language.postfixOps
   * Created by yanncolina on 15/02/17.
   */
 
-case class RealmlistPacket(realmType: Int,
+case class ServerRealmPacket(realmType: Int,
                            lock: Int,
                            flags: Int,
                            name: String,
@@ -20,16 +20,18 @@ case class RealmlistPacket(realmType: Int,
                            characterCount: Int,
                            timezone: Int,
                            id: Int,
-                           versionInfo: VersionInfo)
+                           versionInfo: VersionInfo) {
+  require(versionInfo == VersionInfo.SupportedVersionInfo)
+}
 
 case class ServerRealmlistPacket(packetSize: Int,
                                  nbrRealms: Int,
-                                 realms: Vector[RealmlistPacket],
-                                 fixedSlot1: Int,
-                                 fixedSlot2: Int) extends ServerPacket
+                                 realms: Vector[ServerRealmPacket]) extends ServerPacket {
+  require(nbrRealms == realms.size)
+}
 
-object RealmlistPacket {
-  implicit val codec: Codec[RealmlistPacket] = {
+object ServerRealmPacket {
+  implicit val codec: Codec[ServerRealmPacket] = {
     ("realmType" | uint8L) ::
       ("lock" | uint8L) ::
       ("flag" | uint8L) ::
@@ -40,17 +42,18 @@ object RealmlistPacket {
       ("timezone" | uint8L) ::
       ("id" | uint8L) ::
       ("versionInfo" | Codec[VersionInfo])
-  }.as[RealmlistPacket]
+  }.as[ServerRealmPacket]
 }
 
 object ServerRealmlistPacket {
   implicit val codec: Codec[ServerRealmlistPacket] = {
     constantE(OpCodes.RealmList) ::
       ("packetSize" | uint8L) ::
-      (("nbrRealms" | uint8L) >>:~ { nbrRealms =>
-        ("realms" | vectorOfN(provide(nbrRealms), Codec[RealmlistPacket])) ::
-          ("fixedSlot1" | uint8L) ::
-          ("fixedSlot2" | uint8L)
+      constantE(0L)(uint32L) ::
+      (("nbrRealms" | uint16L) >>:~ { nbrRealms =>
+        ("realms" | vectorOfN(provide(nbrRealms), Codec[ServerRealmPacket])) ::
+          constantE(0x10)(uint8L) ::
+          constantE(0x00)(uint8L)
       })
   }.as[ServerRealmlistPacket]
 }
