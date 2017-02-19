@@ -3,13 +3,13 @@ package ensiwow.auth.handlers
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.auth.crypto.{Srp6Constants, Srp6Protocol}
 import ensiwow.auth.protocol.AuthResults.AuthResult
-import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ServerLogonChallenge, ServerLogonChallengeSuccess}
+import ensiwow.auth.protocol.packets.{ClientChallenge, ServerLogonChallenge, ServerLogonChallengeSuccess}
 import ensiwow.auth.protocol.{AuthResults, VersionInfo}
 import ensiwow.auth.session.{ChallengeData, EventChallengeFailure, EventChallengeSuccess}
 
 import scala.util.Random
 
-case class LogonChallenge(packet: ClientLogonChallenge)
+case class LogonChallenge(packet: ClientChallenge)
 
 /**
   * Handles logon challenges
@@ -19,7 +19,7 @@ class LogonChallengeHandler extends Actor with ActorLogging {
 
   override def receive: PartialFunction[Any, Unit] = {
     case LogonChallenge(packet) =>
-      val error = validateVersion(packet)
+      val error = ChallengeHelper.validate(packet)
 
       val event = error match {
         case Some(authResult) =>
@@ -57,16 +57,6 @@ class LogonChallengeHandler extends Actor with ActorLogging {
       }
 
       sender ! event
-  }
-
-  private def validateVersion(packet: ClientLogonChallenge): Option[AuthResult] = {
-    val valid = packet.versionInfo == VersionInfo.SupportedVersionInfo
-
-    if (!valid) {
-      Some(AuthResults.FailVersionInvalid)
-    } else {
-      None
-    }
   }
 }
 
