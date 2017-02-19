@@ -16,5 +16,11 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 libraryDependencies += "org.scodec" % "scodec-bits_2.12" % "1.1.4"
 libraryDependencies += "org.scodec" % "scodec-core_2.12" % "1.10.3"
 
+libraryDependencies ++= Seq(
+  // https://mvnrepository.com/artifact/com.typesafe.slick/slick_2.11
+  "com.typesafe.slick" % "slick_2.11" % "2.1.0-M2",
+  "org.slf4j" % "slf4j-nop" % "1.6.4"
+)
+
 logBuffered in Test := false
 
