@@ -151,3 +151,17 @@ class ClientReconnectProofTest extends AuthPacketTest[ClientReconnectProof](
     keyCount = 0
   )
 )
+
+class ServerReconnectChallengeTest extends AuthPacketTest[ServerReconnectChallenge](
+  hex"02007907F002A7CFB4675E2DBDAC0A89048D00000000000000000000000000000000",
+  ServerReconnectChallenge(
+    AuthResults.Success,
+    Some(ServerReconnectChallengeSuccess(BigInt("187444696128964725728579388989055698809")))
+  )
+)
+
+class ServerReconnectProofTest extends AuthPacketTest[ServerReconnectProof](
+  hex"03000000",
+  ServerReconnectProof(AuthResults.Success)
+)
+
