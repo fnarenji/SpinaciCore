@@ -31,7 +31,7 @@ class LogonChallengeHandler extends Actor with ActorLogging {
         case None =>
           val userName = packet.login
 
-          val srp6Identity = Account.getSalfAndVerifier(userName)
+          val srp6Identity = Account.getSaltAndVerifier(userName)
 
           val srp6Challenge = srp6.computeChallenge(srp6Identity)
 
