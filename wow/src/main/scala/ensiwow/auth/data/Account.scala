@@ -13,7 +13,7 @@ object Account {
   // TODO: remove this and replace with database
   private val sessionKeyByUser: mutable.HashMap[String, BigInt] = new mutable.HashMap[String, BigInt]
 
-  def getSalfAndVerifier(userName: String) = {
+  def getSaltAndVerifier(userName: String) = {
     // TODO: non hardcoded password
     val password = "t"
 
