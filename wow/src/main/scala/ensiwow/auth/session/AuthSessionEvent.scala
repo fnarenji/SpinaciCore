@@ -24,6 +24,6 @@ case class EventReconnectChallengeSuccess(packet: ServerReconnectChallenge,
 
 case class EventReconnectChallengeFailure(packet: ServerReconnectChallenge) extends AuthSessionEvent
 
-case class EventReconnectProofFailure(packet: ServerReconnectProof) extends AuthSessionEvent
+case object EventReconnectProofFailure extends AuthSessionEvent
 
 case class EventReconnectProofSuccess(packet: ServerReconnectProof) extends AuthSessionEvent
