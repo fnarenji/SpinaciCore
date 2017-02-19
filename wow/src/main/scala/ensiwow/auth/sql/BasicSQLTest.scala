@@ -4,26 +4,22 @@ package ensiwow.auth.sql
   * Created by betcheg on 19/02/17.
   */
 
-import scala.slick.driver.H2Driver.simple._
+import scalikejdbc._
 
-object BasicSQLTest extends SQLite("test_users") with App {
+object BasicSQLTest {
+  def main(args: Array[String]): Unit = {
 
-  /*
-  def addRow(id: String, value: String, foo: String, bar: String, foobar: String) =
-    //database.run(sql"insert or replace into test_users values ('%s', '%s', '%s', '%s', '%s')".format(id, value, foo,bar, foobar)))
-    database.run(sql"insert or replace into test_users values ('1','A','A','A','A')")
+    val bd = new Postgresql()
+    bd.init()
 
+    implicit val session = AutoSession
+    sql"""DROP TABLE tesst""".execute.apply()
+    sql"""create table tesst (name varchar(64))""".execute.apply()
+    sql"insert into tesst (name) VALUES ('foo')".update.apply()
+    sql"insert into tesst (name) VALUES ('bar')".update.apply()
 
-  if (!getTableExists("test_users")) {
-    sqlucreate table test_users(id varchar(18), pseudo varchar(20), foo varchar(20), bar varchar(20), foobar varchar(20))"""
-  } */
-
-
-  database.withSession { implicit session =>
-    users.ddl.create
-
-    users += ("1", "Floran", "A", "B", "C")
-    users += ("2", "Bastien", "D", "E", "F")
+    val entities: List[Map[String, Any]] = sql"select * from tesst".map(_.toMap).list.apply()
+    for (name <- entities) println(name)
   }
 
 }
