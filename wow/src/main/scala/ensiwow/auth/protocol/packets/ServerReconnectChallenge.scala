@@ -30,7 +30,6 @@ case class ServerReconnectChallenge(authResult: AuthResult,
 object ServerReconnectChallenge {
   implicit val codec: Codec[ServerReconnectChallenge] = {
     constantE(OpCodes.ReconnectChallenge) ::
-      constantE(0)(uint8L) :: // no errors
       (("authResult" | Codec[AuthResult]) >>:~ { authResult =>
         ("success" | conditional(authResult == AuthResults.Success, Codec[ServerReconnectChallengeSuccess])).hlist
       })
