@@ -2,9 +2,9 @@ package ensiwow.auth.handlers
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.auth.crypto.{Srp6Constants, Srp6Protocol}
-import ensiwow.auth.protocol.AuthResults.AuthResult
+import ensiwow.auth.data.Account
+import ensiwow.auth.protocol.AuthResults
 import ensiwow.auth.protocol.packets.{ClientChallenge, ServerLogonChallenge, ServerLogonChallengeSuccess}
-import ensiwow.auth.protocol.{AuthResults, VersionInfo}
 import ensiwow.auth.session.{ChallengeData, EventChallengeFailure, EventChallengeSuccess}
 
 import scala.util.Random
@@ -31,11 +31,7 @@ class LogonChallengeHandler extends Actor with ActorLogging {
         case None =>
           val userName = packet.login
 
-          // TODO: non hardcoded password
-          val password = "t"
-
-          // TODO: this should be computed a single time upon account creation
-          val srp6Identity = srp6.computeSaltAndVerifier(userName, password)
+          val srp6Identity = Account.getSalfAndVerifier(userName)
 
           val srp6Challenge = srp6.computeChallenge(srp6Identity)
 

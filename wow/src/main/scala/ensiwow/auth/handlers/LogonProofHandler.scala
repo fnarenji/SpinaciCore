@@ -2,9 +2,9 @@ package ensiwow.auth.handlers
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.auth.crypto.Srp6Protocol
+import ensiwow.auth.data.Account
 import ensiwow.auth.protocol.AuthResults
-import ensiwow.auth.protocol.packets.{ClientLogonProof, ServerLogonProof, ServerLogonProofFailure,
-ServerLogonProofSuccess}
+import ensiwow.auth.protocol.packets.{ClientLogonProof, ServerLogonProof, ServerLogonProofFailure, ServerLogonProofSuccess}
 import ensiwow.auth.session.{ChallengeData, EventProofFailure, EventProofSuccess, ProofData}
 
 case class LogonProof(packet: ClientLogonProof, challengeData: ChallengeData)
@@ -20,6 +20,8 @@ class LogonProofHandler extends Actor with ActorLogging {
 
       val event = srp6.verify(login, packet.clientKey, packet.clientProof, srp6Identity, srp6Challenge) match {
         case Some(srp6Validation) =>
+          Account.saveSessionKey(login, srp6Validation.sharedKey)
+
           val response = ServerLogonProof(
             AuthResults.Success,
             Some(ServerLogonProofSuccess(srp6Validation.serverProof)), None)
