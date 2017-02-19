@@ -123,11 +123,8 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       context.parent ! OutgoingPacket(bits)
       goto(StateRealmlist) using NoData
-    case Event(EventReconnectProofFailure(packet), _: ReconnectChallengeData) =>
-      log.debug(s"Sending failed reconnect proof $packet")
-      val bits = serialize(packet)
-
-      context.parent ! OutgoingPacket(bits)
+    case Event(EventReconnectProofFailure, _: ReconnectChallengeData) =>
+      log.debug(s"Failed reconnect proof, disconnecting")
       goto(StateFailed)
   }
 

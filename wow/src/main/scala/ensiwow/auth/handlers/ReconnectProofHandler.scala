@@ -26,9 +26,7 @@ class ReconnectProofHandler extends Actor with ActorLogging {
 
         EventReconnectProofSuccess(response)
       } else {
-        val response = ServerReconnectProof(AuthResults.FailUnknownAccount)
-
-        EventReconnectProofFailure(response)
+        EventReconnectProofFailure
       }
 
       sender ! event
