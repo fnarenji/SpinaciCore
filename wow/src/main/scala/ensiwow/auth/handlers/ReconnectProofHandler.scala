@@ -2,6 +2,7 @@ package ensiwow.auth.handlers
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.auth.crypto.Srp6Protocol
+import ensiwow.auth.data.Account
 import ensiwow.auth.protocol.AuthResults
 import ensiwow.auth.protocol.packets._
 import ensiwow.auth.session._
@@ -16,9 +17,8 @@ class ReconnectProofHandler extends Actor with ActorLogging {
 
   override def receive = {
     case ReconnectProof(packet, data@ReconnectChallengeData(login, random)) =>
-      throw new NotImplementedError()
+      val sharedKey = Account.getSessionKey(login)
 
-      val sharedKey = BigInt("")
       val verified = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sharedKey)
 
       val event = if (verified) {
