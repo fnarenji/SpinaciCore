@@ -6,13 +6,12 @@ package ensiwow.auth.sql
 
 import scala.slick.jdbc.meta.MTable
 import scala.slick.driver.H2Driver.simple._
-import scala.slick.jdbc.StaticQuery
 
 
 class SQLite(name: String) {
 
   val database = Database.forURL(
-    "jdbc:sqlite:%s.db" format name,
+    "jdbc:sqlite://localhost/db/%s.db" format name,
     driver = "org.sqlite.JDBC")
 
 
@@ -44,7 +43,7 @@ class SQLite(name: String) {
   }
 */
   class T_Users(tag: Tag) extends Table[(String, String, String, String, String)](tag, "USERS") {
-    def id = column[String]("ID", O.PrimaryKey)
+    def id = column[String]("ID")
     def pseudo = column[String]("PSEUDO")
     def foo = column[String]("FOO")
     def bar = column[String]("BAR")
