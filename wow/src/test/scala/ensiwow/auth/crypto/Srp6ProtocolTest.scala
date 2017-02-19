@@ -15,7 +15,7 @@ class Srp6ProtocolTest extends FlatSpec with Matchers {
   val Username = "t"
   val Password = "t"
 
-  val FixedSmallB = BigInt("5698844817725982222235344496777980655886111343")
+  val FixedServerPrivateKey = BigInt("5698844817725982222235344496777980655886111343")
   val FixedUnk3 = BigInt("194942597757323744367948666173918899059")
   val FixedSalt = BigInt("78823503796391676434485569088161368409945032487538050771151147647624579312285")
 
@@ -26,7 +26,7 @@ class Srp6ProtocolTest extends FlatSpec with Matchers {
   val ExpectedIdentity = Srp6Identity(FixedSalt, ExpectedVerifier)
 
   val ExpectedServerKey = BigInt("34065449131815595092332791003415184197068868016788977698739449184781844147149")
-  val ExpectedChallenge = Srp6Challenge(FixedSmallB, ExpectedServerKey)
+  val ExpectedChallenge = Srp6Challenge(FixedServerPrivateKey, ExpectedServerKey)
 
   val ExpectedServerProof = hex"07AC9CAE83F8612E80A5A9FFB4A09CAB1D19BE51"
   val ExpectedSharedKey = BigInt("300378318409522422353872320923135826702415933338008804808601593020685099547324428108406102214443")
@@ -48,7 +48,7 @@ class Srp6ProtocolTest extends FlatSpec with Matchers {
   }
 
   it should "computeChallenge" in {
-    val fixedRandom = new FixedRandomBigInt(FixedSmallB)
+    val fixedRandom = new FixedRandomBigInt(FixedServerPrivateKey)
     val srp6 = new Srp6Protocol(fixedRandom)
 
     val challenge = srp6.computeChallenge(ExpectedIdentity)

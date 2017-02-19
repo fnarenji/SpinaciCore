@@ -15,13 +15,13 @@ case class ClientLogonProof(clientKey: BigInt,
 object ClientLogonProof {
   final val clientKeyLength = 32
   final val clientProofLength = 20
-  final val CRCLength = 20
+  final val CrcLength = 20
 
   implicit val codec: Codec[ClientLogonProof] = {
     constantE(OpCodes.LogonProof) ::
       ("clientKey" | fixedUBigIntL(clientKeyLength)) ::
       ("clientProof" | fixedUBigIntL(clientProofLength)) ::
-      ("crcHash" | fixedUBigIntL(CRCLength)) ::
+      ("crcHash" | fixedUBigIntL(CrcLength)) ::
       constantE(0)(uint8L) :: // key count
       constantE(0)(uint8L)    // security flags
   }.as[ClientLogonProof]

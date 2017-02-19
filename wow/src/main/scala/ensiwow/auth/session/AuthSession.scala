@@ -2,10 +2,10 @@ package ensiwow.auth.session
 
 import akka.actor.{FSM, Props}
 import ensiwow.auth._
-import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
+import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
 import ensiwow.auth.protocol.OpCodes.OpCode
-import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof}
+import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientReconnectProof}
 import ensiwow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
@@ -20,12 +20,14 @@ import scala.language.postfixOps
 class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonChallengeHandler = context.actorSelection(AuthServer.LogonChallengeHandlerPath)
   private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
+  private val reconnectChallengeHandler = context.actorSelection(AuthServer.ReconnectChallengeHandlerPath)
+  private val reconnectProofHandler = context.actorSelection(AuthServer.ReconnectProofHandlerPath)
 
   // First packet that we expect from client is logon challenge
   startWith(StateNoData, NoData)
 
   when(StateNoData) {
-    case Event(e @ EventPacket(bits), NoData) =>
+    case Event(e@EventPacket(bits), NoData) =>
       val state = Codec[OpCode].decode(bits) match {
         case Successful(DecodeResult(OpCodes.LogonChallenge, _)) => StateChallenge
         case Successful(DecodeResult(OpCodes.ReconnectChallenge, _)) => StateReconnectChallenge
@@ -41,12 +43,13 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   when(StateChallenge) {
     case Event(EventPacket(bits), NoData) =>
       log.debug("Received challenge")
-      val packet = deserialize[ClientLogonChallenge](bits)
+      val packet = deserialize[ClientChallenge](bits)(ClientChallenge.logonChallengeCodec)
       log.debug(packet.toString)
 
       logonChallengeHandler ! LogonChallenge(packet)
       stay using NoData
     case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
+      log.debug(s"Sending successful challenge $packet")
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
@@ -68,14 +71,60 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
-    case Event(EventLogonSuccess(packet, proofData), _: ChallengeData) =>
-      log.debug(s"Sending successful logon $packet")
+    case Event(EventProofSuccess(packet, proofData), _: ChallengeData) =>
+      log.debug(s"Sending successful proof $packet")
+      val bits = serialize(packet)
+
+      // TODO: shared key should be saved to database
+      context.parent ! OutgoingPacket(bits)
+      goto(StateRealmlist) using NoData
+    case Event(EventProofFailure(packet), _: ChallengeData) =>
+      log.debug(s"Sending failed proof $packet")
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
-      goto(StateRealmlist) using proofData
-    case Event(EventLogonFailure(packet), _: ChallengeData) =>
-      log.debug(s"Sending failed logon $packet")
+      goto(StateFailed)
+  }
+
+  when(StateReconnectChallenge) {
+    case Event(EventPacket(bits), NoData) =>
+      log.debug("Received reconnect challenge")
+      val packet = deserialize[ClientChallenge](bits)(ClientChallenge.reconnectChallengeCodec)
+      log.debug(packet.toString)
+
+      reconnectChallengeHandler ! LogonChallenge(packet)
+      stay using NoData
+    case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
+      log.debug(s"Sending successful reconnect challenge $packet")
+      val bits = serialize(packet)
+
+      context.parent ! OutgoingPacket(bits)
+
+      goto(StateReconnectProof) using challengeData
+    case Event(EventChallengeFailure(packet), NoData) =>
+      log.debug(s"Sending failed reconnect challenge $packet")
+      val bits = serialize(packet)
+
+      context.parent ! OutgoingPacket(bits)
+      goto(StateFailed)
+  }
+
+  when(StateReconnectProof) {
+    case Event(EventPacket(bits), challengeData: ReconnectChallengeData) =>
+      log.debug("Received reconnect proof")
+      val packet = deserialize[ClientReconnectProof](bits)
+      log.debug(packet.toString)
+
+      reconnectProofHandler ! ReconnectProof(packet, challengeData)
+      stay using challengeData
+    case Event(EventReconnectProofSuccess(packet), _: ReconnectChallengeData) =>
+      log.debug(s"Sending successful reconnect proof $packet")
+      val bits = serialize(packet)
+
+      context.parent ! OutgoingPacket(bits)
+      goto(StateRealmlist) using NoData
+    case Event(EventReconnectProofFailure(packet), _: ReconnectChallengeData) =>
+      log.debug(s"Sending failed reconnect proof $packet")
       val bits = serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
@@ -83,12 +132,12 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateRealmlist) {
-    case Event(EventPacket(bits), _: ProofData) =>
+    case Event(EventPacket(bits), NoData) =>
       import scodec.bits._
       assert(bits == hex"1000000000".bits)
       log.debug("Realmlist R&R.")
       context.parent !
-        OutgoingPacket(hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000"
+        OutgoingPacket(hex"1029000000000001000100005472696E697479003132372E302E302E313A3830383500000000000101011000"
           .bits)
       stay
   }

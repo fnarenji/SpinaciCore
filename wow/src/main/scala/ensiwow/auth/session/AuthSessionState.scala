@@ -16,3 +16,5 @@ case object StateFailed extends AuthSessionState
 case object StateRealmlist extends AuthSessionState
 
 case object StateReconnectChallenge extends AuthSessionState
+
+case object StateReconnectProof extends AuthSessionState

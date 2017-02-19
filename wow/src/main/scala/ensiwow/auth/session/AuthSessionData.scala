@@ -30,3 +30,5 @@ case class ChallengeData(login: String,
   * @param sharedKey     shared key
   */
 case class ProofData(challengeData: ChallengeData, sharedKey: BigInt) extends AuthSessionData
+
+case class ReconnectChallengeData(login: String, random: BigInt) extends AuthSessionData
