@@ -6,6 +6,8 @@ import akka.testkit.TestActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -18,9 +20,11 @@ class TCPServerTest extends FlatSpec {
   implicit val system = ActorSystem()
 
   val serverRef: ActorRef = TestActorRef(new TCPServer)
-  "A server" should "be binded when created" in {
+  "A server" must "be binded when created" in {
     val future = (serverRef ? GetAddress).mapTo[String]
-    val Success(address: String) = future.value.get
-    assert(address === "127.0.0.1")
+    future onComplete {
+      case Success(address) => assert(address === "127.0.0.1")
+      case Failure(t)       => assert(false)
+    }
   }
 }
