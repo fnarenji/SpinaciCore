@@ -20,7 +20,7 @@ class TCPServerTest extends FlatSpec {
   implicit val system = ActorSystem()
 
   val serverRef: ActorRef = TestActorRef(new TCPServer)
-  "A server" must "be binded when created" in {
+  "A server" must "be bound when created" in {
     val future = (serverRef ? GetAddress).mapTo[String]
     future onComplete {
       case Success(address) => assert(address === "127.0.0.1")
