@@ -2,7 +2,7 @@ package ensiwow.auth.protocol.packets
 
 import ensiwow.auth.protocol.AuthResults.AuthResult
 import ensiwow.auth.protocol.{OpCodes, ServerPacket}
-import ensiwow.auth.protocol.codecs._
+import ensiwow.common.codecs._
 import scodec.codecs._
 import scodec._
 

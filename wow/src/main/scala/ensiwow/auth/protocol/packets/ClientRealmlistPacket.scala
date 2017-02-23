@@ -1,6 +1,6 @@
 package ensiwow.auth.protocol.packets
 
-import ensiwow.auth.protocol.codecs._
+import ensiwow.common.codecs._
 import ensiwow.auth.protocol.{ClientPacket, OpCodes}
 import scodec._
 import scodec.codecs._

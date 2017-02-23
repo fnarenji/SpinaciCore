@@ -1,4 +1,4 @@
-package ensiwow.auth.protocol.codecs
+package ensiwow.common.codecs
 
 import ensiwow.utils.BigIntExtensions._
 import scodec.bits.{BitVector, ByteVector}

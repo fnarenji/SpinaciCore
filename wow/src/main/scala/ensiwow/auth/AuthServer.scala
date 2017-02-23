@@ -1,11 +1,12 @@
 package ensiwow.auth
 
 import akka.actor.{Actor, ActorLogging, Props}
+import ensiwow.Application
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
-import ensiwow.auth.network.TCPServer
-import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketEntry}
 import ensiwow.auth.protocol.{ServerPacket, VersionInfo}
-import ensiwow.auth.session.{EventRealmlist, PacketSerializationException}
+import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketEntry}
+import ensiwow.auth.session.{AuthSession, EventRealmlist, PacketSerializationException}
+import ensiwow.common.network.TCPServer
 import scodec.Attempt.{Failure, Successful}
 import scodec.Codec
 import scodec.bits.BitVector
@@ -19,6 +20,9 @@ case object GetRealmlist
   * It holds ownership of the stateless packet handlers.
   */
 class AuthServer extends Actor with ActorLogging {
+  val address = "127.0.0.1"
+  val port = 3724
+
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
   // TODO: should handlers be put in a pool so that they scale accordingly to the load ?
@@ -26,7 +30,7 @@ class AuthServer extends Actor with ActorLogging {
   context.actorOf(LogonProofHandler.props, LogonProofHandler.PreferredName)
   context.actorOf(ReconnectChallengeHandler.props, ReconnectChallengeHandler.PreferredName)
   context.actorOf(ReconnectProofHandler.props, ReconnectProofHandler.PreferredName)
-  context.actorOf(TCPServer.props, TCPServer.PreferredName)
+  context.actorOf(TCPServer.props(AuthSession, address, port), TCPServer.PreferredName)
 
   // TODO: factorize
   private def serialize[T <: ServerPacket](value: T)(implicit codec: Codec[T]): BitVector = {

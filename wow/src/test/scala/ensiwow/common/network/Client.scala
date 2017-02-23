@@ -1,4 +1,4 @@
-package ensiwow.auth.network
+package ensiwow.common.network
 
 import java.net.InetSocketAddress
 

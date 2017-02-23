@@ -1,6 +1,7 @@
-package ensiwow.auth
+package ensiwow
 
 import akka.actor.ActorSystem
+import ensiwow.auth.AuthServer
 
 /**
   * Created by sknz on 1/31/17.

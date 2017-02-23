@@ -1,4 +1,4 @@
-package ensiwow.auth.protocol.codecs
+package ensiwow.common.codecs
 
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector

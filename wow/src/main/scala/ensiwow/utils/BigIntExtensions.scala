@@ -1,8 +1,5 @@
 package ensiwow.utils
 
-import ensiwow.auth.protocol.codecs.fixedUBigIntL
-import scodec.bits.BitVector
-
 /**
   * Additional functions for unsigned BigInt little endian serialization/deserialization
   */
