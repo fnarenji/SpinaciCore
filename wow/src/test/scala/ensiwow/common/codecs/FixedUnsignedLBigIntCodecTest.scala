@@ -1,4 +1,4 @@
-package ensiwow.auth.protocol.codecs
+package ensiwow.common.codecs
 
 import org.scalatest.{FlatSpec, Matchers}
 import scodec.Attempt.{Failure, Successful}

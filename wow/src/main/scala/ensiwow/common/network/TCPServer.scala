@@ -1,4 +1,4 @@
-package ensiwow.auth.network
+package ensiwow.common.network
 
 import java.net.InetSocketAddress
 
@@ -17,29 +17,24 @@ case object GetAddress
   *
   * @constructor send a Bind command to the TCP manager
   */
-class TCPServer extends Actor with ActorLogging {
-  val bindAddress = "127.0.0.1"
-  val bindPort = 3724
-
-  implicit val timeout: Timeout = 2 seconds
-
-  var address = ""
-
+class TCPServer[T <: Session](val companion: T, val address: String, val port: Int) extends Actor with ActorLogging {
   log.debug("Binding server with socket")
-  IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(bindAddress, bindPort))
+  IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(address, port))
 
   override def postStop(): Unit = log.debug("Stopped")
 
+  var boundAddress: InetSocketAddress = _
+
   def receive: PartialFunction[Any, Unit] = {
-    case GetAddress => sender() ! address
+    case GetAddress => sender() ! boundAddress
 
     case Bound(localAddress) =>
-      log.debug(s"TCP port opened at: ${localAddress.getPort}")
-      address = localAddress.getHostString
+      log.debug(s"TCP port opened at: ${localAddress.getHostString}:${localAddress.getPort}")
+      boundAddress = localAddress
 
     case Connected(remote, local) =>
       log.debug(s"Remote connection set from: $local to: $remote")
-      val handlerRef = context.actorOf(TCPHandler.props(sender), TCPHandler.PreferredName(remote))
+      val handlerRef = context.actorOf(TCPHandler.props(companion, sender), TCPHandler.PreferredName(remote))
       sender ! Register(handlerRef)
 
     case CommandFailed(_: Bind) => context stop self
@@ -47,7 +42,10 @@ class TCPServer extends Actor with ActorLogging {
 }
 
 object TCPServer {
-  def props: Props = Props(new TCPServer)
+  def props[T <: Session](companion: T, address: String, port: Int): Props = Props(classOf[TCPServer[T]],
+    companion,
+    address,
+    port)
 
   val PreferredName = "TCP"
 }

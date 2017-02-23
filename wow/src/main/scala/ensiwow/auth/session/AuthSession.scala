@@ -3,10 +3,10 @@ package ensiwow.auth.session
 import akka.actor.{FSM, Props}
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
-import ensiwow.auth.network.{Disconnect, OutgoingPacket}
 import ensiwow.auth.protocol.OpCodes.OpCode
 import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
 import ensiwow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
+import ensiwow.common.network.{Disconnect, OutgoingPacket, Session}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
@@ -182,8 +182,8 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 }
 
-object AuthSession {
-  def props: Props = Props(classOf[AuthSession])
+object AuthSession extends Session {
+  override def props: Props = Props(classOf[AuthSession])
 
-  val PreferredName = "AuthSession"
+  override def PreferredName = "AuthSession"
 }
