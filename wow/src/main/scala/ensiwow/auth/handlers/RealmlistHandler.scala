@@ -23,7 +23,9 @@ class RealmlistHandler extends Actor with ActorLogging {
   override def receive: PartialFunction[Any, Unit] = {
     case RealmlistPacket(_) =>
       val origSender = sender
+
       val futureServerRealmlist: Future[ServerRealmlistPacket] = (context.parent ? GetRealmlist).mapTo[ServerRealmlistPacket]
+
       val futureEvent: Future[EventRealmlist] = {
         futureServerRealmlist map { realms =>
           EventRealmlistSuccess(realms)

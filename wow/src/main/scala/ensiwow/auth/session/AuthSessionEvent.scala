@@ -20,5 +20,7 @@ case class EventLogonFailure(packet: ServerLogonProof) extends AuthSessionEvent
 case class EventLogonSuccess(packet: ServerLogonProof, proofData: ProofData) extends AuthSessionEvent
 
 class EventRealmlist extends AuthSessionEvent
+
 case class EventRealmlistSuccess(packet: ServerRealmlistPacket) extends EventRealmlist
+
 case class EventRealmlistFailure() extends EventRealmlist

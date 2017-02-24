@@ -41,7 +41,7 @@ object AuthServer {
   val RealmlistHandlerPath = s"$ActorPath/${RealmlistHandler.PreferredName}"
 
   // TODO: find a way to retrieve address and port
-  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "ColoCoty", "127.0.0.1:8085", 0, 1, 1, 1))
+  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "EnsiWoW", "127.0.0.1:8085", 0, 1, 1, 1))
   val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacketBody(realms).computePacket
 }
 
