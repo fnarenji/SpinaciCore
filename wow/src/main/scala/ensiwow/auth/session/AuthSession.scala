@@ -2,9 +2,9 @@ package ensiwow.auth.session
 
 import akka.actor.{FSM, Props}
 import ensiwow.auth._
-import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
+import ensiwow.auth.handlers.{LogonChallenge, LogonProof, RealmlistPacket}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
-import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof}
+import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof, ClientRealmlistPacket}
 import ensiwow.auth.protocol.{ClientPacket, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
@@ -19,6 +19,7 @@ import scala.language.postfixOps
 class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonChallengeHandler = context.actorSelection(AuthServer.LogonChallengeHandlerPath)
   private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
+  private val realmlistHandler = context.actorSelection(AuthServer.RealmlistHandlerPath)
 
   // First packet that we expect from client is logon challenge
   startWith(StateChallenge, NoData)
@@ -69,14 +70,20 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateRealmlist) {
-    case Event(EventPacket(bits), _: ProofData) =>
-      import scodec.bits._
-      assert(bits == hex"1000000000".bits)
-      log.debug("Realmlist R&R.")
-      context.parent !
-        OutgoingPacket(hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000"
-          .bits)
-      stay
+    case Event(EventRealmlistSuccess(packet), proofData: ProofData) =>
+      log.debug(s"Sending successful realm list $packet")
+      val bits = serialize(packet)
+
+      context.parent ! OutgoingPacket(bits)
+      stay using proofData
+    case Event(EventRealmlistFailure(), NoData) =>
+      goto(StateFailed)
+    case Event(EventPacket(bits), proofData: ProofData) =>
+      val packet = deserialize[ClientRealmlistPacket](bits)
+      log.debug(s"Received realm list request: $packet")
+
+      realmlistHandler ! RealmlistPacket(packet)
+      stay using proofData
   }
 
   when(StateFailed, stateTimeout = 5 second) {

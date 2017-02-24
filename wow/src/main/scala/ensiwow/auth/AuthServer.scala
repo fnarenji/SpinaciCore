@@ -1,8 +1,7 @@
 package ensiwow.auth
 
-import java.net.InetSocketAddress
-
 import akka.actor.{Actor, ActorLogging, Props}
+
 import ensiwow.auth.crypto.Srp6Protocol
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, RealmlistHandler}
 import ensiwow.auth.network.TCPServer
@@ -27,7 +26,8 @@ class AuthServer extends Actor with ActorLogging {
   context.actorOf(TCPServer.props, TCPServer.PreferredName)
 
   override def receive: PartialFunction[Any, Unit] = {
-    case GetRealmlist => sender ! AuthServer.serverRealmlistPacket
+    case GetRealmlist =>
+      sender() ! AuthServer.serverRealmlistPacket
   }
 }
 
@@ -40,7 +40,8 @@ object AuthServer {
   val LogonProofHandlerPath = s"$ActorPath/${LogonProofHandler.PreferredName}"
   val RealmlistHandlerPath = s"$ActorPath/${RealmlistHandler.PreferredName}"
 
-  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "EnsiWorld", "ip", 0, 0, 0, 0))
+  // TODO: find a way to retrieve address and port
+  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "ColoCoty", "127.0.0.1:8085", 0, 1, 1, 1))
   val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacketBody(realms).computePacket
 }
 
