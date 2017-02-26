@@ -5,8 +5,9 @@ import ensiwow.Application
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
 import ensiwow.auth.protocol.{ServerPacket, VersionInfo}
 import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketEntry}
-import ensiwow.auth.session.{AuthSession, EventRealmlist, PacketSerializationException}
+import ensiwow.auth.session.{AuthSession, EventRealmlist}
 import ensiwow.common.network.TCPServer
+import ensiwow.utils.PacketSerializationException
 import scodec.Attempt.{Failure, Successful}
 import scodec.Codec
 import scodec.bits.BitVector

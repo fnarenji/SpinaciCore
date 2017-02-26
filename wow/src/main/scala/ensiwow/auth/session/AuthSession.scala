@@ -3,12 +3,12 @@ package ensiwow.auth.session
 import akka.actor.{FSM, Props}
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
+import ensiwow.auth.protocol.OpCodes
 import ensiwow.auth.protocol.OpCodes.OpCode
 import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
-import ensiwow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
 import ensiwow.common.network.{Disconnect, EventPacket, OutgoingPacket, Session}
+import ensiwow.utils.{MalformedPacketHeaderException, PacketSerializer}
 import scodec.Attempt.{Failure, Successful}
-import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
 
 import scala.concurrent.duration._
@@ -44,21 +44,21 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   when(StateChallenge) {
     case Event(EventPacket(bits), NoData) =>
       log.debug("Received challenge")
-      val packet = deserialize[ClientChallenge](bits)(ClientChallenge.logonChallengeCodec)
+      val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.logonChallengeCodec)
       log.debug(packet.toString)
 
       logonChallengeHandler ! LogonChallenge(packet)
       stay using NoData
     case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
       log.debug(s"Sending successful challenge $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
 
       goto(StateProof) using challengeData
     case Event(EventChallengeFailure(packet), NoData) =>
       log.debug(s"Sending failed challenge $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
       goto(StateFailed)
@@ -67,21 +67,21 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   when(StateProof) {
     case Event(EventPacket(bits), challengeData: ChallengeData) =>
       log.debug("Received proof")
-      val packet = deserialize[ClientLogonProof](bits)
+      val packet = PacketSerializer.deserialize[ClientLogonProof](bits)
       log.debug(packet.toString)
 
       logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
     case Event(EventProofSuccess(packet, proofData), _: ChallengeData) =>
       log.debug(s"Sending successful proof $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       // TODO: shared key should be saved to database
       context.parent ! OutgoingPacket(bits)
       goto(StateRealmlist) using NoData
     case Event(EventProofFailure(packet), _: ChallengeData) =>
       log.debug(s"Sending failed proof $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
       goto(StateFailed)
@@ -90,21 +90,21 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   when(StateReconnectChallenge) {
     case Event(EventPacket(bits), NoData) =>
       log.debug("Received reconnect challenge")
-      val packet = deserialize[ClientChallenge](bits)(ClientChallenge.reconnectChallengeCodec)
+      val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.reconnectChallengeCodec)
       log.debug(packet.toString)
 
       reconnectChallengeHandler ! LogonChallenge(packet)
       stay using NoData
     case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
       log.debug(s"Sending successful reconnect challenge $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
 
       goto(StateReconnectProof) using challengeData
     case Event(EventChallengeFailure(packet), NoData) =>
       log.debug(s"Sending failed reconnect challenge $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
       goto(StateFailed)
@@ -113,14 +113,14 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   when(StateReconnectProof) {
     case Event(EventPacket(bits), challengeData: ReconnectChallengeData) =>
       log.debug("Received reconnect proof")
-      val packet = deserialize[ClientReconnectProof](bits)
+      val packet = PacketSerializer.deserialize[ClientReconnectProof](bits)
       log.debug(packet.toString)
 
       reconnectProofHandler ! ReconnectProof(packet, challengeData)
       stay using challengeData
     case Event(EventReconnectProofSuccess(packet), _: ReconnectChallengeData) =>
       log.debug(s"Sending successful reconnect proof $packet")
-      val bits = serialize(packet)
+      val bits = PacketSerializer.serialize(packet)
 
       context.parent ! OutgoingPacket(bits)
       goto(StateRealmlist) using NoData
@@ -131,7 +131,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
   when(StateRealmlist) {
     case Event(EventPacket(bits), proofData: ProofData) =>
-      val packet = deserialize[ClientRealmlistPacket](bits)
+      val packet = PacketSerializer.deserialize[ClientRealmlistPacket](bits)
       log.debug(s"Received realm list request: $packet")
 
       authServer ! GetRealmlist
@@ -148,37 +148,6 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       log.debug("Failed state expired, disconnecting")
       context.parent ! Disconnect
       stop
-  }
-
-  /**
-    * Deserializes a packet of type T from the bitvector
-    *
-    * @param bits  bitvector from which to read
-    * @param codec codec used for deserialization
-    * @tparam T type of packet
-    * @return deserialized packets
-    */
-  private def deserialize[T <: ClientPacket](bits: BitVector)(implicit codec: Codec[T]): T = {
-    codec.decode(bits) match {
-      case Successful(DecodeResult(value, BitVector.empty)) => value
-      case Successful(DecodeResult(_, remainder)) => throw PacketPartialReadException(remainder)
-      case Failure(err) => throw MalformedPacketException(err)
-    }
-  }
-
-  /**
-    * Serializes a packet of type T to a bitvector
-    *
-    * @param value packet to be serialized
-    * @param codec codec
-    * @tparam T packet type
-    * @return bit vector containing serialized object
-    */
-  private def serialize[T <: ServerPacket](value: T)(implicit codec: Codec[T]): BitVector = {
-    codec.encode(value) match {
-      case Successful(bits) => bits
-      case Failure(err) => throw PacketSerializationException(err)
-    }
   }
 }
 
