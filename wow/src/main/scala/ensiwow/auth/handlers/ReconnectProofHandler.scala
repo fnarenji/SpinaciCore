@@ -15,8 +15,8 @@ case class ReconnectProof(packet: ClientReconnectProof, reconnectChallengeData: 
 class ReconnectProofHandler extends Actor with ActorLogging {
   private val srp6 = new Srp6Protocol
 
-  override def receive = {
-    case ReconnectProof(packet, data@ReconnectChallengeData(login, random)) =>
+  override def receive: PartialFunction[Any, Unit] = {
+    case ReconnectProof(packet, ReconnectChallengeData(login, random)) =>
       val sharedKey = Account.getSessionKey(login)
 
       val verified = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sharedKey)

@@ -166,7 +166,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     }
   }
 
-  def reverify(login: String, random: BigInt, clientKey: BigInt, clientProof: BigInt, sharedKey: BigInt) = {
+  def reverify(login: String, random: BigInt, clientKey: BigInt, clientProof: BigInt, sharedKey: BigInt): Boolean = {
     val clientKeyBytes = clientKey.toUnsignedLBytes()
 
     val loginDigest = messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))

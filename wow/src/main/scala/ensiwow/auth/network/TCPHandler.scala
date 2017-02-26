@@ -17,9 +17,9 @@ case object Disconnect
   * Handles an open TCP connection.
   */
 class TCPHandler(connection: ActorRef) extends Actor with ActorLogging {
-  val authSession = context.actorOf(AuthSession.props, AuthSession.PreferredName)
+  val authSession: ActorRef = context.actorOf(AuthSession.props, AuthSession.PreferredName)
 
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case Received(data: ByteString) =>
       log.debug(s"Received: $data")
       authSession ! EventPacket(data.toByteVector.bits)

@@ -39,7 +39,7 @@ object BigIntExtensions {
   }
 
   implicit class RichBigIntCompanion(value: BigInt.type) {
-    def fromUnsignedLBytes(bytes: Array[Byte]) = {
+    def fromUnsignedLBytes(bytes: Array[Byte]): BigInt = {
       val reversed = bytes.reverse
 
       val signed = Array[Byte](0) ++ reversed
