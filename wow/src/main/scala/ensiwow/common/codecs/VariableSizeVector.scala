@@ -1,9 +1,9 @@
-package ensiwow.auth.protocol.codecs
+package ensiwow.common.codecs
 
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
-import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 import scodec.codecs._
+import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 
 /**
   * Encodes a unsigned big integer in a fixed number of bytes
