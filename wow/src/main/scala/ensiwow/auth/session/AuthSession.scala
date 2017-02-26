@@ -6,7 +6,7 @@ import akka.util.Timeout
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
-import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof, ClientRealmlistPacket, ServerRealmlistPacket}
+import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof, ClientRealmlistPacket}
 import ensiwow.auth.protocol.{ClientPacket, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
@@ -75,23 +75,15 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
   when(StateRealmlist) {
     case Event(EventPacket(bits), proofData: ProofData) =>
-      implicit val timeout = Timeout(2 second)
-      import context.dispatcher
       val packet = deserialize[ClientRealmlistPacket](bits)
       log.debug(s"Received realm list request: $packet")
 
-      val parent = context.parent
+      authServer ! GetRealmlist
+      stay using proofData
 
-      val futureResponsePacket: Future[ServerRealmlistPacket] =
-        (authServer ? GetRealmlist).mapTo[ServerRealmlistPacket]
+    case Event(EventRealmlist(bits), proofData: ProofData) =>
 
-      futureResponsePacket onComplete {
-        case Success(responsePacket) =>
-          val bits = serialize(responsePacket)
-          parent ! OutgoingPacket(bits)
-        case scala.util.Failure(_) =>
-          goto(StateFailed)
-      }
+      context.parent ! OutgoingPacket(bits)
       stay using proofData
   }
 

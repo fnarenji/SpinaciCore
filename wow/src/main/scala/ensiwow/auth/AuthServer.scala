@@ -1,11 +1,14 @@
 package ensiwow.auth
 
 import akka.actor.{Actor, ActorLogging, Props}
-
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler}
 import ensiwow.auth.network.TCPServer
-import ensiwow.auth.protocol.VersionInfo
+import ensiwow.auth.protocol.{ServerPacket, VersionInfo}
 import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketBody, ServerRealmlistPacketEntry}
+import ensiwow.auth.session.{EventRealmlist, PacketSerializationException}
+import scodec.Attempt.{Failure, Successful}
+import scodec.Codec
+import scodec.bits.BitVector
 
 case object GetRealmlist
 /**
@@ -23,13 +26,20 @@ class AuthServer extends Actor with ActorLogging {
   context.actorOf(LogonProofHandler.props, LogonProofHandler.PreferredName)
   context.actorOf(TCPServer.props, TCPServer.PreferredName)
 
+  // TODO: factorize
+  private def serialize[T <: ServerPacket](value: T)(implicit codec: Codec[T]): BitVector = {
+    codec.encode(value) match {
+      case Successful(bits) => bits
+      case Failure(err) => throw PacketSerializationException(err)
+    }
+  }
   // TODO: find a way to retrieve address and port
-  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "EnsiWoW", "127.0.0.1:8085", 0, 1, 1, 1))
-  val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacketBody(realms).computePacket
+  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "EnsiRealm", "127.0.0.1:8085", 0, 1, 1, 1))
+  private val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacketBody(realms).computePacket
+  private val eventRealmlist: EventRealmlist= EventRealmlist(serialize(serverRealmlistPacket))
 
   override def receive: PartialFunction[Any, Unit] = {
-    case GetRealmlist =>
-      sender() ! serverRealmlistPacket
+    case GetRealmlist => sender() ! eventRealmlist
   }
 }
 
