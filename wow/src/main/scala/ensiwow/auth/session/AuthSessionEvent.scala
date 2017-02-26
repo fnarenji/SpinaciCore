@@ -1,14 +1,12 @@
 package ensiwow.auth.session
 
 import ensiwow.auth.protocol.packets.{ServerLogonChallenge, ServerLogonProof, ServerReconnectChallenge, ServerReconnectProof}
-import scodec.bits.BitVector
+import ensiwow.common.network.SessionEvent
 
 /**
   * Events
   */
-sealed trait AuthSessionEvent
-
-case class EventPacket(bits: BitVector) extends AuthSessionEvent
+sealed trait AuthSessionEvent extends SessionEvent
 
 case class EventChallengeSuccess(packet: ServerLogonChallenge,
                                  challengeData: ChallengeData) extends AuthSessionEvent

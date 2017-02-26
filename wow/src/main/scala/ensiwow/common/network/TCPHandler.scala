@@ -5,7 +5,6 @@ import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.io.Tcp.{Close, ConnectionClosed, Received, Write}
 import akka.util.ByteString
-import ensiwow.auth.session.EventPacket
 import scodec.bits.BitVector
 import scodec.interop.akka._
 
