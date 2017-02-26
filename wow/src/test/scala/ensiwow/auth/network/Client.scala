@@ -25,7 +25,7 @@ class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor with A
 
     IO(Tcp) ! Connect(remote)
 
-    def receive = {
+    def receive: PartialFunction[Any, Unit] = {
         case CommandFailed(_: Connect) =>
             listener ! "connect failed"
             context stop self

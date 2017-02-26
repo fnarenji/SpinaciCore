@@ -35,7 +35,7 @@ class Srp6ProtocolTest extends FlatSpec with Matchers {
   class FixedRandomBigInt(fixedRandomValues: BigInt*) extends RandomBigInt {
     private val valuesQueue = mutable.Queue[BigInt](fixedRandomValues: _*)
 
-    override def next(sizeInBits: Int) = valuesQueue.dequeue()
+    override def next(sizeInBits: Int): BigInt = valuesQueue.dequeue()
   }
 
   it should "computeSaltAndVerifier" in {

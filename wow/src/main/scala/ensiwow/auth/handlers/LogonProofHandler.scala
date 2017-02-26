@@ -15,7 +15,7 @@ case class LogonProof(packet: ClientLogonProof, challengeData: ChallengeData)
 class LogonProofHandler extends Actor with ActorLogging {
   private val srp6 = new Srp6Protocol
 
-  override def receive = {
+  override def receive: PartialFunction[Any, Unit] = {
     case LogonProof(packet, data@ChallengeData(login, srp6Identity, srp6Challenge)) =>
 
       val event = srp6.verify(login, packet.clientKey, packet.clientProof, srp6Identity, srp6Challenge) match {
@@ -27,7 +27,7 @@ class LogonProofHandler extends Actor with ActorLogging {
             Some(ServerLogonProofSuccess(srp6Validation.serverProof)), None)
 
           EventProofSuccess(response, ProofData(data, srp6Validation.sharedKey))
-        case _ =>
+        case None =>
           val response = ServerLogonProof(AuthResults.FailUnknownAccount, None, Some(ServerLogonProofFailure()))
 
           EventProofFailure(response)

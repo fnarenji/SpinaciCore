@@ -10,11 +10,10 @@ import scodec.{Codec, DecodeResult}
   * Test checking for encoding/decoding idempotency
   */
 abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
-                                (implicit val codec: Codec[T],
-                                 implicit val m: reflect.Manifest[T]) extends FlatSpec with Matchers {
+                                (implicit val codec: Codec[T]) extends FlatSpec with Matchers {
   private val packetBits = bytes.bits
 
-  behavior of m.runtimeClass.getSimpleName
+  behavior of reference.getClass.getSimpleName
 
   it must "serialize as expected" in {
     val encode = codec.encode(reference)
@@ -48,7 +47,7 @@ abstract class ClientChallengeTest(bytes: ByteVector,
     timezoneBias = 60,
     ip = Vector(127, 0, 0, 1),
     login = "SKNZBOGOSS"
-  ))(codec, implicitly)
+  ))(codec)
 
 class ClientLogonChallengeTest extends ClientChallengeTest(
   hex"00082800576F57000303053430363878006E69570053556E653C0000007F0000010A534B4E5A424F474F5353",
