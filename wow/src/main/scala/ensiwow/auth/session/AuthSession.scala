@@ -6,7 +6,7 @@ import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.protocol.OpCodes.OpCode
 import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
 import ensiwow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
-import ensiwow.common.network.{Disconnect, OutgoingPacket, Session}
+import ensiwow.common.network.{Disconnect, EventPacket, OutgoingPacket, Session}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
