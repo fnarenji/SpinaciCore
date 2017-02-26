@@ -1,17 +1,21 @@
 package ensiwow.auth.session
 
 import akka.actor.{FSM, Props}
+import akka.pattern.ask
+import akka.util.Timeout
 import ensiwow.auth._
-import ensiwow.auth.handlers.{LogonChallenge, LogonProof, RealmlistPacket}
+import ensiwow.auth.handlers.{LogonChallenge, LogonProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
-import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof, ClientRealmlistPacket}
+import ensiwow.auth.protocol.packets.{ClientLogonChallenge, ClientLogonProof, ClientRealmlistPacket, ServerRealmlistPacket}
 import ensiwow.auth.protocol.{ClientPacket, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult}
 
 import scala.concurrent.duration._
+import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.util.Success
 
 /**
   * Handles an auth session
@@ -19,7 +23,7 @@ import scala.language.postfixOps
 class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonChallengeHandler = context.actorSelection(AuthServer.LogonChallengeHandlerPath)
   private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
-  private val realmlistHandler = context.actorSelection(AuthServer.RealmlistHandlerPath)
+  private val authServer = context.actorSelection(AuthServer.ActorPath)
 
   // First packet that we expect from client is logon challenge
   startWith(StateChallenge, NoData)
@@ -70,19 +74,24 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateRealmlist) {
-    case Event(EventRealmlistSuccess(packet), proofData: ProofData) =>
-      log.debug(s"Sending successful realm list $packet")
-      val bits = serialize(packet)
-
-      context.parent ! OutgoingPacket(bits)
-      stay using proofData
-    case Event(EventRealmlistFailure(), NoData) =>
-      goto(StateFailed)
     case Event(EventPacket(bits), proofData: ProofData) =>
+      implicit val timeout = Timeout(2 second)
+      import context.dispatcher
       val packet = deserialize[ClientRealmlistPacket](bits)
       log.debug(s"Received realm list request: $packet")
 
-      realmlistHandler ! RealmlistPacket(packet)
+      val parent = context.parent
+
+      val futureResponsePacket: Future[ServerRealmlistPacket] =
+        (authServer ? GetRealmlist).mapTo[ServerRealmlistPacket]
+
+      futureResponsePacket onComplete {
+        case Success(responsePacket) =>
+          val bits = serialize(responsePacket)
+          parent ! OutgoingPacket(bits)
+        case scala.util.Failure(_) =>
+          goto(StateFailed)
+      }
       stay using proofData
   }
 
