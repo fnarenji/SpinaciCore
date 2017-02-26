@@ -22,10 +22,10 @@ class TCPServerTest extends FlatSpec {
 
   val serverRef: ActorRef = TestActorRef(new TCPServer)
   "A server" must "be bound when created" in {
-    val future = (serverRef ? GetSocketAddress).mapTo[InetSocketAddress]
+    val future = (serverRef ? GetAddress).mapTo[InetSocketAddress]
     future onComplete {
       case Success(address) => assert(address.getHostString + ":" + address.getPort === "127.0.0.1:3724")
-      case Failure(t)       => assert(false)
+      case Failure(t)       => fail(t)
     }
   }
 }
