@@ -33,13 +33,9 @@ case class ServerRealmlistPacketEntry(realmType: Int,
 /**
   * Data structure which describes the response to be sent
   *
-  * @param realmsCount the number of realms
-  * @param realms      a vector containing the realms
+  * @param realms a vector containing the realms
   */
-case class ServerRealmlistPacket(realmsCount: Int,
-                                 realms: Vector[ServerRealmlistPacketEntry]) extends ServerPacket {
-  require(realmsCount == realms.size)
-}
+case class ServerRealmlistPacket(realms: Vector[ServerRealmlistPacketEntry]) extends ServerPacket
 
 object ServerRealmlistPacketEntry {
   implicit val codec: Codec[ServerRealmlistPacketEntry] = {
@@ -61,12 +57,9 @@ object ServerRealmlistPacket {
       variableSizeBytes(
         uint16L,
         constantE(0L)(uint32L) ::
-          (("realmsCount" | uint16L) >>:~ { realmsCount =>
-            ("realms" | vectorOfN(provide(realmsCount), Codec[ServerRealmlistPacketEntry])) ::
-              constantE(0x10)(uint8L) ::
-              constantE(0x00)(uint8L)
-          })
-      )
+          ("realms" | variableSizeVector(uint16L, Codec[ServerRealmlistPacketEntry])) ::
+          constantE(0x10)(uint8L) ::
+          constantE(0x00)(uint8L))
   }.as[ServerRealmlistPacket]
 }
 

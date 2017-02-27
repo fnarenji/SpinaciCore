@@ -11,13 +11,13 @@ import scodec.Codec
 import scodec.bits.BitVector
 
 case object GetRealmlist
+
 /**
   * AuthServer is the base actor for all services provided by the authentication server.
   *
   * This actor is unique (e.g. singleton) per ActorSystem.
   * It holds ownership of the stateless packet handlers.
   */
-
 class AuthServer extends Actor with ActorLogging {
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
@@ -36,7 +36,7 @@ class AuthServer extends Actor with ActorLogging {
 
   // TODO: find a way to retrieve address and port
   private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "EnsiWoW", "127.0.0.1:8085", 0, 1, 1, 1))
-  private val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacket(realms.size, realms)
+  private val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacket(realms)
   private val eventRealmlist: EventRealmlist= EventRealmlist(serialize(serverRealmlistPacket))
 
   override def receive: PartialFunction[Any, Unit] = {
