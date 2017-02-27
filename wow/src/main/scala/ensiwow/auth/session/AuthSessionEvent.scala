@@ -2,6 +2,7 @@ package ensiwow.auth.session
 
 import ensiwow.auth.protocol.packets.{ServerLogonChallenge, ServerLogonProof, ServerReconnectChallenge, ServerReconnectProof}
 import ensiwow.common.network.SessionEvent
+import scodec.bits.BitVector
 
 /**
   * Events
