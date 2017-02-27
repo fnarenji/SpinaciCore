@@ -19,10 +19,10 @@ case class Srp6Identity(salt: BigInt, verifier: BigInt)
 /**
   * SRP6 challenge information.
   *
-  * @param smallB    random value generated
-  * @param serverKey server key used by client
+  * @param serverPrivateKey random value generated
+  * @param serverKey        server key used by client
   */
-case class Srp6Challenge(smallB: BigInt, serverKey: BigInt)
+case class Srp6Challenge(serverPrivateKey: BigInt, serverKey: BigInt)
 
 /**
   * SRP6 validated proof information.
@@ -67,7 +67,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
   /**
     * Size of random number 'b' in bits
     */
-  private val SmallBBitCount = 19 * 8
+  private val ServerPrivateKeyBitCount = 19 * 8
 
   /**
     * Computes salt and verifier for user credentials
@@ -110,13 +110,13 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
   def computeChallenge(identity: Srp6Identity): Srp6Challenge = {
     val verifier = identity.verifier
 
-    val smallB = randomBigInt.next(SmallBBitCount)
-    assert(smallB > 0)
+    val serverPrivateKey = randomBigInt.next(ServerPrivateKeyBitCount)
+    assert(serverPrivateKey > 0)
 
-    val gPowSmallB = Srp6Constants.g.modPow(smallB, Srp6Constants.N)
-    val serverKey = ((verifier * Srp6Constants.legacyMultiplier) + gPowSmallB) % Srp6Constants.N
+    val gPowServerPrivateKey = Srp6Constants.g.modPow(serverPrivateKey, Srp6Constants.N)
+    val serverKey = ((verifier * Srp6Constants.legacyMultiplier) + gPowServerPrivateKey) % Srp6Constants.N
 
-    Srp6Challenge(smallB, serverKey)
+    Srp6Challenge(serverPrivateKey, serverKey)
   }
 
   /**
@@ -137,7 +137,11 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     val clientKeyBytes = clientKey.toUnsignedLBytes()
     val serverKeyBytes = challenge.serverKey.toUnsignedLBytes()
 
-    val sessionKey = computeSessionKey(challenge.smallB, identity.verifier, clientKey, clientKeyBytes, serverKeyBytes)
+    val sessionKey = computeSessionKey(challenge.serverPrivateKey,
+      identity.verifier,
+      clientKey,
+      clientKeyBytes,
+      serverKeyBytes)
 
     val sharedKeyBytes = computeSharedKey(sessionKey)
     val sharedKey = BigInt.fromUnsignedLBytes(sharedKeyBytes)
@@ -160,6 +164,27 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     } else {
       None
     }
+  }
+
+  def reverify(login: String, random: BigInt, clientKey: BigInt, clientProof: BigInt, sharedKey: BigInt): Boolean = {
+    val clientKeyBytes = clientKey.toUnsignedLBytes()
+
+    val loginDigest = messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
+
+    val randomBytes = random.toUnsignedLBytes()
+
+    val sharedKeyBytes = sharedKey.toUnsignedLBytes()
+
+    messageDigest.update(clientKeyBytes)
+    messageDigest.update(loginDigest)
+    messageDigest.update(randomBytes)
+    messageDigest.update(sharedKeyBytes)
+
+    val expectedProofBytes = messageDigest.digest()
+
+    val clientProofBytes = clientProof.toUnsignedLBytes()
+
+    clientProofBytes sameElements expectedProofBytes
   }
 
   /**
@@ -234,16 +259,16 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
   /**
     * Computes the session key.
     * u = H(clientKey, serverKey)
-    * ((clientKey * (verifier &#94; u) % N) &#94; smallB) % N
+    * ((clientKey * (verifier &#94; u) % N) &#94; serverPrivateKey) % N
     *
-    * @param smallB         random constant computed during challenge
-    * @param verifier       verifier for identity being validated
-    * @param clientKey      client key
-    * @param clientKeyBytes client key as byte array
-    * @param serverKeyBytes server key as byte array
+    * @param serverPrivateKey random constant computed during challenge
+    * @param verifier         verifier for identity being validated
+    * @param clientKey        client key
+    * @param clientKeyBytes   client key as byte array
+    * @param serverKeyBytes   server key as byte array
     * @return session key
     */
-  private def computeSessionKey(smallB: BigInt,
+  private def computeSessionKey(serverPrivateKey: BigInt,
                                 verifier: BigInt,
                                 clientKey: BigInt,
                                 clientKeyBytes: Array[Byte],
@@ -253,7 +278,7 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     val shaDigest = messageDigest.digest
     val u = BigInt.fromUnsignedLBytes(shaDigest)
 
-    (clientKey * verifier.modPow(u, Srp6Constants.N)).modPow(smallB, Srp6Constants.N)
+    (clientKey * verifier.modPow(u, Srp6Constants.N)).modPow(serverPrivateKey, Srp6Constants.N)
   }
 
 }

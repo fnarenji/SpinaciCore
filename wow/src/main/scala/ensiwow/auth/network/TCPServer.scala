@@ -30,7 +30,7 @@ class TCPServer extends Actor with ActorLogging {
 
   override def postStop(): Unit = log.debug("Stopped")
 
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case GetAddress => sender() ! address
 
     case Bound(localAddress) =>

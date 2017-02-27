@@ -8,7 +8,7 @@ import ensiwow.auth.crypto.{Srp6Challenge, Srp6Identity}
 sealed trait AuthSessionData
 
 /**
-  * No date by default and in most cases
+  * No data by default and in most cases
   */
 case object NoData extends AuthSessionData
 
@@ -30,3 +30,5 @@ case class ChallengeData(login: String,
   * @param sharedKey     shared key
   */
 case class ProofData(challengeData: ChallengeData, sharedKey: BigInt) extends AuthSessionData
+
+case class ReconnectChallengeData(login: String, random: BigInt) extends AuthSessionData

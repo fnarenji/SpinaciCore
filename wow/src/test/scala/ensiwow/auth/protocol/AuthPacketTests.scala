@@ -10,11 +10,10 @@ import scodec.{Codec, DecodeResult}
   * Test checking for encoding/decoding idempotency
   */
 abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
-                                (implicit val m: reflect.Manifest[T],
-                                 implicit val codec: Codec[T]) extends FlatSpec with Matchers {
+                                (implicit val codec: Codec[T]) extends FlatSpec with Matchers {
   private val packetBits = bytes.bits
 
-  behavior of m.runtimeClass.getSimpleName
+  behavior of reference.getClass.getSimpleName
 
   it must "serialize as expected" in {
     val encode = codec.encode(reference)
@@ -36,9 +35,9 @@ abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
   }
 }
 
-class ClientLogonChallengeTest extends AuthPacketTest[ClientLogonChallenge](
-  hex"00082800576F57000303053430363878006E69570053556E653C0000007F0000010A534B4E5A424F474F5353",
-  ClientLogonChallenge(
+abstract class ClientChallengeTest(bytes: ByteVector,
+                                   codec: Codec[ClientChallenge]) extends AuthPacketTest[ClientChallenge](bytes,
+  ClientChallenge(
     error = 8,
     size = 40,
     versionInfo = VersionInfo(3, 3, 5, 12340),
@@ -48,11 +47,20 @@ class ClientLogonChallengeTest extends AuthPacketTest[ClientLogonChallenge](
     timezoneBias = 60,
     ip = Vector(127, 0, 0, 1),
     login = "SKNZBOGOSS"
-  )
-)
+  ))(codec)
+
+class ClientLogonChallengeTest extends ClientChallengeTest(
+  hex"00082800576F57000303053430363878006E69570053556E653C0000007F0000010A534B4E5A424F474F5353",
+  ClientChallenge.logonChallengeCodec)
+
+class ClientReconnectChallengeTest extends ClientChallengeTest(
+  hex"02082800576F57000303053430363878006E69570053556E653C0000007F0000010A534B4E5A424F474F5353",
+  ClientChallenge.reconnectChallengeCodec)
 
 class ServerLogonChallengeSuccessTest extends AuthPacketTest[ServerLogonChallenge](
-  hex"00000053EB4E8B205D34F2536521D6FAC362808CB7106224459654A9928A28B502380E010720B79B3E2A87823CAB8F5EBFBF8EB10108535006298B5BADBD5B53E1895E644B897364905AA2F2ED120418BA50F1826244F5694F533F71DE9B0CE359303B8708B7ED5D7B90BA7A4BA3D40C147E496AC8F600",
+  ByteVector.fromValidHex("00000053EB4E8B205D34F2536521D6FAC362808CB7106224459654A9928A28B502380E010720B79B3E2A87823C" +
+    "AB8F5EBFBF8EB10108535006298B5BADBD5B53E1895E644B897364905AA2F2ED120418BA50F1826244F5694F533F71DE9B0CE359303B8708" +
+    "B7ED5D7B90BA7A4BA3D40C147E496AC8F600"),
   ServerLogonChallenge(AuthResults.Success,
     Some(ServerLogonChallengeSuccess(
       serverKey = BigInt("6431342003305856544905171798004231448559842193170150403295401468531275918163"),
@@ -69,9 +77,10 @@ class ServerLogonChallengeFailureTest extends AuthPacketTest[ServerLogonChalleng
   ServerLogonChallenge(AuthResults.FailVersionInvalid, None)
 )
 
-
 class ServerLogonChallengeTest extends AuthPacketTest[ServerLogonChallenge](
-  hex"00000053EB4E8B205D34F2536521D6FAC362808CB7106224459654A9928A28B502380E010720B79B3E2A87823CAB8F5EBFBF8EB10108535006298B5BADBD5B53E1895E644B897364905AA2F2ED120418BA50F1826244F5694F533F71DE9B0CE359303B8708B7ED5D7B90BA7A4BA3D40C147E496AC8F600",
+  ByteVector.fromValidHex("00000053EB4E8B205D34F2536521D6FAC362808CB7106224459654A9928A28B502380E010720B79B3E2A87823C" +
+    "AB8F5EBFBF8EB10108535006298B5BADBD5B53E1895E644B897364905AA2F2ED120418BA50F1826244F5694F533F71DE9B0CE359303B8708" +
+    "B7ED5D7B90BA7A4BA3D40C147E496AC8F600"),
   ServerLogonChallenge(AuthResults.Success,
     Some(ServerLogonChallengeSuccess(
       serverKey = BigInt("6431342003305856544905171798004231448559842193170150403295401468531275918163"),
@@ -84,7 +93,8 @@ class ServerLogonChallengeTest extends AuthPacketTest[ServerLogonChallenge](
 )
 
 class ClientLogonProofTest extends AuthPacketTest[ClientLogonProof](
-  hex"0101BF7357A9D256B8FEA0D3ABC7E478BD61D64D38F7AA4DF0E06F33478894D16FF6625623DB0D80DD472B233B8F2D08864CC7CB09B348FF9B4AAC56A778030549A910C0BB2287DE200000",
+  ByteVector.fromValidHex("0101BF7357A9D256B8FEA0D3ABC7E478BD61D64D38F7AA4DF0E06F33478894D16FF6625623DB0D80DD472B233B" +
+    "8F2D08864CC7CB09B348FF9B4AAC56A778030549A910C0BB2287DE200000"),
   ClientLogonProof(
     clientKey = BigInt("50577022361791655843908772462053474113315524324387888481189784495796664909569"),
     crcHash = BigInt("187650242078200820197416130741145435439049427123"),
@@ -126,5 +136,29 @@ class ServerRealmlistPacketTest extends AuthPacketTest[ServerRealmlistPacket](
       )
     )
   )
+)
+
+class ClientReconnectProofTest extends AuthPacketTest[ClientReconnectProof](
+  ByteVector.fromValidHex("03A24880D8A707FDEC2A30F9C8C598886D094C05150643E6FC65AC10B08DA21ADC1C645F0E5E512158A04DD5DC" +
+    "10CF656F7F27184E195F1D9F00"),
+  ClientReconnectProof(
+    clientKey = BigInt("145595102509722589026758362009446664354"),
+    clientProof = BigInt("82053162634462068115671169198622307468467063817"),
+    unk = BigInt("908384538449775762577322799369775676137318469982"),
+    keyCount = 0
+  )
+)
+
+class ServerReconnectChallengeTest extends AuthPacketTest[ServerReconnectChallenge](
+  hex"02007907F002A7CFB4675E2DBDAC0A89048D00000000000000000000000000000000",
+  ServerReconnectChallenge(
+    AuthResults.Success,
+    Some(ServerReconnectChallengeSuccess(BigInt("187444696128964725728579388989055698809")))
+  )
+)
+
+class ServerReconnectProofTest extends AuthPacketTest[ServerReconnectProof](
+  hex"03000000",
+  ServerReconnectProof(AuthResults.Success)
 )
 
