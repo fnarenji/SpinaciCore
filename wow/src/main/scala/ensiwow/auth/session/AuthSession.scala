@@ -130,17 +130,15 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateRealmlist) {
-    case Event(EventPacket(bits), proofData: ProofData) =>
+    case Event(EventPacket(bits), NoData) =>
       val packet = PacketSerializer.deserialize[ClientRealmlistPacket](bits)
       log.debug(s"Received realm list request: $packet")
 
       authServer ! GetRealmlist
-      stay using proofData
-
-    case Event(EventRealmlist(bits), proofData: ProofData) =>
-
+      stay using NoData
+    case Event(EventRealmlist(bits), NoData) =>
       context.parent ! OutgoingPacket(bits)
-      stay using proofData
+      stay using NoData
   }
 
   when(StateFailed, stateTimeout = 5 second) {
