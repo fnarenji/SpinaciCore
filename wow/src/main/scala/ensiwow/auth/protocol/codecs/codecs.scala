@@ -56,4 +56,15 @@ package object codecs {
     * Codec for big integers
     */
   def fixedUBigIntL(sizeInBytes: Long): Codec[BigInt] = new FixedUnsignedLBigIntCodec(sizeInBytes)
+
+  /**
+    * Codec for decoding a vector that is prefixed by its size
+    * @param sizeCodec size codec
+    * @param valueCodec vector element codec
+    * @tparam T type of element
+    * @return size prefixed vector codec
+    */
+  def variableSizeVector[T](sizeCodec: Codec[Int], valueCodec: Codec[T]): Codec[Vector[T]] = new VariableSizeVector[T](
+    sizeCodec,
+    valueCodec)
 }

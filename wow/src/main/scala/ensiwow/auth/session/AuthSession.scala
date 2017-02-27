@@ -5,7 +5,7 @@ import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.network.{Disconnect, OutgoingPacket}
 import ensiwow.auth.protocol.OpCodes.OpCode
-import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientReconnectProof}
+import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
 import ensiwow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
@@ -22,6 +22,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
   private val reconnectChallengeHandler = context.actorSelection(AuthServer.ReconnectChallengeHandlerPath)
   private val reconnectProofHandler = context.actorSelection(AuthServer.ReconnectProofHandlerPath)
+  private val authServer = context.actorSelection(AuthServer.ActorPath)
 
   // First packet that we expect from client is logon challenge
   startWith(StateNoData, NoData)
@@ -129,14 +130,17 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateRealmlist) {
-    case Event(EventPacket(bits), NoData) =>
-      import scodec.bits._
-      assert(bits == hex"1000000000".bits)
-      log.debug("Realmlist R&R.")
-      context.parent !
-        OutgoingPacket(hex"1029000000000001000100005472696E697479003132372E302E302E313A3830383500000000000101011000"
-          .bits)
-      stay
+    case Event(EventPacket(bits), proofData: ProofData) =>
+      val packet = deserialize[ClientRealmlistPacket](bits)
+      log.debug(s"Received realm list request: $packet")
+
+      authServer ! GetRealmlist
+      stay using proofData
+
+    case Event(EventRealmlist(bits), proofData: ProofData) =>
+
+      context.parent ! OutgoingPacket(bits)
+      stay using proofData
   }
 
   when(StateFailed, stateTimeout = 5 second) {
