@@ -11,15 +11,15 @@ object BasicSQLTest {
 
     val bd = new Postgresql()
     bd.init()
+    bd.create("tesst")
+    bd.addUser("foo")
+    bd.addUser("bar")
+    bd.addUser("foobar")
 
-    implicit val session = AutoSession
-    sql"""DROP TABLE tesst""".execute.apply()
-    sql"""create table tesst (name varchar(64))""".execute.apply()
-    sql"insert into tesst (name) VALUES ('foo')".update.apply()
-    sql"insert into tesst (name) VALUES ('bar')".update.apply()
+    bd.print("tesst")
 
-    val entities: List[Map[String, Any]] = sql"select * from tesst".map(_.toMap).list.apply()
-    for (name <- entities) println(name)
+    if(bd.tableExists("tesst")) println("TRUE")
+    if(bd.tableExists("fakename")) println("FALSE")
   }
 
 }
