@@ -11,7 +11,8 @@ object BasicSQLTest {
 
     val bd = new Postgresql()
     bd.init()
-    bd.create("tesst")
+
+    bd.createUsers()
     bd.addUser("foo")
     bd.addUser("bar")
     bd.addUser("foobar")
