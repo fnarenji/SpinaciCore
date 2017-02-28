@@ -14,7 +14,6 @@ class Postgresql {
       // initialize JDBC driver & connection pool
       Class.forName("org.postgresql.Driver")
       ConnectionPool.singleton("jdbc:postgresql:bdd", "postgres", "aaaaaa64")
-      //implicit val session = AutoSession
     }
 
     def execute(req: String) = {
@@ -34,7 +33,7 @@ class Postgresql {
 
   def print(tableName : String) = {
 
-    val entities: List[Map[String, Any]] = sql"select * from tesst".map(_.toMap).list.apply()
+    val entities = sql"select * from $tableName".map(_.toMap).list.apply();
     for (name <- entities) println(name)
 
   }

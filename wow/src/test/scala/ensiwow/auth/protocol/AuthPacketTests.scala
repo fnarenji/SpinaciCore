@@ -92,3 +92,4 @@ class ServerLogonProofFailureTest extends AuthPacketTest[ServerLogonProof](
   hex"01040300",
   ServerLogonProof(AuthResults.FailUnknownAccount, None, Some(ServerLogonProofFailure()))
 )
+

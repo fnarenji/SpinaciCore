@@ -16,7 +16,7 @@ object BasicSQLTest {
     bd.addUser("bar")
     bd.addUser("foobar")
 
-    bd.print("tesst")
+    bd.print("'")
 
     if(bd.tableExists("tesst")) println("TRUE")
     if(bd.tableExists("fakename")) println("FALSE")
