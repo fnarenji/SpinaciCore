@@ -1,4 +1,4 @@
-package ensiwow.auth.protocol
+package ensiwow.common
 
 import scodec.Codec
 import scodec.codecs._
