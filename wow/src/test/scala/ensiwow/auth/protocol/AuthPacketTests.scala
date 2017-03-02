@@ -2,10 +2,10 @@ package ensiwow.auth.protocol
 
 import ensiwow.auth.protocol.packets._
 import ensiwow.common.VersionInfo
+import ensiwow.common.codecs.CodecTestUtils
 import org.scalatest.{FlatSpec, Matchers}
-import scodec.Attempt.{Failure, Successful}
+import scodec.Codec
 import scodec.bits._
-import scodec.{Codec, DecodeResult}
 
 /**
   * Test checking for encoding/decoding idempotency
@@ -16,24 +16,9 @@ abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
 
   behavior of reference.getClass.getSimpleName
 
-  it must "serialize as expected" in {
-    val encode = codec.encode(reference)
+  it must "serialize as expected" in CodecTestUtils.encode(packetBits, reference)
 
-    encode match {
-      case Successful(bits) => bits shouldEqual packetBits
-      case Failure(err) => fail(err.toString())
-    }
-  }
-
-  it must "deserialize as expected" in {
-    val attempt = codec.decode(packetBits)
-
-    attempt match {
-      case Successful(DecodeResult(packet, BitVector.empty)) => packet shouldEqual reference
-      case Successful(DecodeResult(packet, remainder)) => fail(s"non empty remainder: $packet / $remainder")
-      case Failure(err) => fail(err.toString())
-    }
-  }
+  it must "deserialize as expected" in CodecTestUtils.decode(packetBits, reference)
 }
 
 abstract class ClientChallengeTest(bytes: ByteVector,
