@@ -14,12 +14,15 @@ import scala.util.Random
   * Handles a realm session
   */
 class RealmSession extends Actor with ActorLogging {
+  // Send initial packet
   {
+    val SeedSizeBits = ServerAuthChallenge.SeedSize * 8
+
     val authChallenge = PacketBuilder.server(
       ServerAuthChallenge(
         ThreadLocalRandom.current().nextLong(0xFFFFFFFF1L),
-        BigInt(ServerAuthChallenge.SeedSize, Random),
-        BigInt(ServerAuthChallenge.SeedSize, Random)))
+        BigInt(SeedSizeBits, Random),
+        BigInt(SeedSizeBits, Random)))
 
     context.parent ! OutgoingPacket(authChallenge)
   }
