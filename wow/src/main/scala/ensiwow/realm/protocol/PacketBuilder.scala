@@ -5,10 +5,9 @@ import scodec.Attempt.{Failure, Successful}
 import scodec.Codec
 import scodec.bits.BitVector
 
-trait Payload {
-  def opCode: OpCodes.Value
-}
-
+/**
+  * Packet builder for realm packets
+  */
 object PacketBuilder {
   def server[T <: Payload](payload: T)(implicit codec: Codec[T]): BitVector = {
     codec.encode(payload) match {
