@@ -67,4 +67,10 @@ package object codecs {
   def variableSizeVector[T](sizeCodec: Codec[Int], valueCodec: Codec[T]): Codec[Vector[T]] = new VariableSizeVector[T](
     sizeCodec,
     valueCodec)
+
+  /**
+    * Server packet size codec
+    * @return codec for server packet size
+    */
+  val serverPacketSize = new ServerPacketSizeCodec
 }
