@@ -6,7 +6,7 @@ import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 
 /**
-  * Encodes a unsigned big integer in a fixed number of bytes
+  * Encodes a vector prefixed by its size
   */
 private[codecs] final class VariableSizeVector[T](sizeCodec: Codec[Int], valueCodec: Codec[T]) extends Codec[Vector[T]] {
   override def sizeBound: SizeBound = sizeCodec.sizeBound + valueCodec.sizeBound
@@ -26,5 +26,5 @@ private[codecs] final class VariableSizeVector[T](sizeCodec: Codec[Int], valueCo
      }
   }
 
-  override def toString = s"BigIntCodec"
+  override def toString = s"VariableSizeVectorCodec"
 }
