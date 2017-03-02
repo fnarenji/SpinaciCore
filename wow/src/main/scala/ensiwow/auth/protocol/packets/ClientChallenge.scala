@@ -1,6 +1,5 @@
 package ensiwow.auth.protocol.packets
 
-import ensiwow.auth.protocol.OpCodes.OpCode
 import ensiwow.auth.protocol.{ClientPacket, OpCodes}
 import ensiwow.common.VersionInfo
 import ensiwow.common.codecs._
@@ -26,7 +25,7 @@ case class ClientChallenge(error: Int,
 }
 
 object ClientChallenge {
-  private def makeChallengeCodec(opCode: OpCode) = {
+  private def makeChallengeCodec(opCode: OpCodes.Value) = {
     def reversedFixedSizeCString(sizeInBytes: Long) = reverse(fixedCString(sizeInBytes))
 
     val GameName = "WoW"

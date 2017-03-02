@@ -4,7 +4,6 @@ import akka.actor.{FSM, Props}
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.protocol.OpCodes
-import ensiwow.auth.protocol.OpCodes.OpCode
 import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
 import ensiwow.common.network.{Disconnect, EventPacket, OutgoingPacket, Session}
 import ensiwow.utils.{MalformedPacketHeaderException, PacketSerializer}
@@ -29,7 +28,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
   when(StateNoData) {
     case Event(e@EventPacket(bits), NoData) =>
-      val state = Codec[OpCode].decode(bits) match {
+      val state = Codec[OpCodes.Value].decode(bits) match {
         case Successful(DecodeResult(OpCodes.LogonChallenge, _)) => StateChallenge
         case Successful(DecodeResult(OpCodes.ReconnectChallenge, _)) => StateReconnectChallenge
         case Failure(err) => throw MalformedPacketHeaderException(err)
