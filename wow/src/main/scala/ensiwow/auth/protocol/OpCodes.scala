@@ -4,25 +4,23 @@ import scodec._
 import scodec.codecs._
 
 /**
-  * Enumeration of OpCodes.
+  * Enumeration of Auth OpCodes.
   */
-object OpCodes {
-  final case class OpCode(opCode : Int)
-
-  val LogonChallenge = OpCode(0x0)
-  val LogonProof = OpCode(0x1)
-  val ReconnectChallenge = OpCode(0x2)
-  val ReconnectProof = OpCode(0x3)
-  val RealmList = OpCode(0x10)
+object OpCodes extends Enumeration {
+  val LogonChallenge = Value(0x0)
+  val LogonProof = Value(0x1)
+  val ReconnectChallenge = Value(0x2)
+  val ReconnectProof = Value(0x3)
+  val RealmList = Value(0x10)
 
   /**
     * Those below are not supported
     */
-  val TransferInitiate = OpCode(0x30)
-  val TransferData = OpCode(0x31)
-  val TransferAccept = OpCode(0x32)
-  val TransferResume = OpCode(0x33)
-  val TransferCancel = OpCode(0x34)
+  val TransferInitiate = Value(0x30)
+  val TransferData = Value(0x31)
+  val TransferAccept = Value(0x32)
+  val TransferResume = Value(0x33)
+  val TransferCancel = Value(0x34)
 
-  implicit val codec: Codec[OpCode] = { "opCode" | uint8L }.as[OpCode]
+  implicit val codec: Codec[OpCodes.Value] = enumerated(uint8L, OpCodes)
 }
