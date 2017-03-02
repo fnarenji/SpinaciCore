@@ -20,10 +20,11 @@ class TCPServerTest extends AsyncFlatSpec with Matchers {
   implicit val system = ActorSystem()
 
   val expectedHostname = "127.0.0.1"
-  val expectedPort = 3724
+  val expectedPort = 3725 // Use a different but close port in case an authserver is already running on the machine
   val expectedAddress = new InetSocketAddress(expectedHostname, expectedPort)
 
   val serverRef: ActorRef = TestActorRef(TCPServer.props(AuthSession, expectedHostname, expectedPort))
+
   "A server" must "be bound when created" in {
     val future = (serverRef ? GetAddress).mapTo[InetSocketAddress]
     future map { _ shouldEqual expectedAddress }
