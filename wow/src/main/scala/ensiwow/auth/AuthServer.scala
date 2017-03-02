@@ -3,9 +3,9 @@ package ensiwow.auth
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.Application
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
-import ensiwow.auth.protocol.VersionInfo
 import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketEntry}
 import ensiwow.auth.session.{AuthSession, EventRealmlist}
+import ensiwow.common.VersionInfo
 import ensiwow.common.network.TCPServer
 import ensiwow.utils.PacketSerializer
 

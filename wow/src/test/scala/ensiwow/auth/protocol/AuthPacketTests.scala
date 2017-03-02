@@ -1,6 +1,7 @@
 package ensiwow.auth.protocol
 
 import ensiwow.auth.protocol.packets._
+import ensiwow.common.VersionInfo
 import org.scalatest.{FlatSpec, Matchers}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits._

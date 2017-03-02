@@ -1,8 +1,9 @@
 package ensiwow.auth.handlers
 
 import ensiwow.auth.protocol.AuthResults.AuthResult
-import ensiwow.auth.protocol.{AuthResults, VersionInfo}
+import ensiwow.auth.protocol.AuthResults
 import ensiwow.auth.protocol.packets.ClientChallenge
+import ensiwow.common.VersionInfo
 
 /**
   * Created by sknz on 2/19/17.

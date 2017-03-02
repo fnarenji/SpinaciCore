@@ -2,7 +2,7 @@ package ensiwow.realm
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.Application
-import ensiwow.auth.protocol.VersionInfo
+import ensiwow.common.VersionInfo
 import ensiwow.common.network.TCPServer
 import ensiwow.realm.session.RealmSession
 
