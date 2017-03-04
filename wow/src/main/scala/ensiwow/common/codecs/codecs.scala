@@ -2,7 +2,7 @@ package ensiwow.common
 
 import scodec.bits.BitVector
 import scodec.codecs._
-import scodec.{Attempt, Codec, DecodeResult, SizeBound}
+import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 
 /**
   * Codecs specific or practical for packet reading
@@ -12,9 +12,7 @@ package object codecs {
     * Codec that reverses String obtained by another String codec
     *
     * @param codec string codec to be reversed
-    * @return reversing codec
-    */
-  def reverse(codec: Codec[String]): Codec[String] = new ReversedStringCodec(codec)
+    * @return reversing codec */ def reverse(codec: Codec[String]): Codec[String] = new ReversedStringCodec(codec)
 
   /**
     * Codec that stops a string at the first nul occurrence or until all is consumed
@@ -96,4 +94,70 @@ package object codecs {
     * @return integer codec with offset
     */
   def integerOffset(codec: Codec[Int], offset: Int): Codec[Int] = codec.xmap[Int](_ + offset, _ - offset)
+
+  /**
+    * Prefixes the encoded date with it's size in bytes before applying the transform
+    *
+    * @param sizeCodec size codec
+    * @param codec     value codec
+    * @tparam A value type
+    * @return byte size prefixed codec
+    */
+  def sizePrefixedTransform[A](sizeCodec: Codec[Long],
+                               codec: Codec[A],
+                               transform: Codec[BitVector]): Codec[A] = new Codec[A] {
+    override def sizeBound: SizeBound = codec.sizeBound + sizeCodec.sizeBound
+
+    override def encode(value: A): Attempt[BitVector] = {
+      for {
+        valueBits <- codec encode value
+      } yield {
+        for {
+          sizeBits <- sizeCodec encode valueBits.bytes.length
+          transformedBits <- transform encode valueBits
+        } yield {
+          sizeBits ++ transformedBits
+        }
+      }
+    }.flatten
+
+    override def decode(bits: BitVector): Attempt[DecodeResult[A]] = {
+      sizeCodec.decode(bits) map {
+        case DecodeResult(valueSize, remainder) =>
+          transform.decode(remainder) map { case DecodeResult(valueBits, _) =>
+            fixedSizeBytes(valueSize, codec).decode(valueBits)
+          } flatten
+      } flatten
+    }
+  }
+
+  /**
+    * Upper bound checking codec
+    *
+    * @param codec      value codec
+    * @param upperBound upper bound
+    * @tparam T value type
+    * @return bound checking codec
+    */
+  def upperBound[T: Ordering](codec: Codec[T], upperBound: T): Codec[T] = {
+    def boundsCheck(value: T) = {
+      import Ordering.Implicits._
+
+      if (value <= upperBound) {
+        Attempt successful value
+      } else {
+        Attempt failure Err("Out of bounds value")
+      }
+    }
+
+    codec.exmap(boundsCheck, boundsCheck)
+  }
+
+
+  /**
+    * C style boolean (all zeros and then 1-bit)
+    * @param size size in bits
+    * @return c style boolean codec
+    */
+  def cbool(size: Long): Codec[Boolean] = ignore(size - 1).dropLeft(bool(1))
 }

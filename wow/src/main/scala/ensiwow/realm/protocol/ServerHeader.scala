@@ -8,17 +8,17 @@ import scodec.codecs._
   * Represents the header of a packet sent by the server
   *
   * @param opCode      op code of packet
-  * @param payloadSize size of payload (excluding header size)
+  * @param payloadSize size of payload (excluding opcode)
   */
-case class ServerPacketHeader(payloadSize: Int, opCode: OpCodes.Value) {
+case class ServerHeader(payloadSize: Int, opCode: OpCodes.Value) extends PacketHeader {
   require(payloadSize >= 0)
 }
 
-object ServerPacketHeader {
+object ServerHeader {
   val OpCodeSize: Int = 16
 
-  implicit val codec: Codec[ServerPacketHeader] = {
+  implicit val codec: Codec[ServerHeader] = {
     ("payloadSize" | integerOffset(serverPacketSizeCodec, - OpCodeSize / 8)) ::
       ("opCode" | enumerated(uintL(OpCodeSize), OpCodes))
-  }.as[ServerPacketHeader]
+  }.as[ServerHeader]
 }

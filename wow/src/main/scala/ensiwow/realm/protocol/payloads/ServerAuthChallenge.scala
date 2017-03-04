@@ -3,12 +3,12 @@ package ensiwow.realm.protocol.payloads
 import scodec.Codec
 import scodec.codecs._
 import ensiwow.common.codecs._
-import ensiwow.realm.protocol.{OpCodes, Payload}
+import ensiwow.realm.protocol.{OpCodes, Payload, ServerHeader}
 
 /**
   * Server authentication challenge
   */
-case class ServerAuthChallenge(authSeed: Long, firstSeed: BigInt, secondSeed: BigInt) extends Payload {
+case class ServerAuthChallenge(authSeed: Long, firstSeed: BigInt, secondSeed: BigInt) extends Payload[ServerHeader] {
   override def opCode: OpCodes.Value = OpCodes.SAuthChallenge
 }
 
