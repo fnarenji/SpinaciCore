@@ -15,8 +15,10 @@ case class ServerPacketHeader(payloadSize: Int, opCode: OpCodes.Value) {
 }
 
 object ServerPacketHeader {
+  val OpCodeSize: Int = 16
+
   implicit val codec: Codec[ServerPacketHeader] = {
-    ("payloadSize" | serverPacketSize) ::
-      ("opCode" | Codec[OpCodes.Value])
+    ("payloadSize" | integerOffset(serverPacketSizeCodec, - OpCodeSize / 8)) ::
+      ("opCode" | enumerated(uintL(OpCodeSize), OpCodes))
   }.as[ServerPacketHeader]
 }
