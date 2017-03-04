@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.common.network.{EventPacket, OutgoingPacket, Session}
-import ensiwow.realm.protocol.PacketBuilder
+import ensiwow.realm.protocol.PacketSerialization
 import ensiwow.realm.protocol.payloads.ServerAuthChallenge
 
 import scala.language.postfixOps
@@ -18,7 +18,7 @@ class RealmSession extends Actor with ActorLogging {
   {
     val SeedSizeBits = ServerAuthChallenge.SeedSize * 8
 
-    val authChallenge = PacketBuilder.server(
+    val authChallenge = PacketSerialization.server(
       ServerAuthChallenge(
         ThreadLocalRandom.current().nextLong(0xFFFFFFFF1L),
         BigInt(SeedSizeBits, Random),

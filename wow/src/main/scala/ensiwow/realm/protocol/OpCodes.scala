@@ -1,14 +1,9 @@
 package ensiwow.realm.protocol
 
-import scodec.Codec
-import scodec.codecs._
-
 /**
   * Realm protocol OpCodes.
   */
 object OpCodes extends Enumeration {
-  val ClientSize: Int = 32
-
   // Client
   val BootMe = Value(0x001)
   val DatabaseLookup = Value(0x002)
