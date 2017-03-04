@@ -7,7 +7,7 @@ import scodec.codecs._
   * Realm protocol OpCodes.
   */
 object OpCodes extends Enumeration {
-  val OpCodeSize: Int = 16
+  val ClientSize: Int = 32
 
   // Client
   val BootMe = Value(0x001)
@@ -1325,7 +1325,5 @@ object OpCodes extends Enumeration {
   val UmsgUpdateGroupInfo = Value(0x4Fe)
   val MsgMoveSetCollisionHgt = Value(0x518)
   val NumMsgTypes = Value(0x51F)
-
-  implicit val codec: Codec[OpCodes.Value] = enumerated(uintL(OpCodeSize), OpCodes)
 }
 

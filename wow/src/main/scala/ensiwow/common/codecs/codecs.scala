@@ -17,7 +17,7 @@ package object codecs {
   def reverse(codec: Codec[String]): Codec[String] = new ReversedStringCodec(codec)
 
   /**
-    * Codec that stops a string at the first nul occurence or until all is consumed
+    * Codec that stops a string at the first nul occurrence or until all is consumed
     */
   def fixedCString(sizeInBytes: Long): Codec[String] = filtered(ascii, new Codec[BitVector] {
     private val nul = BitVector.lowByte
@@ -70,8 +70,30 @@ package object codecs {
 
   /**
     * Server packet size codec
+    * One-bit boolean prefix determines big endian uint width (0 -> 15, 1 -> 23) and then int is read
     *
     * @return codec for server packet size
     */
-  val serverPacketSize = new ServerPacketSizeCodec
+  val serverPacketSizeCodec: Codec[Int] = {
+    val SmallSize = 15
+    val BigSize = 23
+    val Boundary = math.pow(2, 15).toInt
+
+    def codecProvider(isBig: Boolean): Codec[Int] = uint(if (isBig) {
+      BigSize
+    } else {
+      SmallSize
+    })
+
+    bool(1).consume[Int](codecProvider)(_ >= Boundary)
+  }
+
+  /**
+    * Add integer offset to integer codec
+    *
+    * @param codec  integer codec to offset
+    * @param offset offset
+    * @return integer codec with offset
+    */
+  def integerOffset(codec: Codec[Int], offset: Int): Codec[Int] = codec.xmap[Int](_ + offset, _ - offset)
 }
