@@ -20,7 +20,7 @@ class RealmSession extends Actor with ActorLogging {
 
     val authChallenge = PacketSerialization.server(
       ServerAuthChallenge(
-        ThreadLocalRandom.current().nextLong(0xFFFFFFFF1L),
+        ThreadLocalRandom.current().nextLong(0x7FFFFFFFL),
         BigInt(SeedSizeBits, Random),
         BigInt(SeedSizeBits, Random)))
 
