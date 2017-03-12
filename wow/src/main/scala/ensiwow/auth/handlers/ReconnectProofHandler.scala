@@ -17,16 +17,16 @@ class ReconnectProofHandler extends Actor with ActorLogging {
 
   override def receive: PartialFunction[Any, Unit] = {
     case ReconnectProof(packet, ReconnectChallengeData(login, random)) =>
-      val sharedKey = Account.getSessionKey(login)
+      var event: AuthSessionEvent = EventReconnectProofFailure
 
-      val verified = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sharedKey)
+      Account.getSessionKey(login) map { sessionKey =>
+          val verified = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sessionKey)
 
-      val event = if (verified) {
-        val response = ServerReconnectProof(AuthResults.Success)
+          if (verified) {
+            val response = ServerReconnectProof(AuthResults.Success)
 
-        EventReconnectProofSuccess(response)
-      } else {
-        EventReconnectProofFailure
+            EventReconnectProofSuccess(response)
+          }
       }
 
       sender ! event

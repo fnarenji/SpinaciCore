@@ -25,7 +25,7 @@ object Account {
     sessionKeyByUser.put(userName, sessionKey)
   }
 
-  def getSessionKey(userName: String): BigInt = {
-    sessionKeyByUser(userName)
+  def getSessionKey(userName: String): Option[BigInt] = {
+    sessionKeyByUser.get(userName)
   }
 }
