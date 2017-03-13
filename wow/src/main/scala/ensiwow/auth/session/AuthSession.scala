@@ -5,8 +5,8 @@ import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.protocol.OpCodes
 import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
-import ensiwow.common.network.{Disconnect, EventPacket, OutgoingPacket, Session}
-import ensiwow.utils.{MalformedPacketHeaderException, PacketSerializer}
+import ensiwow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
+import ensiwow.common.network.{Disconnect, EventIncoming, OutgoingPacket, SessionActorCompanion}
 import scodec.Attempt.{Failure, Successful}
 import scodec.{Codec, DecodeResult, Err}
 
@@ -27,7 +27,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   startWith(StateNoData, NoData)
 
   when(StateNoData) {
-    case Event(e@EventPacket(bits), NoData) =>
+    case Event(e@EventIncoming(bits), NoData) =>
       val state = Codec[OpCodes.Value].decode(bits) match {
         case Successful(DecodeResult(OpCodes.LogonChallenge, _)) => StateChallenge
         case Successful(DecodeResult(OpCodes.ReconnectChallenge, _)) => StateReconnectChallenge
@@ -41,7 +41,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateChallenge) {
-    case Event(EventPacket(bits), NoData) =>
+    case Event(EventIncoming(bits), NoData) =>
       log.debug("Received challenge")
       val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.logonChallengeCodec)
       log.debug(packet.toString)
@@ -64,7 +64,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateProof) {
-    case Event(EventPacket(bits), challengeData: ChallengeData) =>
+    case Event(EventIncoming(bits), challengeData: ChallengeData) =>
       log.debug("Received proof")
       val packet = PacketSerializer.deserialize[ClientLogonProof](bits)
       log.debug(packet.toString)
@@ -87,7 +87,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateReconnectChallenge) {
-    case Event(EventPacket(bits), NoData) =>
+    case Event(EventIncoming(bits), NoData) =>
       log.debug("Received reconnect challenge")
       val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.reconnectChallengeCodec)
       log.debug(packet.toString)
@@ -110,7 +110,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateReconnectProof) {
-    case Event(EventPacket(bits), challengeData: ReconnectChallengeData) =>
+    case Event(EventIncoming(bits), challengeData: ReconnectChallengeData) =>
       log.debug("Received reconnect proof")
       val packet = PacketSerializer.deserialize[ClientReconnectProof](bits)
       log.debug(packet.toString)
@@ -129,7 +129,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 
   when(StateRealmlist) {
-    case Event(EventPacket(bits), NoData) =>
+    case Event(EventIncoming(bits), NoData) =>
       val packet = PacketSerializer.deserialize[ClientRealmlistPacket](bits)
       log.debug(s"Received realm list request: $packet")
 
@@ -148,7 +148,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 }
 
-object AuthSession extends Session {
+object AuthSession extends SessionActorCompanion {
   override def props: Props = Props(classOf[AuthSession])
 
   override def PreferredName = "AuthSession"
