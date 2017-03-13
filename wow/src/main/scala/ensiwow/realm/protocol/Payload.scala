@@ -3,8 +3,6 @@ package ensiwow.realm.protocol
 /**
   * Represents a class that is a payload
   */
-trait Payload[THeader <: PacketHeader] {
-  def opCode: OpCodes.Value
-}
+trait Payload[THeader <: PacketHeader]
 
 
