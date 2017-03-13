@@ -26,7 +26,7 @@ class ClientHeaderTest extends FlatSpec with Matchers {
   behavior of "ClientPacketHeader"
 
   private val header = ClientHeader(269, OpCodes.AuthSession)
-  private val bits = hex"1101ED010000".bits
+  private val bits = hex"0111ED010000".bits
 
   it must "serialize as expected" in CodecTestUtils.encode(bits, header)
   it must "deserialize as expected" in CodecTestUtils.decode(bits, header)
