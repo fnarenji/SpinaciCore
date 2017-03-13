@@ -15,17 +15,17 @@ case object Disconnect
 /**
   * Handles an open TCP connection.
   */
-class TCPHandler[T <: Session](companion: T, connection: ActorRef) extends Actor with ActorLogging {
+class TCPHandler[T <: SessionActorCompanion](companion: T, connection: ActorRef) extends Actor with ActorLogging {
   private val session = context.actorOf(companion.props, companion.PreferredName)
 
   def receive: PartialFunction[Any, Unit] = {
     case Received(data: ByteString) =>
-      log.debug(s"Received: $data")
-      session ! EventPacket(data.toByteVector.bits)
+      log.debug(s"Received: ${data.toByteVector.toHex}")
+      session ! EventIncoming(data.toByteVector.bits)
 
     case OutgoingPacket(bits) =>
       val byteString = bits.bytes.toByteString
-      log.debug(s"Sending: $byteString")
+      log.debug(s"Sending: ${bits.toHex}")
       connection ! Write(byteString)
 
     // Flushes pending writes and gracefully closes the connection
@@ -40,7 +40,7 @@ class TCPHandler[T <: Session](companion: T, connection: ActorRef) extends Actor
 }
 
 object TCPHandler {
-  def props[T <: Session](companion: T, connection: ActorRef): Props = Props(new TCPHandler(companion, connection))
+  def props[T <: SessionActorCompanion](companion: T, connection: ActorRef): Props = Props(new TCPHandler(companion, connection))
 
   def PreferredName(inetSocketAddress: InetSocketAddress) =
     s"Handler@${inetSocketAddress.getHostString}:${inetSocketAddress.getPort}"
