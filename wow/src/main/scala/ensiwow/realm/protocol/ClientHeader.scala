@@ -16,11 +16,11 @@ case class ClientHeader(payloadSize: Int, opCode: OpCodes.Value) extends PacketH
 }
 
 object ClientHeader {
-  val OpCodeSize = 32
-  val MaxPayloadSize = 10240 - OpCodeSize / 8
+  val OpCodeSize: Int = 32
+  val MaxPayloadSize: Int = 10240 - OpCodeSize / 8
 
   implicit val codec: Codec[ClientHeader] = {
-    ("payloadSize" | integerOffset(uint16L, - OpCodeSize / 8)) ::
+    ("payloadSize" | integerOffset(uint16, - OpCodeSize / 8)) ::
       ("opCode" | enumerated(uintL(OpCodeSize - 1), OpCodes)) ::
       ignore(1)
   }.as[ClientHeader]
