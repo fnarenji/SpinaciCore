@@ -1,8 +1,11 @@
 package ensiwow.common
 
+import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
+
+import scala.language.postfixOps
 
 /**
   * Codecs specific or practical for packet reading
@@ -12,7 +15,8 @@ package object codecs {
     * Codec that reverses String obtained by another String codec
     *
     * @param codec string codec to be reversed
-    * @return reversing codec */ def reverse(codec: Codec[String]): Codec[String] = new ReversedStringCodec(codec)
+    * @return reversing codec */
+  def reverse(codec: Codec[String]): Codec[String] = new ReversedStringCodec(codec)
 
   /**
     * Codec that stops a string at the first nul occurrence or until all is consumed
@@ -156,8 +160,43 @@ package object codecs {
 
   /**
     * C style boolean (all zeros and then 1-bit)
+    *
     * @param size size in bits
     * @return c style boolean codec
     */
   def cbool(size: Long): Codec[Boolean] = ignore(size - 1).dropLeft(bool(1))
+
+  /**
+    * Not empty codec only read/writes a value if it's present.
+    * Reading works by checking if enough bits are available, thus this codec should most likely only be used for values
+    * at the end.
+    * @param codec value codec to read
+    * @tparam A type of value
+    * @return codec of optional A
+    */
+  def notEmpty[A](codec: Codec[A]): Codec[Option[A]] = new Codec[Option[A]] {
+    override def sizeBound: SizeBound = SizeBound.atLeast(0) | codec.sizeBound
+
+    override def decode(bits: BitVector): Attempt[DecodeResult[Option[A]]] = {
+      if (bits.nonEmpty) {
+        codec.decode(bits) match {
+          case Successful(DecodeResult(value, BitVector.empty)) =>
+            Attempt.successful(DecodeResult(Some(value), BitVector.empty))
+          case f: Failure =>
+            f
+        }
+      } else {
+        Attempt.successful(DecodeResult(None, BitVector.empty))
+      }
+    }
+
+    override def encode(value: Option[A]): Attempt[BitVector] = {
+      value match {
+        case Some(actualValue) =>
+          codec.encode(actualValue)
+        case None =>
+          Attempt.successful(BitVector.empty)
+      }
+    }
+  }
 }
