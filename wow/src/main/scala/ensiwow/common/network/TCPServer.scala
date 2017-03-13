@@ -15,7 +15,7 @@ case object GetAddress
   *
   * @constructor send a Bind command to the TCP manager
   */
-class TCPServer[T <: Session](val companion: T, val address: String, val port: Int) extends Actor with ActorLogging {
+class TCPServer[T <: SessionActorCompanion](val companion: T, val address: String, val port: Int) extends Actor with ActorLogging {
   log.debug("Binding server with socket")
   IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(address, port))
 
@@ -26,7 +26,7 @@ class TCPServer[T <: Session](val companion: T, val address: String, val port: I
       log.debug(s"TCP port opened at: ${localAddress.getHostString}:${localAddress.getPort}")
 
     case Connected(remote, local) =>
-      log.debug(s"Remote connection set from: $local to: $remote")
+      log.debug(s"Remote connection set from $remote to $local")
       val handlerRef = context.actorOf(TCPHandler.props(companion, sender), TCPHandler.PreferredName(remote))
       sender ! Register(handlerRef)
 
@@ -35,7 +35,7 @@ class TCPServer[T <: Session](val companion: T, val address: String, val port: I
 }
 
 object TCPServer {
-  def props[T <: Session](companion: T, address: String, port: Int): Props = Props(classOf[TCPServer[T]],
+  def props[T <: SessionActorCompanion](companion: T, address: String, port: Int): Props = Props(classOf[TCPServer[T]],
     companion,
     address,
     port)
