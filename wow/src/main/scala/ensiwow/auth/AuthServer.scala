@@ -5,9 +5,9 @@ import ensiwow.Application
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
 import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketEntry}
 import ensiwow.auth.session.{AuthSession, EventRealmlist}
+import ensiwow.auth.utils.PacketSerializer
 import ensiwow.common.VersionInfo
 import ensiwow.common.network.TCPServer
-import ensiwow.utils.PacketSerializer
 
 case object GetRealmlist
 

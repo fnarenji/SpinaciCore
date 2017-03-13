@@ -7,5 +7,9 @@ import scodec.bits.BitVector
   */
 trait SessionEvent
 
-case class EventPacket(bits: BitVector) extends SessionEvent
+/**
+  * Incoming packet read from the network
+  * @param bits bits read
+  */
+case class EventIncoming(bits: BitVector) extends SessionEvent
 

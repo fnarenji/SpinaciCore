@@ -1,11 +1,11 @@
-package ensiwow.utils
+package ensiwow.auth.utils
 
 import java.io.IOException
 
 import ensiwow.auth.protocol.{ClientPacket, ServerPacket}
 import scodec.Attempt.{Failure, Successful}
-import scodec.{Codec, DecodeResult, Err}
 import scodec.bits.BitVector
+import scodec.{Codec, DecodeResult, Err}
 
 /**
   * Errors
