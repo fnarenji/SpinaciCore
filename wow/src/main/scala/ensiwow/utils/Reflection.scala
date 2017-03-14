@@ -20,11 +20,11 @@ object Reflection {
     val classpath: List[File] = List(".").map(new File(_))
     val classes = ClassFinder(classpath).getClasses()
     val classMap = ClassFinder.classInfoMap(classes)
-    val apiClasses = ClassFinder.concreteSubclasses(classTag.runtimeClass, classMap)
+    val subclasses = ClassFinder.concreteSubclasses(classTag.runtimeClass, classMap)
 
     val runtimeMirror = scala.reflect.runtime.universe.runtimeMirror(getClass.getClassLoader)
 
-    apiClasses
+    subclasses
       .map(_.name)
       .map(runtimeMirror.staticModule)
       .map(runtimeMirror.reflectModule)
