@@ -11,12 +11,14 @@ import spray.json.RootJsonFormat
 
 import scala.collection.mutable
 
-final case class Account(login: String, password: String)
+final case class Account(login: Account.Username, password: String)
 
 /**
   * Account information
   */
 object Account {
+  type Username = String
+
   private val srp6 = new Srp6Protocol()
 
   // TODO: remove this and replace with database
@@ -69,7 +71,7 @@ object AccountAPI extends API {
           } ~
             path("delete") {
               pathEnd {
-                entity(as[String]) { login =>
+                entity(as[Account.Username]) { login =>
                   // TODO: Delete account
                   // It must exist
                   // Account.deleteAccount(user.username, user.password)
