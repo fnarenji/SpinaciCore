@@ -148,6 +148,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
   }
 }
 
+
 object AuthSession extends SessionActorCompanion {
   override def props: Props = Props(classOf[AuthSession])
 
