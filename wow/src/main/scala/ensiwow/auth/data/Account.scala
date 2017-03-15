@@ -24,7 +24,7 @@ object Account {
   // TODO: remove this and replace with database
   private val sessionKeyByUser: mutable.HashMap[String, BigInt] = new mutable.HashMap[String, BigInt]
 
-  def getSaltAndVerifier(login: String): Srp6Identity = {
+  def getSaltAndVerifier(login: Login): Srp6Identity = {
     // TODO: non hardcoded password
     val password = "t"
 
@@ -32,15 +32,15 @@ object Account {
     srp6.computeSaltAndVerifier(login, password)
   }
 
-  def saveSessionKey(login: String, sessionKey: BigInt): Unit = {
+  def saveSessionKey(login: Login, sessionKey: BigInt): Unit = {
     sessionKeyByUser.put(login, sessionKey)
   }
 
-  def getSessionKey(login: String): Option[BigInt] = {
+  def getSessionKey(login: Login): Option[BigInt] = {
     sessionKeyByUser.get(login)
   }
 
-  def createAccount(login: String, password: String) = {
+  def createAccount(login: Login, password: String) = {
 
   }
 }
