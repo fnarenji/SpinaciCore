@@ -1,9 +1,10 @@
 package ensiwow
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.settings.ServerSettings
+import ensiwow.api.WebServer
 import ensiwow.auth.AuthServer
 import ensiwow.realm.RealmServer
-import ensiwow.api.WebServer
 
 /**
   * Created by sknz on 1/31/17.
@@ -15,7 +16,7 @@ object Application {
     system.actorOf(AuthServer.props, AuthServer.PreferredName)
     system.actorOf(RealmServer.props, RealmServer.PreferredName)
 
-    WebServer.startServer("localhost", 8080)
+    WebServer.startServer("localhost", 8080, ServerSettings(system), system)
     system.terminate()
   }
 
