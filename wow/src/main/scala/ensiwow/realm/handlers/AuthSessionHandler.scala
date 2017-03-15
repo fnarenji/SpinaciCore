@@ -2,7 +2,7 @@ package ensiwow.realm.handlers
 
 import ensiwow.auth.data.Account
 import ensiwow.realm.protocol.payloads.{ClientAuthSession, ServerAuthResponse, ServerAuthResponseSuccess}
-import ensiwow.realm.protocol.{AuthResponses, PayloadHandler, PayloadHandlerCompanion}
+import ensiwow.realm.protocol._
 import ensiwow.realm.session._
 
 case class AuthSession(packet: ClientAuthSession)
@@ -10,7 +10,7 @@ case class AuthSession(packet: ClientAuthSession)
 /**
   * Handles realm auth session packet
   */
-class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
+class AuthSessionHandler extends ConcretePayloadHandler[ClientAuthSession] {
   override def process(payload: ClientAuthSession): Unit = {
     val userName = payload.login
 
@@ -28,4 +28,4 @@ class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
   }
 }
 
-object AuthSessionHandler extends PayloadHandlerCompanion[AuthSessionHandler, ClientAuthSession]
+object AuthSessionHandler extends ConcretePayloadHandlerFactory[AuthSessionHandler, ClientAuthSession]

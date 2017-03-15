@@ -28,6 +28,7 @@ case class EventOutgoing[T <: Payload[ServerHeader]](payload: T)
   (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T]) extends PayloadBearingEvent[T](payload)
 
 case class EventHandlerFailure(err: Err) extends RealmSessionEvent
+case object EventEmptyHandlerFailure extends RealmSessionEvent
 
 case class EventTerminate(delayed: Boolean) extends RealmSessionEvent
 
@@ -73,6 +74,7 @@ class RealmSession extends Actor with ActorLogging {
       } else {
         terminate
       }
+
     case ev@EventTerminateWithPayload(payload) =>
       log.debug(s"Sending $payload")
       val bits = ev.serialize(sessionCipher)
