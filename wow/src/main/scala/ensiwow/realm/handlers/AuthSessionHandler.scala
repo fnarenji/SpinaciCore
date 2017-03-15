@@ -10,7 +10,7 @@ case class AuthSession(packet: ClientAuthSession)
 /**
   * Handles realm auth session packet
   */
-class AuthSessionHandler extends ConcretePayloadHandler[ClientAuthSession] {
+class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
   override def process(payload: ClientAuthSession): Unit = {
     val userName = payload.login
 
@@ -28,4 +28,4 @@ class AuthSessionHandler extends ConcretePayloadHandler[ClientAuthSession] {
   }
 }
 
-object AuthSessionHandler extends ConcretePayloadHandlerFactory[AuthSessionHandler, ClientAuthSession]
+object AuthSessionHandler extends PacketHandlerFactory[AuthSessionHandler, ClientAuthSession]

@@ -57,7 +57,7 @@ class RealmSession extends Actor with ActorLogging {
         val handlerPath = RealmServer.handlerPath(header.opCode)
         val handler = context.actorSelection(handlerPath)
 
-        handler ! EventPayload(payloadBits)
+        handler ! EventPacket(payloadBits)
       } else {
         log.info(s"Got unhandled packet $header/${payloadBits.bytes.length}")
       }
