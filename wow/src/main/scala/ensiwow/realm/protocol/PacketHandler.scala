@@ -9,19 +9,22 @@ import scodec.{Codec, DecodeResult}
 /**
   * Incoming payload bits
   *
-  * @param bits bits of payload
+  * @param payloadBits bits of payload
   */
-case class EventPayload(bits: BitVector)
-
-trait PayloadHandler extends Actor with ActorLogging
+case class EventPacket(payloadBits: BitVector)
 
 /**
-  * Payload handler base class
+  * A packet handler is an actor which handles one type of packet
+  */
+trait PacketHandler extends Actor with ActorLogging
+
+/**
+  * Payload containing packet handler
   *
   * @param codec codec used for payload serialization
   * @tparam A payload type
   */
-abstract class ConcretePayloadHandler[A <: Payload[ClientHeader]](implicit codec: Codec[A]) extends PayloadHandler {
+abstract class PayloadHandler[A <: Payload[ClientHeader]](implicit codec: Codec[A]) extends PacketHandler {
   /**
     * Processes an incoming payload
     *
@@ -30,7 +33,7 @@ abstract class ConcretePayloadHandler[A <: Payload[ClientHeader]](implicit codec
   protected def process(payload: A): Unit
 
   override def receive: Receive = {
-    case EventPayload(bits) =>
+    case EventPacket(bits) =>
       codec.decode(bits) match {
         case Successful(DecodeResult(payload, BitVector.empty)) =>
           process(payload)
@@ -40,14 +43,17 @@ abstract class ConcretePayloadHandler[A <: Payload[ClientHeader]](implicit codec
   }
 }
 
-abstract class EmptyPayloadHandler extends PayloadHandler {
+/**
+  * Payload-less packet handler
+  */
+abstract class PayloadlessPacketHandler extends PacketHandler {
   /**
-    * Processes empty payload
+    * Processes packet without payload
     */
   protected def process: Unit
 
   override def receive: Receive = {
-    case EventPayload(bits) =>
+    case EventPacket(bits) =>
       bits match {
         case BitVector.empty =>
           process

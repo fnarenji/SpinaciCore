@@ -7,7 +7,7 @@ object PayloadHandlerHelper {
   /**
     * List of payload handlers companions
     */
-  private val payloadHandlersFactories = Reflection.objectsOf[PayloadHandlerFactory[_]]
+  private val payloadHandlersFactories = Reflection.objectsOf[PacketHandlerFactory[_]]
 
   /**
     * List of opcodes for which a handler exists
