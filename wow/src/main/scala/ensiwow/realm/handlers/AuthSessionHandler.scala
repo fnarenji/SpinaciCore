@@ -28,4 +28,4 @@ class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
   }
 }
 
-object AuthSessionHandler extends PacketHandlerFactory[AuthSessionHandler, ClientAuthSession]
+object AuthSessionHandler extends PayloadHandlerFactory[AuthSessionHandler, ClientAuthSession]
