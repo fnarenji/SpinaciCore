@@ -7,6 +7,8 @@ scalaVersion := "2.12.1"
 scalacOptions += "-feature"
 scalacOptions += "-deprecation"
 
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.16"
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.4.16"
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.16"
