@@ -1,9 +1,14 @@
 package ensiwow.realm.protocol
 
+import scodec._
+import scodec.codecs._
+
 /**
   * Realm protocol OpCodes.
   */
 object OpCodes extends Enumeration {
+  implicit val codec: Codec[OpCodes.Value] = enumerated(uint8L, OpCodes)
+
   // Client
   val BootMe = Value(0x001)
   val DatabaseLookup = Value(0x002)
