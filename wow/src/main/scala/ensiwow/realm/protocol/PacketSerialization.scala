@@ -1,6 +1,6 @@
 package ensiwow.realm.protocol
 
-import ensiwow.auth.utils.PacketSerializationException
+import ensiwow.auth.utils.{MalformedPacketHeaderException, PacketSerializationException}
 import ensiwow.realm.crypto.SessionCipher
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
@@ -20,23 +20,34 @@ object PacketSerialization {
     * @tparam T payload type
     * @return bits of packet containing (encrypted) header and serialized payload
     */
-  def outgoing[T <: Payload[ServerHeader]](payload: T)
-                                          (cipher: Option[SessionCipher])
-                                          (implicit payloadCodec: Codec[T],
-                                           opCodeProvider: OpCodeProvider[T]): BitVector = {
+  def outgoing[T <: Payload[ServerHeader]](payload: T)(cipher: Option[SessionCipher])(
+    implicit payloadCodec: Codec[T],
+    opCodeProvider: OpCodeProvider[T]): BitVector = {
     payloadCodec.encode(payload) match {
       case Successful(payloadBits) =>
-        val header = ServerHeader(payloadBits.bytes.intSize.get, opCodeProvider.opCode)
+        outgoingRaw(payloadBits, opCodeProvider.opCode)(cipher)
+      case Failure(err) => throw PacketSerializationException(err)
+    }
+  }
 
-        Codec[ServerHeader].encode(header) match {
-          case Successful(headerBits) =>
-            val encryptedHeader = headerBits.toByteArray
+  /**
+    * Serializes an outgoing packet
+    *
+    * @param payloadBits payload bits
+    * @param opCode      opcode of payload
+    * @param cipher      optional encryption cipher to be used
+    * @return bits of packet containing (encrypted) header and serialized payload
+    */
+  def outgoingRaw(payloadBits: BitVector, opCode: OpCodes.Value)(cipher: Option[SessionCipher]): BitVector = {
+    val header = ServerHeader(payloadBits.bytes.intSize.get, opCode)
 
-            cipher foreach { cipher => cipher.encrypt(encryptedHeader) }
+    Codec[ServerHeader].encode(header) match {
+      case Successful(headerBits) =>
+        val encryptedHeader = headerBits.toByteArray
 
-            BitVector(encryptedHeader) ++ payloadBits
-          case Failure(err) => throw PacketSerializationException(err)
-        }
+        cipher foreach { cipher => cipher.encrypt(encryptedHeader) }
+
+        BitVector(encryptedHeader) ++ payloadBits
       case Failure(err) => throw PacketSerializationException(err)
     }
   }
@@ -46,22 +57,25 @@ object PacketSerialization {
     *
     * @param bits   bits of incoming packet
     * @param cipher optional encryption cipher to be used
-    * @return tuple containing deserialized header and payload bits
+    * @return tuple containing deserialized header and unprocessed bits
     */
   def incomingHeader(bits: BitVector)(cipher: Option[SessionCipher]): (ClientHeader, BitVector) = {
     val headerLength = Codec[ClientHeader].sizeBound.exact.get
 
-    val headerBytes = bits.take(headerLength).toByteArray
+    val headerBits = bits.take(headerLength)
+    val headerBytesArray = headerBits.toByteArray
 
-    cipher foreach (cipher => cipher.decrypt(headerBytes))
+    cipher foreach (cipher => cipher.decrypt(headerBytesArray))
 
-    val decryptedBits = BitVector(headerBytes)
+    val decryptedBits = BitVector(headerBytesArray)
 
     Codec[ClientHeader].decode(decryptedBits) match {
       case Successful(DecodeResult(header, BitVector.empty)) =>
         val payloadBits = bits.drop(headerLength)
 
         (header, payloadBits)
+      case Failure(cause) =>
+        throw MalformedPacketHeaderException(cause)
     }
   }
 }

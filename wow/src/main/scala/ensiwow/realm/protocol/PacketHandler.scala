@@ -1,7 +1,7 @@
 package ensiwow.realm.protocol
 
 import akka.actor.{Actor, ActorLogging}
-import ensiwow.realm.session.{EventEmptyHandlerFailure, EventHandlerFailure}
+import ensiwow.realm.session.NetworkWorker
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult}
@@ -38,7 +38,7 @@ abstract class PayloadHandler[A <: Payload[ClientHeader]](implicit codec: Codec[
         case Successful(DecodeResult(payload, BitVector.empty)) =>
           process(payload)
         case Failure(err) =>
-          sender ! EventHandlerFailure(err)
+          sender ! NetworkWorker.EventHandlerFailure(err)
       }
   }
 }
@@ -54,12 +54,9 @@ abstract class PayloadlessPacketHandler extends PacketHandler {
 
   override def receive: Receive = {
     case EventPacket(bits) =>
-      bits match {
-        case BitVector.empty =>
-          process
-        case _ =>
-          sender ! EventEmptyHandlerFailure
-      }
+      log.debug(s"processing payloadless packet (payload bits: $bits)")
+
+      process
   }
 }
 
