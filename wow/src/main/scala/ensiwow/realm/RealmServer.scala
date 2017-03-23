@@ -5,7 +5,7 @@ import ensiwow.Application
 import ensiwow.common.VersionInfo
 import ensiwow.common.network.TCPServer
 import ensiwow.realm.protocol.{OpCodes, PayloadHandlerHelper}
-import ensiwow.realm.session.RealmSession
+import ensiwow.realm.session.NetworkWorker
 
 /**
   * RealmServer is the base actor for all services provided by the realm server.
@@ -17,7 +17,7 @@ class RealmServer extends Actor with ActorLogging {
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
   PayloadHandlerHelper.spawnActors(context)
-  context.actorOf(TCPServer.props(RealmSession, address, port), TCPServer.PreferredName)
+  context.actorOf(TCPServer.props(NetworkWorker, address, port), TCPServer.PreferredName)
 
   override def receive: Receive = PartialFunction.empty
 }

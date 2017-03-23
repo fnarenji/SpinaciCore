@@ -6,7 +6,7 @@ import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.protocol.OpCodes
 import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
 import ensiwow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
-import ensiwow.common.network.{Disconnect, EventIncoming, OutgoingPacket, SessionActorCompanion}
+import ensiwow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
 import scodec.Attempt.{Failure, Successful}
 import scodec.{Codec, DecodeResult, Err}
 
@@ -52,14 +52,14 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       log.debug(s"Sending successful challenge $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
 
       goto(StateProof) using challengeData
     case Event(EventChallengeFailure(packet), NoData) =>
       log.debug(s"Sending failed challenge $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
       goto(StateFailed)
   }
 
@@ -76,13 +76,13 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       val bits = PacketSerializer.serialize(packet)
 
       // TODO: shared key should be saved to database
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
       goto(StateRealmlist) using NoData
     case Event(EventProofFailure(packet), _: ChallengeData) =>
       log.debug(s"Sending failed proof $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
       goto(StateFailed)
   }
 
@@ -98,14 +98,14 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       log.debug(s"Sending successful reconnect challenge $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
 
       goto(StateReconnectProof) using challengeData
     case Event(EventChallengeFailure(packet), NoData) =>
       log.debug(s"Sending failed reconnect challenge $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
       goto(StateFailed)
   }
 
@@ -121,7 +121,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       log.debug(s"Sending successful reconnect proof $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
       goto(StateRealmlist) using NoData
     case Event(EventReconnectProofFailure, _: ReconnectChallengeData) =>
       log.debug(s"Failed reconnect proof, disconnecting")
@@ -136,14 +136,14 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       authServer ! GetRealmlist
       stay using NoData
     case Event(EventRealmlist(bits), NoData) =>
-      context.parent ! OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(bits)
       stay using NoData
   }
 
   when(StateFailed, stateTimeout = 5 second) {
     case Event(StateTimeout, _) =>
       log.debug("Failed state expired, disconnecting")
-      context.parent ! Disconnect
+      context.parent ! TCPHandler.Disconnect
       stop
   }
 }

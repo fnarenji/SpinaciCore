@@ -18,12 +18,12 @@ class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
       case Some(sessionKey) =>
         val response = ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
 
-        sender ! EventAuthenticated(sessionKey)
-        sender ! EventOutgoing(response)
+        sender ! NetworkWorker.EventAuthenticated(sessionKey)
+        sender ! NetworkWorker.EventOutgoing(response)
       case None =>
         val response = ServerAuthResponse(AuthResponses.Failed, None)
 
-        sender ! EventTerminateWithPayload(response)
+        sender ! NetworkWorker.EventTerminateWithPayload(response)
     }
   }
 }

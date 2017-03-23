@@ -48,6 +48,7 @@ case class ServerAuthResponse(response: AuthResponses.Value,
   success match {
     case Some(success) =>
       require(response == AuthResponses.WaitQueue == success.queue.nonEmpty)
+    case None =>
   }
 }
 
