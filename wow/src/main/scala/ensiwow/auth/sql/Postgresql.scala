@@ -30,7 +30,7 @@ class Postgresql {
 
   def createUsers() = {
     //sql"DROP TABLE users".execute.apply()
-    sql"create table users (login varchar(64), verifier numeric(72,0), salt numeric(72,0), sessionkey numeric(97,0) )".execute.apply()
+    sql"create table users (login varchar(64), verifier numeric(77,0), salt numeric(77,0), sessionkey numeric(97,0) )".execute.apply()
   }
 
   def print(tableName : String) = {

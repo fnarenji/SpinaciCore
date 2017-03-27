@@ -39,7 +39,7 @@ object Account {
   def createAccount(login : String, password: String) = {
 
     val Srp6Identity(salt, verifier) = srp6.computeSaltAndVerifier(login, password)
-
+    System.out.println("s: "+ salt +" ,  v: "+verifier);
     using(ConnectionPool.borrow()) { conn =>
       sql"insert into users (login,verifier,salt,sessionkey) VALUES ($login,$salt,$verifier,null)".update.apply()
     }
