@@ -44,7 +44,12 @@ class NetworkWorker extends Actor with ActorLogging {
       context.parent ! TCPHandler.OutgoingPacket(bits)
 
     case NetworkWorker.EventOutgoingRaw(payloadBits, opCode) =>
-      val bits = PacketSerialization.outgoingRaw(payloadBits, opCode)(sessionCipher)
+      val bits = PacketSerialization.outgoing(payloadBits, opCode)(sessionCipher)
+
+      context.parent ! TCPHandler.OutgoingPacket(bits)
+
+    case NetworkWorker.EventOutgoingSplit(headerBits, payloadBits) =>
+      val bits = PacketSerialization.outgoing(headerBits, payloadBits)(sessionCipher)
 
       context.parent ! TCPHandler.OutgoingPacket(bits)
 
@@ -73,9 +78,9 @@ class NetworkWorker extends Actor with ActorLogging {
   }
 
   private def processBufferedBits(): Unit = {
-    log.debug(s"Have ${unprocessedBits.bytes.size} bytes waiting to be processed")
+//    log.debug(s"Have ${unprocessedBits.bytes.size} bytes waiting to be processed")
     if (currHeader.isEmpty && unprocessedBits.sizeGreaterThanOrEqual(Codec[ClientHeader].sizeBound.exact.get)) {
-      log.debug("No header, parsing next one")
+//      log.debug("No header, parsing next one")
       val (header, remaining) = PacketSerialization.incomingHeader(unprocessedBits)(sessionCipher)
       currHeader = Some(header)
       unprocessedBits = remaining
@@ -84,29 +89,29 @@ class NetworkWorker extends Actor with ActorLogging {
     currHeader match {
       case Some(header) =>
         if (unprocessedBits.bytes.size >= header.payloadSize) {
-          log.debug("Has header, no payload, parsing payload")
+//          log.debug("Has header, no payload, parsing payload")
 
           val payloadBits = unprocessedBits.take(header.payloadSize * 8L)
           unprocessedBits = unprocessedBits.drop(header.payloadSize * 8L)
           currHeader = None
 
           if (PayloadHandlerHelper.isHandled(header.opCode)) {
-            log.debug(s"Got packet $header/${payloadBits.bytes.length}")
+//            log.debug(s"Got packet $header/${payloadBits.bytes.length}")
 
             val handlerPath = RealmServer.handlerPath(header.opCode)
             val handler = context.actorSelection(handlerPath)
 
-            handler ! EventPacket(payloadBits)
+            handler ! EventPacket(header, payloadBits)
           } else {
             log.info(s"Got unhandled packet $header/${payloadBits.bytes.length}")
           }
 
           processBufferedBits()
         } else {
-          log.debug("Has header, no payload, not enough data")
+//          log.debug("Has header, no payload, not enough data")
         }
       case None =>
-        log.debug("No header, not enough data for next one")
+//        log.debug("No header, not enough data for next one")
     }
   }
 
@@ -138,17 +143,21 @@ object NetworkWorker extends SessionActorCompanion {
 
   sealed trait RealmSessionEvent
 
-  sealed class PayloadBearingEvent[T <: Payload[ServerHeader]](payload: T)
+  sealed class PayloadBearingEvent[T <: Payload with ServerSide](payload: T)
     (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T])
     extends RealmSessionEvent {
-    def serialize(sessionCipher: Option[SessionCipher]): BitVector =
+    def serialize(sessionCipher: Option[SessionCipher]): BitVector = {
       PacketSerialization.outgoing(payload)(sessionCipher)(implicitly, implicitly)
+    }
   }
 
-  case class EventOutgoing[T <: Payload[ServerHeader]](payload: T)
-    (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T]) extends PayloadBearingEvent[T](payload)
+  case class EventOutgoing[T <: Payload with ServerSide](payload: T)
+    (implicit opCodeProvider: OpCodeProvider[T], codec: Codec[T])
+    extends PayloadBearingEvent[T](payload)
 
   case class EventOutgoingRaw(bits: BitVector, opCode: OpCodes.Value) extends RealmSessionEvent
+
+  case class EventOutgoingSplit(headerBits: BitVector, payloadBits: BitVector) extends RealmSessionEvent
 
   case class EventHandlerFailure(err: Err) extends RealmSessionEvent
 
@@ -156,8 +165,9 @@ object NetworkWorker extends SessionActorCompanion {
 
   case class EventTerminate(delayed: Boolean) extends RealmSessionEvent
 
-  case class EventTerminateWithPayload[T <: Payload[ServerHeader]](payload: T)
+  case class EventTerminateWithPayload[T <: Payload with ServerSide](payload: T)
     (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T]) extends PayloadBearingEvent[T](payload)
 
   case class EventAuthenticated(sessionKey: BigInt) extends RealmSessionEvent
+
 }

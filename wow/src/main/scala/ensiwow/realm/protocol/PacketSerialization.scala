@@ -13,6 +13,47 @@ object PacketSerialization {
   /**
     * Serializes an outgoing packet
     *
+    * @param payload      payload to serialize
+    * @param payloadCodec codec used to serialize payload
+    * @param opCode       payload opcode
+    * @tparam T payload type
+    * @return (header, payload) bits
+    */
+  def outgoingSplit[T <: Payload with ServerSide](payload: T, opCode: OpCodes.Value)
+    (implicit payloadCodec: Codec[T]): (BitVector, BitVector) = {
+
+    payloadCodec.encode(payload) match {
+      case Successful(payloadBits) =>
+        val header = ServerHeader(payloadBits.bytes.intSize.get, opCode)
+
+        Codec[ServerHeader].encode(header) match {
+          case Successful(headerBits) =>
+            (headerBits, payloadBits)
+          case Failure(err) => throw PacketSerializationException(err)
+        }
+      case Failure(err) => throw PacketSerializationException(err)
+    }
+  }
+
+  /**
+    * Constructs outgoing packet
+    *
+    * @param headerBits  header bits
+    * @param payloadBits payload bits
+    * @param cipher      optional cipher to apply
+    * @return packet bits
+    */
+  def outgoing(headerBits: BitVector, payloadBits: BitVector)(cipher: Option[SessionCipher]): BitVector = {
+    val encryptedHeader = headerBits.toByteArray
+
+    cipher foreach { cipher => cipher.encrypt(encryptedHeader) }
+
+    BitVector(encryptedHeader) ++ payloadBits
+  }
+
+  /**
+    * Serializes an outgoing packet
+    *
     * @param payload        payload to serialize
     * @param cipher         optional encryption cipher to be used
     * @param payloadCodec   codec used to serialize payload
@@ -20,12 +61,12 @@ object PacketSerialization {
     * @tparam T payload type
     * @return bits of packet containing (encrypted) header and serialized payload
     */
-  def outgoing[T <: Payload[ServerHeader]](payload: T)(cipher: Option[SessionCipher])(
+  def outgoing[T <: Payload with ServerSide](payload: T)(cipher: Option[SessionCipher])(
     implicit payloadCodec: Codec[T],
     opCodeProvider: OpCodeProvider[T]): BitVector = {
     payloadCodec.encode(payload) match {
       case Successful(payloadBits) =>
-        outgoingRaw(payloadBits, opCodeProvider.opCode)(cipher)
+        outgoing(payloadBits, opCodeProvider.opCode)(cipher)
       case Failure(err) => throw PacketSerializationException(err)
     }
   }
@@ -38,16 +79,12 @@ object PacketSerialization {
     * @param cipher      optional encryption cipher to be used
     * @return bits of packet containing (encrypted) header and serialized payload
     */
-  def outgoingRaw(payloadBits: BitVector, opCode: OpCodes.Value)(cipher: Option[SessionCipher]): BitVector = {
+  def outgoing(payloadBits: BitVector, opCode: OpCodes.Value)(cipher: Option[SessionCipher]): BitVector = {
     val header = ServerHeader(payloadBits.bytes.intSize.get, opCode)
 
     Codec[ServerHeader].encode(header) match {
       case Successful(headerBits) =>
-        val encryptedHeader = headerBits.toByteArray
-
-        cipher foreach { cipher => cipher.encrypt(encryptedHeader) }
-
-        BitVector(encryptedHeader) ++ payloadBits
+        outgoing(headerBits, payloadBits)(cipher)
       case Failure(err) => throw PacketSerializationException(err)
     }
   }

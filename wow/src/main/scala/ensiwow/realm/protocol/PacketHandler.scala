@@ -11,7 +11,7 @@ import scodec.{Codec, DecodeResult}
   *
   * @param payloadBits bits of payload
   */
-case class EventPacket(payloadBits: BitVector)
+case class EventPacket(header: ClientHeader, payloadBits: BitVector)
 
 /**
   * A packet handler is an actor which handles one type of packet
@@ -24,7 +24,11 @@ trait PacketHandler extends Actor with ActorLogging
   * @param codec codec used for payload serialization
   * @tparam A payload type
   */
-abstract class PayloadHandler[A <: Payload[ClientHeader]](implicit codec: Codec[A]) extends PacketHandler {
+abstract class PayloadHandler[A <: Payload with ClientSide](implicit codec: Codec[A]) extends PacketHandler {
+  private var _currentOpCode: OpCodes.Value = _
+
+  protected def currentOpCode: OpCodes.Value = _currentOpCode
+
   /**
     * Processes an incoming payload
     *
@@ -33,9 +37,11 @@ abstract class PayloadHandler[A <: Payload[ClientHeader]](implicit codec: Codec[
   protected def process(payload: A): Unit
 
   override def receive: Receive = {
-    case EventPacket(bits) =>
+    case EventPacket(header, bits) =>
       codec.decode(bits) match {
         case Successful(DecodeResult(payload, BitVector.empty)) =>
+          _currentOpCode = header.opCode
+
           process(payload)
         case Failure(err) =>
           sender ! NetworkWorker.EventHandlerFailure(err)
@@ -47,14 +53,20 @@ abstract class PayloadHandler[A <: Payload[ClientHeader]](implicit codec: Codec[
   * Payload-less packet handler
   */
 abstract class PayloadlessPacketHandler extends PacketHandler {
+  private var _currentOpCode: OpCodes.Value = _
+
+  protected def currentOpCode: OpCodes.Value = _currentOpCode
+
   /**
     * Processes packet without payload
     */
-  protected def process: Unit
+  protected def process(): Unit
 
   override def receive: Receive = {
-    case EventPacket(bits) =>
+    case EventPacket(header, bits) =>
       log.debug(s"processing payloadless packet (payload bits: $bits)")
+
+      _currentOpCode = header.opCode
 
       process
   }

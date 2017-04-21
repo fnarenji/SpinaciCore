@@ -1,7 +1,7 @@
 package ensiwow.realm.protocol.payloads
 
 import ensiwow.common.codecs._
-import ensiwow.realm.protocol.{ClientHeader, OpCodeProvider, OpCodes, Payload}
+import ensiwow.realm.protocol._
 import scodec.Codec
 import scodec.bits.ByteVector
 import scodec.codecs._
@@ -20,7 +20,7 @@ object AddonInfo {
     ("name" | cstring) ::
       ("enabled" | cbool(8)) ::
       ("crc" | uint32L) ::
-      ignore(32) // un1k
+      ignore(32) // unk1
   }.as[AddonInfo]
 }
 
@@ -39,7 +39,7 @@ case class ClientAuthSession(build: Long,
                              shaDigest: ByteVector,
                              // Below that, everything is zlib deflated
                              addons: Vector[AddonInfo],
-                             currentTime: Long) extends Payload[ClientHeader]
+                             currentTime: Long) extends Payload with ClientSide
 
 object ClientAuthSession {
   val AddonInfoMaxSize = 0xFFFFF

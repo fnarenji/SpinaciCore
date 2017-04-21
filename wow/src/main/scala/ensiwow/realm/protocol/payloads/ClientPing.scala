@@ -9,7 +9,7 @@ import scala.language.postfixOps
 /**
   * Created by yanncolina on 17/03/17.
   */
-case class ClientPing(ping: Long, latency: Long) extends Payload[ClientHeader]
+case class ClientPing(ping: Long, latency: Long) extends Payload with ClientSide
 
 object ClientPing {
   implicit val opCodeProvider: OpCodeProvider[ClientPing] = OpCodes.Ping
@@ -20,7 +20,7 @@ object ClientPing {
   }.as[ClientPing]
 }
 
-case class ServerPong(ping: Long) extends Payload[ServerHeader]
+case class ServerPong(ping: Long) extends Payload with ServerSide
 
 object ServerPong {
   implicit val opCodeProvider: OpCodeProvider[ServerPong] = OpCodes.SPong

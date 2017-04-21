@@ -1,7 +1,8 @@
 package ensiwow.common
 
+import ensiwow.realm.protocol.objectupdates.UpdateFlags
 import scodec.Attempt.{Failure, Successful}
-import scodec.bits.BitVector
+import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 
@@ -107,9 +108,10 @@ package object codecs {
     * @tparam A value type
     * @return byte size prefixed codec
     */
-  def sizePrefixedTransform[A](sizeCodec: Codec[Long],
-                               codec: Codec[A],
-                               transform: Codec[BitVector]): Codec[A] = new Codec[A] {
+  def sizePrefixedTransform[A](
+    sizeCodec: Codec[Long],
+    codec: Codec[A],
+    transform: Codec[BitVector]): Codec[A] = new Codec[A] {
     override def sizeBound: SizeBound = codec.sizeBound + sizeCodec.sizeBound
 
     override def encode(value: A): Attempt[BitVector] = {
@@ -170,6 +172,7 @@ package object codecs {
     * Not empty codec only read/writes a value if it's present.
     * Reading works by checking if enough bits are available, thus this codec should most likely only be used for values
     * at the end.
+    *
     * @param codec value codec to read
     * @tparam A type of value
     * @return codec of optional A
@@ -199,4 +202,153 @@ package object codecs {
       }
     }
   }
+
+  /**
+    * Narrows a Long codec to an Int.
+    *
+    * @param codec long codec
+    * @return narrowed codec, will fail if value can't be narrowed
+    */
+  def long2Int(codec: Codec[Long]): Codec[Int] = {
+    codec.narrow(l => {
+      if (l.isValidInt) {
+        Attempt.successful(l.toInt)
+      } else {
+        Attempt.failure(Err("Long value did not belong to Int range"))
+      }
+    }, i => i.toLong)
+  }
+
+  /**
+    * Fixes a value, not written nor read to stream
+    *
+    * @param value value to fix
+    * @tparam T type of value
+    * @return fixed codec
+    */
+  def fixed[T](value: T): Codec[T] = new Codec[T] {
+    override def decode(bits: BitVector): Attempt[DecodeResult[T]] = Attempt.Successful(DecodeResult(value, bits))
+
+    override def encode(value: T): Attempt[BitVector] = Attempt.Successful(BitVector.empty)
+
+    override def sizeBound: SizeBound = SizeBound.exact(0)
+  }
+
+  /**
+    * Encode a set of flags as a fixed length bitmask
+    * @param e enum object
+    * @param codec codec for bitmask
+    * @tparam T enumeration type
+    * @tparam I integer type for bitmask
+    * @return bitmask codec
+    */
+  def fixedBitmask[T <: Enumeration, I](e: T, codec: Codec[I])
+    (implicit numeric: Integral[I]): Codec[e.ValueSet] = new Codec[e.ValueSet] {
+
+    import numeric._
+
+    private type ValueSet = e.ValueSet
+    private type Value = e.Value
+    private val ValueSet = e.ValueSet
+
+    assert(UpdateFlags.values.max.id <= math.pow(2, codec.sizeBound.exact.get - 1).toInt)
+
+    override def decode(bits: BitVector): Attempt[DecodeResult[ValueSet]] = {
+      codec.decode(bits) match {
+        case Successful(DecodeResult(mask, rem)) =>
+          val builder = ValueSet.newBuilder
+
+          for (elem <- e.values) {
+            if ((elem.id & mask.toInt()) > 0) {
+              builder += elem
+            }
+          }
+
+          val result = builder.result()
+
+          Attempt.Successful(DecodeResult(result, rem))
+
+        case f: Failure => f
+      }
+    }
+
+    override def encode(valueSet: ValueSet): Attempt[BitVector] = {
+      var mask = 0
+
+      for (elem <- valueSet) {
+        mask = mask | elem.id
+      }
+
+      codec.encode(numeric.fromInt(mask))
+    }
+
+    override def sizeBound: SizeBound = codec.sizeBound
+  }
+
+  /**
+    * Treats an Option[T] as if it was required
+    * @param codec codec for T
+    * @tparam T type of optional
+    * @return Option[T] codec that is not optional
+    */
+  def requiredOptional[T](codec: Codec[T]): Codec[Option[T]] = {
+    codec.exmap(v => Attempt.Successful(Some(v)), o => o match {
+      case Some(v) =>
+        Attempt.Successful(v)
+      case None =>
+        Attempt.Failure(Err("No value"))
+    })
+  }
+
+  /**
+    * Prefixes the output of the codec by a bitmask indicating which bytes are non null, and zero packs null bytes
+    * @param size bitmask size
+    * @param codec codec to filter
+    * @tparam T type of codec
+    * @return zero packing codec for type T
+    */
+  def zeroPacked[T](size: Int, codec: Codec[T]): Codec[T] = filtered(codec, new Codec[BitVector] {
+    override def decode(bits: BitVector): Attempt[DecodeResult[BitVector]] = {
+      bits.acquireThen(size)(x => Attempt.failure(Err(x)), maskBits => {
+        val reversedMask = maskBits.reverseBitOrder
+
+        var packedBits = bits.drop(size)
+        var unpackedBits = BitVector.low(size * 8)
+
+        for (i <- 0 until size) {
+          if (reversedMask(i)) {
+            packedBits.consumeThen(8)(x => Attempt.failure(Err(x)), { case (unpackedByte, rem) =>
+              packedBits = rem
+              unpackedBits = unpackedBits.patch(i * 8, unpackedByte)
+            })
+          }
+        }
+
+        Attempt.Successful(DecodeResult(unpackedBits, packedBits))
+      })
+    }
+
+    override def encode(value: BitVector): Attempt[BitVector] = {
+      val bytes = value.toByteArray
+
+      assert(bytes.length == size)
+      val nonZeroByteIndices = bytes.zipWithIndex.filter { case (b, _) => b != 0.toByte }.map(_._2)
+
+      var mask = BitVector.low(size)
+      for (elem <- nonZeroByteIndices) {
+        mask = mask.set(elem)
+      }
+      mask = mask.reverseBitOrder
+
+      var packedData = mask.bytes
+
+      for (i <- nonZeroByteIndices) {
+        packedData = packedData ++ ByteVector(bytes(i))
+      }
+
+      Attempt.successful(packedData.bits)
+    }
+
+    override def sizeBound: SizeBound = SizeBound.bounded(size, (size + 1) * 8)
+  })
 }

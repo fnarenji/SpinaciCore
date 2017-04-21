@@ -1,7 +1,9 @@
 package ensiwow.realm.protocol
 
 import ensiwow.common.codecs.CodecTestUtils
-import ensiwow.realm.protocol.payloads.{AddonInfo, ClientAuthSession, ServerAuthChallenge}
+import ensiwow.realm.entities.{EntityType, Guid, GuidType, Position}
+import ensiwow.realm.protocol.objectupdates.{UpdateFlags, UpdateType}
+import ensiwow.realm.protocol.payloads._
 import org.scalatest.{FlatSpec, Matchers}
 import scodec.Codec
 import scodec.bits._
@@ -9,12 +11,14 @@ import scodec.bits._
 /**
   * Server packet serialization/deserialization test, without encryption
   */
-sealed class PacketTest[TPayload <: Payload[THeader], THeader <: PacketHeader](headerBytes: ByteVector,
-                                                                               referenceHeader: THeader,
-                                                                               payloadBytes: ByteVector,
-                                                                               referencePayload: TPayload)
-                                                                              (implicit payloadCodec: Codec[TPayload],
-                                                                               headerCodec: Codec[THeader])
+sealed class PacketTest[TPayload <: Payload, THeader <: PacketHeader](
+  headerBytes: ByteVector,
+  referenceHeader: THeader,
+  payloadBytes: ByteVector,
+  referencePayload: TPayload)
+  (
+    implicit payloadCodec: Codec[TPayload],
+    headerCodec: Codec[THeader])
   extends FlatSpec with Matchers {
   behavior of referencePayload.getClass.getSimpleName
 
@@ -25,12 +29,14 @@ sealed class PacketTest[TPayload <: Payload[THeader], THeader <: PacketHeader](h
   it must "serialize payload as expected" in CodecTestUtils.encode(payloadBytes.bits, referencePayload)
 }
 
-class ServerPacketTest[TPayload <: Payload[ServerHeader]](headerBytes: ByteVector,
-                                                          referenceHeader: ServerHeader,
-                                                          payloadBytes: ByteVector,
-                                                          referencePayload: TPayload)
-                                                         (implicit payloadCodec: Codec[TPayload],
-                                                          opCodeProvider: OpCodeProvider[TPayload])
+class ServerPacketTest[TPayload <: Payload with ServerSide](
+  headerBytes: ByteVector,
+  referenceHeader: ServerHeader,
+  payloadBytes: ByteVector,
+  referencePayload: TPayload)
+  (
+    implicit payloadCodec: Codec[TPayload],
+    opCodeProvider: OpCodeProvider[TPayload])
   extends PacketTest(headerBytes, referenceHeader, payloadBytes, referencePayload)(payloadCodec, Codec[ServerHeader]) {
   it must "serialize as expected" in {
     PacketSerialization.outgoing(referencePayload)(None) shouldEqual (headerBytes ++ payloadBytes).bits
@@ -87,5 +93,30 @@ class ClientAuthSessionTest extends PacketTest(
       AddonInfo("Blizzard_TrainerUI", enabled = true, 1276933997)
     ),
     1262785851
+  )
+)
+
+class ServerUpdateObjectTest extends PacketTest(
+  hex"02C3A900",
+  ServerHeader(707, OpCodes.SUpdateObject),
+  hex"0100000003010104610000000000000055A6030005A50BC6159FFAC273B4A542E17F293F00000000000020400000E04000009040711C9740000020400000E04000009040E00F4940C3F548402A150080119500C0D8DF83F5010800004A06000406000000000000000000000000000000008202002A000C0F00FC000C0000000000000000000000000000000000000000000000000000000000000000B86DDBB66DDB00000000000000000000000000000000000000000000000000000000000000000000000000000000000020E200100000000000000000000000000000000200FE0000000040000000000080000000003F00000001000000190000000000803F01040003370000006400000037000000E803000064000000E803000001000000010000000800000000080000400600004006000040060000022BC73E0000C03F3100000031000000E32B7E40F2159F40E32BFE3FF2151F40000000000000803F00000000150000001700000015000000140000001400000030000000190000001A0000000E00000066662640333393400000803F060507010000000131000000300000002F0000002C08000087C30000337100000200000000000040060000000000004004000000000000400A000000000000400C0000000000004008000000000000400E0000000000004090010000260000000500050027000000050005005F00000005000500620000002C012C017600000005000500A200000001000500AD00000001000500B000000001000500B700000005000500FD000000050005009E010000010001009F01000001000100F20200000500050009030000010005000A030000010005000200000063FF9F41D36F1D41D36F1D41D36F1D41000000202C0100000000803F0000803F0000803F0000803F0000803F0000803F0000803FFFFFFFFF5000000015000000160000001700000018000000190000001A000000",
+  ServerUpdateObject(
+    Vector(
+      ServerUpdateBlock(
+        UpdateType.CreateObject2,
+        Guid(1, GuidType.Player),
+        EntityType.Player,
+        MovementInfo(
+          UpdateFlags.Living + UpdateFlags.Self + UpdateFlags.StationaryPosition,
+          0,
+          0,
+          239189,
+          Position(None, -8937.25488f, -125.310707f, 82.8524399f, 0.662107527f),
+          0
+        ),
+        MoveSpeeds.DefaultSpeeds,
+        hex"2A150080119500C0D8DF83F5010800004A06000406000000000000000000000000000000008202002A000C0F00FC000C0000000000000000000000000000000000000000000000000000000000000000B86DDBB66DDB00000000000000000000000000000000000000000000000000000000000000000000000000000000000020E200100000000000000000000000000000000200FE0000000040000000000080000000003F00000001000000190000000000803F01040003370000006400000037000000E803000064000000E803000001000000010000000800000000080000400600004006000040060000022BC73E0000C03F3100000031000000E32B7E40F2159F40E32BFE3FF2151F40000000000000803F00000000150000001700000015000000140000001400000030000000190000001A0000000E00000066662640333393400000803F060507010000000131000000300000002F0000002C08000087C30000337100000200000000000040060000000000004004000000000000400A000000000000400C0000000000004008000000000000400E0000000000004090010000260000000500050027000000050005005F00000005000500620000002C012C017600000005000500A200000001000500AD00000001000500B000000001000500B700000005000500FD000000050005009E010000010001009F01000001000100F20200000500050009030000010005000A030000010005000200000063FF9F41D36F1D41D36F1D41D36F1D41000000202C0100000000803F0000803F0000803F0000803F0000803F0000803F0000803FFFFFFFFF5000000015000000160000001700000018000000190000001A000000"
+      )
+    )
   )
 )
