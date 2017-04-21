@@ -1,14 +1,14 @@
 package ensiwow.realm.protocol.payloads
 
 import ensiwow.common.codecs._
-import ensiwow.realm.protocol.{OpCodeProvider, OpCodes, Payload, ServerHeader}
+import ensiwow.realm.protocol._
 import scodec.Codec
 import scodec.codecs._
 
 /**
   * Server authentication challenge
   */
-case class ServerAuthChallenge(authSeed: Long, firstSeed: BigInt, secondSeed: BigInt) extends Payload[ServerHeader]
+case class ServerAuthChallenge(authSeed: Long, firstSeed: BigInt, secondSeed: BigInt) extends Payload with ServerSide
 
 object ServerAuthChallenge {
   val SeedSize = 16

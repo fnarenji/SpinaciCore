@@ -7,12 +7,19 @@ object PayloadHandlerHelper {
   /**
     * List of payload handlers companions
     */
-  private val payloadHandlersFactories = Reflection.objectsOf[PacketHandlerFactory[_]]
+  private val payloadHandlersFactories = Reflection.objectsOf[PacketHandlerFactory[_ <: PacketHandler]]
 
   /**
     * List of opcodes for which a handler exists
     */
-  private val handledOpCodes = payloadHandlersFactories.map(_.opCode)
+  private val handledOpCodes: Map[OpCodes.Value, PacketHandlerFactory[_ <: PacketHandler]] = payloadHandlersFactories.flatMap(
+    factory => {
+      val builder = Map.newBuilder[OpCodes.Value, PacketHandlerFactory[_ <: PacketHandler]]
+      for (elem <- factory.opCodes) {
+        builder += elem -> factory
+      }
+      builder.result()
+    }) toMap
 
   /**
     * Handler actor's preferred name
@@ -20,7 +27,7 @@ object PayloadHandlerHelper {
     * @param opCode opcode
     * @return preferred name
     */
-  def PreferredName(opCode: OpCodes.Value) = s"${opCode}Handler"
+  def PreferredName(opCode: OpCodes.Value) = handledOpCodes(opCode).preferredName
 
   /**
     * Spawn all actor for handlers
@@ -28,7 +35,9 @@ object PayloadHandlerHelper {
     * @param context actor context
     */
   def spawnActors(context: ActorContext): Unit = {
-    payloadHandlersFactories.foreach(factory => context.actorOf(factory.props, PreferredName(factory.opCode)))
+    for (factory <- payloadHandlersFactories) {
+      context.actorOf(factory.props, factory.preferredName)
+    }
   }
 
   /**

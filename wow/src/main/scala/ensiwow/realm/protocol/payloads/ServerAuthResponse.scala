@@ -40,7 +40,7 @@ object ServerAuthResponseSuccess {
   * Server auth response
   */
 case class ServerAuthResponse(response: AuthResponses.Value,
-                              success: Option[ServerAuthResponseSuccess]) extends Payload[ServerHeader] {
+                              success: Option[ServerAuthResponseSuccess]) extends Payload with ServerSide {
   private val successResponses = Array(AuthResponses.Ok, AuthResponses.WaitQueue)
 
   require(successResponses.contains(response) == success.nonEmpty)

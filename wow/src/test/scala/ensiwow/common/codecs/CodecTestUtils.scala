@@ -22,6 +22,7 @@ object CodecTestUtils extends Assertions with Matchers {
   def encode[T](expectedBits: BitVector, value: T)(implicit codec: Codec[T]): Assertion = {
     codec.encode(value) match {
       case Successful(bits) =>
+        bits.toHex shouldEqual expectedBits.toHex
         bits shouldEqual expectedBits
       case Failure(err) => fail(err.toString())
     }

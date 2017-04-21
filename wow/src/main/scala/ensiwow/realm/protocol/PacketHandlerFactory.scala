@@ -9,9 +9,13 @@ import scala.reflect.ClassTag
   * @tparam TPacketHandler packet handler
   */
 abstract class PacketHandlerFactory[TPacketHandler <: PacketHandler : ClassTag] {
-  final def props: Props = Props(implicitly[ClassTag[TPacketHandler]].runtimeClass)
+  private val clazz = implicitly[ClassTag[TPacketHandler]].runtimeClass
 
-  def opCode: OpCodes.Value
+  final def props: Props = Props(clazz)
+
+  final def preferredName: String = clazz.getSimpleName
+
+  def opCodes: OpCodes.ValueSet
 }
 
 /**
@@ -21,17 +25,30 @@ abstract class PacketHandlerFactory[TPacketHandler <: PacketHandler : ClassTag] 
   * @tparam TPayload                payload type
   */
 abstract class PayloadHandlerFactory[TPayloadHandler <: PayloadHandler[TPayload] : ClassTag,
-TPayload <: Payload[ClientHeader] : OpCodeProvider] extends PacketHandlerFactory[TPayloadHandler] {
-  override final def opCode: OpCodes.Value = implicitly[OpCodeProvider[TPayload]].opCode
+TPayload <: Payload with ClientSide : OpCodeProvider] extends PacketHandlerFactory[TPayloadHandler] {
+  private val opCode = implicitly[OpCodeProvider[TPayload]].opCode
+
+  override final def opCodes: OpCodes.ValueSet = OpCodes.ValueSet(opCode)
+}
+
+/**
+  * Multi op code payload handler factory
+  *
+  * @tparam TPayloadHandler payload handler type
+  * @tparam TPayload                payload type
+  */
+abstract class MultiPayloadHandlerFactory[TPayloadHandler <: PayloadHandler[TPayload] : ClassTag,
+TPayload <: Payload with ClientSide](handledOpCodes: OpCodes.Value*) extends PacketHandlerFactory[TPayloadHandler] {
+  override final def opCodes: OpCodes.ValueSet = OpCodes.ValueSet(handledOpCodes:_*)
 }
 
 /**
   * Payloadless handler factory
-  * @param handledOpCode handled opcode
+  * @param handledOpCodes handled opcodes
   * @tparam TPayloadlessPacketHandler handler type
   */
 abstract class PayloadlessPacketHandlerFactory[TPayloadlessPacketHandler <: PayloadlessPacketHandler : ClassTag]
-(handledOpCode: OpCodes.Value) extends PacketHandlerFactory[TPayloadlessPacketHandler] {
-  override final def opCode: OpCodes.Value = handledOpCode
+(handledOpCodes: OpCodes.Value*) extends PacketHandlerFactory[TPayloadlessPacketHandler] {
+  override final def opCodes: OpCodes.ValueSet = OpCodes.ValueSet(handledOpCodes:_*)
 }
 
