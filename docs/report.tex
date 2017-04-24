@@ -1,0 +1,151 @@
+\documentclass[paper=a4, fontsize=11pt]{scrartcl}
+
+\usepackage[utf8]{inputenc}
+\usepackage{fourier} % Adobe Utopia
+\usepackage[french]{babel}
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{relsize}
+\usepackage[acronym,toc]{glossaries}
+\usepackage{svg}
+\usepackage{enumitem}
+\usepackage[ampersand]{easylist}
+\usepackage{graphicx}
+
+\usepackage{sectsty}
+\allsectionsfont{\normalfont\scshape} 
+
+\usepackage{fancyhdr}
+\pagestyle{fancyplain}
+\fancyhead{}
+\fancyfoot[L]{} 
+\fancyfoot[C]{}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\headheight}{14.6pt}
+\graphicspath{{res/}}
+
+\usepackage{stmaryrd}
+\usepackage{url}
+
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}}
+\hoffset = -0pt
+\voffset = -20pt
+\textwidth = 450pt
+\textheight = 700pt
+
+\title{%
+    \normalfont{}
+    \normalsize{}
+    \textsc{École nationale supérieure d'informatique et de mathématiques appliquées de Grenoble} \\ [10pt]
+    \horrule{0.5pt} \\[0.4cm]
+    \huge Prototyping a massively multiplayer game server
+    \horrule{2pt} \\[0.5cm]
+}
+
+\author{Yann COLINA\\
+Bastien ETCHEGOYEN\\
+Etienne L'HER\\
+Floran NARENJI-SHESHKALANI} 
+
+\date{\normalsize\today}
+
+\newacronym{MMO}{MMORPG}{massively multiplayer online role playing game}
+\newacronym{WoW}{WoW}{World of Warcraft}
+
+\begin{document}
+
+\maketitle
+
+\iffalse
+* Reflection
+* Actor system/hierarchy
+* API
+* Diagrams
+    * Actors hierarchy/messages
+    * Client protocol
+* Protocol (scodec)
+* Handlers
+* AuthServer
+    * SRP6a
+* WorldServer
+    * RC4a
+    * Actor interactions (EventStream)
+* Reverse engineering difficulties
+    * Big protocol, organicly built, too many features
+* Sources
+    * TrinityCore
+    * Akka docs
+    * Scala docs
+    * scodec
+* Scala
+    * Functional
+    * Immutable
+    * Preferred language for Akka actors (ugly in Java)
+    * Strongly typed
+    * Full of syntaxic sugar
+    * Ahead of it's time ('research language')
+    * Home grown language (der Schweiz)
+
+* Introduction
+    * Motivation
+    * TrinityCore
+        * It's not "translating C++ to Akka"
+        * We're doing cleanear, hopefully scalable
+    * Basic behavior of WoW client
+* Building blocks for a WoW server
+    * Actors and why
+    * Protocol (scodec)
+    * Database storage
+    * Networking
+    * API + Reflection
+* Auth
+    * Protocol description
+        * Sequence diagram
+        * Actor diagram
+        * Principle of each packet
+            * with it's cryptographical application
+    * Realm list building
+    * Account API
+    * AuthSession FSM
+* Realm
+    * Connection + cryptography
+    * Characters management
+    * World state
+        * Event stream
+    * Moving entities
+    * Concurrency stuff
+* Conclusion
+    * Reverse engineering difficulties
+* Annex: Why Scala, no regrets tho
+* Bibliography
+    
+
+\fi
+
+\section{Introduction}
+
+This project was an experiment in writing an authoritative server for an online
+video game.
+The goal was to get hands-on experience about designing and building a
+complex server from scratch, without missing any aspects of it: from basic blocks
+such as networking, cryptography and concurrency to managing the world itself.
+
+\section{World of Warcraft}
+
+For such a purpose, we choose the \gls{WoW} video game.
+In deed, writing our own video game client would have been both out of the scope
+of this project and, in terms of time spent, mutually exclusive with writing the
+server for it.
+Moreover, the video game sector has by nature little to no available open source
+game clients that would fit the purpose of this project.
+Consequently, it was decided to settle on an existing video game.
+
+With prior knowledge and additional research, \gls{WoW} was determined to be the
+video game for which writing a server would be most interesting: being the most
+popular and populous game of its type for the last decade, the technical aspects
+were certain to be production grade. Furthermore, the protocol is well
+documented and there exists very advanced open source implementations of it.
+
+\end{document}
+
