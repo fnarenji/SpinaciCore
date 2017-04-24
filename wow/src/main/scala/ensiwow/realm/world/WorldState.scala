@@ -2,7 +2,7 @@ package ensiwow.realm.world
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.Application
-import ensiwow.realm.entities.{CharacterView, Guid}
+import ensiwow.realm.entities.{CharacterRef, Guid}
 import ensiwow.realm.events.{DispatchWorldUpdate, PlayerJoined, Tick, WorldEvent}
 import ensiwow.realm.world.WorldState.{GetState, State}
 
@@ -23,7 +23,7 @@ class WorldState extends Actor with ActorLogging {
   eventStream.publish(Tick(0, Application.uptimeMillis(), Tick(0, 0, null)))
 
   private var events = mutable.MutableList[WorldEvent]()
-  private val characters = mutable.HashMap[Guid.Id, CharacterView]()
+  private val characters = mutable.HashMap[Guid.Id, CharacterRef]()
 
   override def receive: Receive = {
     case e@PlayerJoined(character) =>
@@ -61,6 +61,6 @@ object WorldState {
 
   object GetState extends Event
 
-  case class State(characters: Iterable[CharacterView]) extends Event
+  case class State(characters: Iterable[CharacterRef]) extends Event
 }
 

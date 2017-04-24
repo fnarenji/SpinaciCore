@@ -10,10 +10,10 @@ import scala.collection.mutable
 case class CharacterInfo(guid: Guid, selfBytes: ByteVector, otherBytes: ByteVector) {
   var position: Position = _
 
-  val view: CharacterView = new CharacterView(this)
+  val ref: CharacterRef = new CharacterRef(this)
 }
 
-class CharacterView(characterInfo: CharacterInfo) {
+class CharacterRef(characterInfo: CharacterInfo) {
   def guid: Guid = characterInfo.guid
 
   def position: Position = characterInfo.position
@@ -23,8 +23,8 @@ class CharacterView(characterInfo: CharacterInfo) {
   def otherBytes: ByteVector = characterInfo.otherBytes
 }
 
-object CharacterView {
-  def unapply(arg: CharacterView): Option[(Guid, Position, ByteVector, ByteVector)] = Some(
+object CharacterRef {
+  def unapply(arg: CharacterRef): Option[(Guid, Position, ByteVector, ByteVector)] = Some(
     arg.guid,
     arg.position,
     arg.selfBytes,

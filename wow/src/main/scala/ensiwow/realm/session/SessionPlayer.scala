@@ -34,7 +34,7 @@ class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with Acto
 
   private val timeSyncSenderToken = scheduler.schedule(Duration.Zero, 10 seconds, TimeSyncRequestSender)
 
-  eventStream.publish(PlayerJoined(currentCharacter.view))
+  eventStream.publish(PlayerJoined(currentCharacter.ref))
 
   worldState ! WorldState.GetState
 
