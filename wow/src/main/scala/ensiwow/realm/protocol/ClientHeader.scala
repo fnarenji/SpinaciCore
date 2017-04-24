@@ -20,6 +20,7 @@ object ClientHeader {
   val MaxPayloadSize: Int = 10240 - OpCodeSize / 8
 
   implicit val codec: Codec[ClientHeader] = {
+    // Note: this one is stored as big endian on the wire
     ("payloadSize" | integerOffset(uint16, - OpCodeSize / 8)) ::
       ("opCode" | enumerated(uintL(OpCodeSize - 1), OpCodes)) ::
       ignore(1)
