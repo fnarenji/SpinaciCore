@@ -1,6 +1,6 @@
 package ensiwow.realm
 
-import ensiwow.realm.entities.CharacterView
+import ensiwow.realm.entities.CharacterRef
 import ensiwow.realm.protocol.payloads.ClientMovement
 import scodec.bits.BitVector
 
@@ -12,7 +12,7 @@ import scala.collection.mutable
 package object events {
   sealed trait WorldEvent
 
-  case class PlayerJoined(character: CharacterView) extends WorldEvent
+  case class PlayerJoined(character: CharacterRef) extends WorldEvent
 
   case class Tick(number: Long, msTime: Long, previousTick: Tick) extends WorldEvent
 
