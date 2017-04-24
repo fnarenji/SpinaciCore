@@ -18,6 +18,7 @@ object ServerHeader {
   val OpCodeSize: Int = 16
 
   implicit val codec: Codec[ServerHeader] = {
+    // Note: this one is stored as big endian on the wire
     ("payloadSize" | integerOffset(serverPacketSizeCodec, - OpCodeSize / 8)) ::
       ("opCode" | enumerated(uintL(OpCodeSize), OpCodes))
   }.as[ServerHeader]
