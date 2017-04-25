@@ -1,6 +1,6 @@
 package ensiwow.realm.handlers
 
-import ensiwow.realm.entities.{CharacterInfo, Guid, Position}
+import ensiwow.realm.entities.{CharacterInfo, Guid}
 import ensiwow.realm.protocol.payloads._
 import ensiwow.realm.protocol.{OpCodes, PayloadlessPacketHandler, PayloadlessPacketHandlerFactory}
 import ensiwow.realm.session.NetworkWorker
@@ -10,7 +10,7 @@ import ensiwow.realm.session.NetworkWorker
   */
 class CharacterEnumHandler extends PayloadlessPacketHandler {
 
-  def complete(char: (Guid, CharacterInfo)): ServerCharacterEnumEntry = {
+  def completeDescription(char: (Guid, CharacterInfo)): ServerCharacterEnumEntry = {
     ServerCharacterEnumEntry(guid = char._1,
       characterDescription = char._2.description,
       level = 1,
@@ -27,10 +27,8 @@ class CharacterEnumHandler extends PayloadlessPacketHandler {
   /**
     * Processes empty payload
     */
-  override protected def process: Unit = {
-    val charactersEnum = {
-      for (char <- CharacterInfo.getCharacters) yield complete(char)
-    }
+  override protected def process(): Unit = {
+    val charactersEnum = for (char <- CharacterInfo.getCharacters) yield completeDescription(char)
 
     sender ! NetworkWorker.EventOutgoing(ServerCharacterEnum(charactersEnum.toVector))
   }
