@@ -2,7 +2,6 @@ package ensiwow.realm.protocol.payloads
 
 import ensiwow.common.codecs._
 import ensiwow.realm.protocol._
-import ensiwow.realm.shared.Classes
 import scodec.Codec
 import scodec.codecs._
 
