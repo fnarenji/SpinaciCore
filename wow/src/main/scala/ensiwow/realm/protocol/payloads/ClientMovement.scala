@@ -18,7 +18,7 @@ object ClientMovement {
       ("flags" | uint32L) ::
       ("extraFlags" | uint16L) ::
       ("time" | uint32L) ::
-      ("position" | Position.vector4DCodec) ::
+      ("position" | Position.codecXYZO) ::
       ("bytes" | bytes)
     ).as[ClientMovement]
 }

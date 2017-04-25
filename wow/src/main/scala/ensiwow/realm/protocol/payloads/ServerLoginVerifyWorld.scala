@@ -14,6 +14,6 @@ case class ServerLoginVerifyWorld(playerPosition: Position) extends Payload with
 
 object ServerLoginVerifyWorld {
   implicit val opCodeProvider: OpCodeProvider[ServerLoginVerifyWorld] = OpCodes.SLoginVerifyWorld
-  implicit val codec: Codec[ServerLoginVerifyWorld] = ("playerPosition" | Position.vector5DCodec).as[ServerLoginVerifyWorld]
+  implicit val codec: Codec[ServerLoginVerifyWorld] = ("playerPosition" | Position.codecMXYZO).as[ServerLoginVerifyWorld]
 }
 

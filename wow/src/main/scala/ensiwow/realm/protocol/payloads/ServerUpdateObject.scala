@@ -85,7 +85,7 @@ object MovementInfo {
       ("movementFlags" | uint32L) ::
       ("extraMovementFlags" | uint16L) ::
       ("msTime" | uint32L) ::
-      ("position" | Position.vector4DCodec) ::
+      ("position" | Position.codecXYZO) ::
       ("fallTime" | uint32L)
   }.as[MovementInfo]
 }
