@@ -6,7 +6,7 @@ import scodec.codecs._
 
 import scala.language.postfixOps
 
-case class ClientCharCreate(createInfo: CreateInfo) extends Payload[ClientHeader]
+case class ClientCharCreate(createInfo: CreateInfo) extends Payload with ClientSide
 
 object ClientCharCreate {
   implicit val opCodeProvider: OpCodeProvider[ClientCharCreate] = OpCodes.CharCreate
@@ -14,7 +14,7 @@ object ClientCharCreate {
   implicit val codec: Codec[ClientCharCreate] = ("createInfo" | Codec[CreateInfo]).as[ClientCharCreate]
 }
 
-case class ServerCharCreate(responseCode: Int) extends Payload[ServerHeader]
+case class ServerCharCreate(responseCode: Int) extends Payload with ServerSide
 
 object ServerCharCreate {
   implicit val opCodeProvider: OpCodeProvider[ServerCharCreate] = OpCodes.SCharCreate
