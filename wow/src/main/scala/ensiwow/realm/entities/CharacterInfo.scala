@@ -96,7 +96,7 @@ object CharacterInfo {
 
   def byGuid(guid: Guid): CharacterInfo = characterByGuid(guid)
 
-  def getNextId: Int = (characterByGuid.keys reduce(_.id max _.id)) + 1
+  def getNextId: Int = (characterByGuid.keys reduce(_ max _)).id + 1
 
 }
 
