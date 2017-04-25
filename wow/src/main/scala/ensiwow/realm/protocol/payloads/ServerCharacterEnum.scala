@@ -14,36 +14,35 @@ import scala.language.postfixOps
   *
   * @param characters a vector of characters
   */
-case class ServerCharEnum(characters: Vector[ServerCharEnumEntry]) extends Payload with ServerSide
+case class ServerCharacterEnum(characters: Vector[ServerCharacterEnumEntry]) extends Payload with ServerSide
 
-object ServerCharEnum {
-  implicit val opCodeProvider: OpCodeProvider[ServerCharEnum] = OpCodes.SCharEnum
+object ServerCharacterEnum {
+  implicit val opCodeProvider: OpCodeProvider[ServerCharacterEnum] = OpCodes.SCharEnum
 
-  implicit val codec: Codec[ServerCharEnum] = {
-    "characters" | variableSizeVector(uint8L, Codec[ServerCharEnumEntry])
-  }.as[ServerCharEnum]
+  implicit val codec: Codec[ServerCharacterEnum] = {
+    "characters" | variableSizeVector(uint8L, Codec[ServerCharacterEnumEntry])
+  }.as[ServerCharacterEnum]
 }
 
-case class ServerCharEnumEntry(
-  guid: Guid,
-  charInfo: CharInfo,
-  level: Int,
-  zone: Long,
-  position: Position,
-  guildId: Long,
-  charFlag: Long,
-  charCustomFlag: Long,
-  atLogin: Int,
-  pet: Pet
-  // Inventory bag supposed always empty
+case class ServerCharacterEnumEntry(guid: Guid,
+                                    characterDescription: CharacterDescription,
+                                    level: Int,
+                                    zone: Long,
+                                    position: Position,
+                                    guildId: Long,
+                                    charFlag: Long,
+                                    charCustomFlag: Long,
+                                    atLogin: Int,
+                                    pet: Pet
+                                    // Inventory bag supposed always empty
 )
 
-object ServerCharEnumEntry {
-  implicit val codec: Codec[ServerCharEnumEntry] = {
+object ServerCharacterEnumEntry {
+  implicit val codec: Codec[ServerCharacterEnumEntry] = {
     val inventorySlotSize = 9
     val inventorySlotCount = 23
     ("guid" | Guid.codec) ::
-      ("charInfo" | Codec[CharInfo]) ::
+      ("charInfo" | Codec[CharacterDescription]) ::
       ("level" | uint8L) ::
       ("zone" | uint32L) ::
       ("position" | Position.codecMXYZ) ::
@@ -54,7 +53,7 @@ object ServerCharEnumEntry {
       ("pet" | Codec[Pet]) ::
       constantE(ByteVector.low(inventorySlotCount * inventorySlotSize))(bytes)
     // Inventory bag supposed always empty
-  }.as[ServerCharEnumEntry]
+  }.as[ServerCharacterEnumEntry]
 }
 
 case class Pet(displayId: Long, level: Long, family: Long)

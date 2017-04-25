@@ -9,10 +9,12 @@ import scodec.codecs._
   */
 case class Guid(id: Guid.Id, guidType: GuidType.Value) {
   require(id >= 0)
+  def max(other: Guid): Guid = Guid(this.id max other.id, this.guidType)
 }
 
 object Guid {
   type Id = Int
+
 
   val codec: Codec[Guid] = (
     ("guid" | uintL(24)) ::

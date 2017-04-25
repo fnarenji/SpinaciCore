@@ -4,6 +4,7 @@ import ensiwow.common.codecs.CodecTestUtils
 import ensiwow.realm.entities.{EntityType, Guid, GuidType, Position}
 import ensiwow.realm.protocol.objectupdates.{UpdateFlags, UpdateType}
 import ensiwow.realm.protocol.payloads._
+import ensiwow.realm.shared.{Classes, Genders, Races}
 import org.scalatest.{FlatSpec, Matchers}
 import scodec.Codec
 import scodec.bits._
@@ -125,19 +126,19 @@ class ServerUpdateObjectTest extends PacketTest(
   )
 )
 
-class ServerCharEnumTest extends PacketTest(
+class ServerCharacterEnumTest extends PacketTest(
   hex"02273B00",
   ServerHeader(549, OpCodes.SCharEnum),
   hex"0208000000000000004761726C000104000808070604010C00000000000000F1B60BC6FB6101C3E335A7420000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009000000000000004761726D000104000006060006010C00000000000000A3CE0BC6F00B05C35A53A74200000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  ServerCharEnum(
+  ServerCharacterEnum(
     Vector(
-      ServerCharEnumEntry(
+      ServerCharacterEnumEntry(
         Guid(8, GuidType.Player),
-        CharInfo(
+        CharacterDescription(
           "Garl",
-          race = 1,
-          charClass = 4,
-          gender = 0,
+          race = Races.RaceHuman,
+          charClass = Classes.ClassRogue,
+          gender = Genders.GenderMale  ,
           skin = 8,
           face = 8,
           hairStyle = 7,
@@ -153,13 +154,13 @@ class ServerCharEnumTest extends PacketTest(
         0,
         Pet(0, 0, 0)
       ),
-      ServerCharEnumEntry(
+      ServerCharacterEnumEntry(
         Guid(9, GuidType.Player),
-        CharInfo(
+        CharacterDescription(
           "Garm",
-          race = 1,
-          charClass = 4,
-          gender = 0,
+          race = Races.RaceHuman,
+          charClass = Classes.ClassRogue,
+          gender = Genders.GenderMale,
           skin = 0,
           face = 6,
           hairStyle = 6,
