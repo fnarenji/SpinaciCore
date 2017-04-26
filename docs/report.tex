@@ -51,7 +51,8 @@ Floran NARENJI-SHESHKALANI}
 \date{\normalsize\today}
 
 \newacronym{MMO}{MMORPG}{massively multiplayer online role playing game}
-\newacronym{WoW}{WoW}{World of Warcraft}
+% \newacronym{WoW}{WoW}{World of Warcraft}
+\newacronym{NPC}{NPC}{Non playing characters}
 
 \begin{document}
 
@@ -97,9 +98,13 @@ The academic goal was to get hands-on experience about designing and building a
 complex server from scratch, without missing any aspects of it: from basic blocks
 such as networking, cryptography and concurrency to managing the world itself.
 
+This project was done as a part of the Ensimag's second year module `Specialty
+project'.
+The idea was at the initiative of the students.
+
 \subsection{World of Warcraft}
 
-For such a purpose, we choose the \gls{WoW} video game.
+For such a purpose, we chose the World of Warcraft video game.
 In deed, writing our own video game client would have been both out of the scope
 of this project and, in terms of time spent, mutually exclusive with writing the
 server for it.
@@ -107,11 +112,22 @@ Moreover, the video game sector has by nature little to no available open source
 game clients that would fit the purpose of this project.
 Consequently, it was decided to settle on an existing video game.
 
-With prior knowledge and additional research, \gls{WoW} was determined to be the
+With prior knowledge and additional research, World of Warcraft was determined to be the
 video game for which writing a server would be most interesting: being the most
 popular and populous game of its type for the last decade, the technical aspects
 were certain to be production grade. Furthermore, the protocol is well
 documented and there exists very advanced open source implementations of it.
+
+\subsubsection{Disclaimer}
+
+World of Warcraft is proprietary software.
+Regular players pay a monthly subscription fee.
+This project is only done as a learning experience, by students in a fully
+academic context.
+In other words, this is a research project with no goals whatsoever towards
+facilitating copyright infringement.
+
+This project is under the MIT license, as found in the repository's root folder.
 
 \subsection{General information about MMORPGs}
 
@@ -155,7 +171,7 @@ to last until the end of the project.
 \subsection{TrinityCore}
 
 TrinityCore is an open source project for a game server that is compatible with
-the \gls{WoW} client.
+the World of Warcraft client.
 Unlike our implementation, their codebase is nearly 13 years old (through many
 forks) and provides a playing experience that is much closer (yet still not
 equal) to the official experience.
@@ -265,15 +281,235 @@ This actor's responsibility is to handle all aspects of networking for a client:
 
 The \texttt{NetworkWorker} then creates a \texttt{Session} actor, which is
 responsible for maintaining all state related to the current game client.
-However, it does not handle anything related to the player being in game.
+However, it does not handle anything related to the player being in the world.
 
 \subsection{Characters management}
 
+
 \subsection{World state}
 
-When a player has selected it's character and joined the world,
+\subsubsection{Event stream}
+
+As actions in the game must be visible for other characters, there needs to
+be a way to send messages to a set of players.
+
+On the official implementation of World of Warcraft, with the expected
+workloads, it would be necessary to separate the world is small subset that have
+much more workable sizes, e.g.\ by iterating only on units which are in the
+players field of view.
+
+In our simplified implementation, however, we can ignore these constraints as
+our number of players is expected to be very small.\\
+
+As a common communication channel between all actors of the world, we use Akka's
+\texttt{EventStream}, which is an advanced implementation of the
+publisher/subscriber pattern: it offers subscribers ability to filter on the
+types of messages they want to receive.
+
+\subsubsection{WorldState actor}
+
+The \texttt{WorldState} actor's responsibility is to maintain knowledge about
+the current state of the world.
+In our case, this means:
+\begin{itemize}
+    \item gathering changes to the world, e.g.\ a player joining
+    \item maintaining the current state of the world using those changes, e.g.\
+        having a list of all players currently in the world
+    \item and `ticking' the world
+\end{itemize}
+
+Ticking the world is an action that happens at a very small interval (30
+milliseconds).
+When the world is ticked, actions that took place during the last 30
+milliseconds are grouped together and sent out to all clients in form of the
+\texttt{ServerObjectUpdate} packet.
+Some actions, for example movements which require more real time handling,
+are not part of the events gathered for a world tick. However, an example of an
+event that is gathered is a player joining the world:
+\begin{itemize}
+    \item for the player itself, the packet would contain information about it's
+        own character, such as it's looks, current statistics and initial
+        position and all the other players that are already in world
+    \item for other players, the packet would contain similiar information,
+        telling them that a new player has spawned at some position
+\end{itemize}
+
+For that process, the \texttt{WorldState} actor gathers events and then
+publishes a \texttt{DispatchWorldUpdate} event to the event stream. All
+\texttt{SessionPlayer} actors are subscribed to this event, and use the contents
+(the events that happened during the last tick) to build the
+\texttt{ServerObjectUpdate} packet.
+
+\subsubsection{Joining the world}
+
+When a player has selected it's character and joined the world, the
+\texttt{ClientPlayerLogin} packet is sent by the client.
+
+The \texttt{PlayerLoginHandler} actor then sends an event to the \texttt{Session}
+actor, containing the id of the selected character.
+Initially, all features related to the in-game character were handled by the
+\texttt{Session} actor.
+
+However, to enforce the single responsibility principle, it was decided to move
+this responsibility to a separator actor, \texttt{SessionPlayer} that is created
+by the \texttt{Session} actor once the client has selected its player.\\
+
+Upon it's creation, the \texttt{SessionPlayer} actor publishes a
+\texttt{PlayerJoined} event to the event stream.  
+On the next world tick, this event will be a part of the
+\texttt{DispatchWorldUpdate} message received by all \texttt{SessionPlayer}
+actors (including the sender).
+As written earlier, the client will know about its own character when receiving
+the initial \texttt{ServerObjectUpdate} which will this information.\\
+
+However, a player joining the world must also know about existing players. To
+handle that case, the \texttt{SessionPlayer} sends when created a
+\texttt{GetWorldState} message to the \texttt{WorldState} actor, which answers
+with a list of players of players currently in world.
+
+This additional information is used when building the first
+\texttt{ServerObjectUpdate} packet, such that the client will have knowledge of
+all players currently in world.
 
 \subsection{Player movement}
+
+There are various messages in the protocol used for movement.
+All of them have the same structure but use a different opcode, indicating what
+type of movement is being done.
+As the movements require direct handling instead of waiting for the next world
+tick, the messages are received by the \texttt{MovementHandler}, are adapted for
+network lag and directly forwarded to all the clients through, which is done by
+publish a \texttt{PlayerMoved} event to the event stream.
+The event is received by all \texttt{NetworkWorker} actor, who send the packet
+to the client.
+
+Lag compensation is a simple process.
+The client regularly (every 10 seconds) synchronizes its local time with the
+server's time.
+When the packet is emitted by the client, it is tagged with the emission time.
+On reception by the server, the difference between the server's time and the
+packet's time gives a rough estimation of the time it took for the packet to
+travel from the client to the server. 
+This difference is added to the packet's time tag before it is sent back to
+the clients.
+
+\subsection{Interesting challenges ahead}
+
+The featureset that is currently implemented is very limited, and a lot of the
+time was spent on necessary and yet unavoidable boilerplate code.
+The environment of an MMORPG server however offers a lot of potential for
+challenging code situations.
+For the future of this project, on which we intend to continue to work, we
+feel like the following features would be interesting challenges.
+
+\subsubsection{Basic game play features}
+
+While not directly technically complex, add more game feature makes for a
+richer environment. In a highly concurrent architecture like ours, and with more
+feature meaning more data, it is a challenge to design data management in a way
+that is both correct (i.e.\ no concurrency issues) and scalable.
+
+These features could be:
+\begin{itemize}
+    \item Unit fields (required for almost everything else, we managed to avoid
+        this complex feature for the duration of the project)
+    \item Spell casting
+    \item \gls{NPC}
+\end{itemize}
+
+These basic features also serve as openings for more technically interesting
+features.
+
+\subsection{Non playing characters}
+
+Adding non-players characters to the game opens up a lot of interesting
+challenges.
+Indeed, with many creatures on a map, it would be impossible in the time of a
+single world tick to iterate on all of them.
+Moreover, it would also be pointless, as a player is limited in the amount of
+information it can display on screen.
+
+As such, it is interesting to discuss ways to split up the world in smaller
+pieces.
+Of course, as the World of Warcraft client and player perceives the world
+as one big continuous space, it's not possible to put hard barriers between
+these smaller pieces.
+A common approach is to layer the world with a grid, where every entity belongs
+to a cell. As entities (even creatures) can move freely between different cells 
+of the grid, keeping the grid up to date in real time is a task in itself,
+specially with a concurrent environment.
+
+Generally speaking, this field of research is known as spatial indices.
+
+\subsection{Distributed application}
+
+As it currently stands, our application only benefits from `vertical scaling':
+the only way bigger workloads can be handled, ignoring better code, is by using
+faster hardware.
+For production software, this is insufficient as hardware progress is slow
+and costly.
+
+Horizontal scaling means that the application can take advantage of additional
+computers.
+In our case, Akka supports horizontal scaling: it is possible for an
+\texttt{ActorSystem} to be spread amongst multiple machines (Akka Cluster
+containing Akka Nodes).
+However, it's not automatic and it is the programmer's responsibility to
+correctly assign actors to nodes.
+Indeed, having actors that communicate a lot on different nodes will incur
+serialization and network overhead for every message, which would result in a
+loss of performance.\\
+
+As World of Warcraft is an open world that is continuous from the point of view
+of the player, isolating groups of actors is difficult.
+However, there exists a few hard borders which can be used.
+The main one is continents. The main world, in the version we support, is split
+in four main continents (named Kalimdor, the Eastern Kingdoms, Northrend and
+Outland).
+
+There is little communication between those continents: most actors of a
+contient (creatures, various game objects) are created and will always reside
+within said continent.
+
+Players can switch continents, but it is not seamless as it requires a loading
+screen on the client's side.
+Thus, moving a Player's actor from one continent's node to another would
+cause little issue.
+
+Some actions (like chat, groups, guilds, instances, battlegrounds\ldots) 
+require interacting with a player whose actor is on a different node.
+As these actions are not real time, node crossing overhead is not an issue.
+
+One remaining issue is that the client currently uses a single TCP connection,
+therefore there has to be a front end server through which all network data
+will pass.
+For production grade software with actual players, how much latency such a proxy
+would add depends on a lot of factors, e.g.\ the cluster's hardware
+configuration.
+
+For a technical demonstration such as this project however, this issue is
+ignored.
+
+\subsection{Raycasting}
+
+When two entities of the world are interacting with one another, they most of
+the time must have line of sight on one another.
+Concretely, it would not make sense to be able to cast spells on a creature from
+behind a wall.
+A common problem is knowing who is in line of sight of whom in real time.
+
+Solving this problem implies loading the maps in memory of the world, which in
+itself is already complicated due to the associated reverse engineering
+challenges.
+There are then well-known algorithms to check for line of sight.
+
+An interesting part of this approach would be to split off the actors
+responsible for this work to another machine. With a low enough network latency
+(e.g. InfiniBand) and a machine with hardware optimised for such
+calculations (e.g.\ multiple GPUs if the calculations lend themselves well to
+to GPU computing), this design could offer improvements in scalability.
+
+This is also way to open up to the domain of `server-side world physics'.
 
 \section{Conclusion}
 
