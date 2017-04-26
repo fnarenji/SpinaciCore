@@ -102,6 +102,9 @@ This project was done as a part of the Ensimag's second year module `Specialty
 project'.
 The idea was at the initiative of the students.
 
+The source code under MIT license is available at
+\url{https://github.com/SKNZ/EnsiWoW}.
+
 \subsection{World of Warcraft}
 
 For such a purpose, we chose the World of Warcraft video game.
@@ -194,18 +197,72 @@ eventually distributed solution with a clean and hopefully elegant codebase.
 
 \subsection{Actors}
 
+An actor is the basic computational unit of an actor system.
+
+An actor follows a few axioms:
+\begin{itemize}
+    \item An actor can send a message to another actor
+    \item An actor can create a child actor
+    \item An actor's received messages are stored in a mailbox and processed one
+        at a time
+    \item An actor can have mutable data only if it is private
+    \item Messages exchanged by actors should contain only immutable data
+\end{itemize}
+
+The lack of mutable shared state make actors a way to express concurrent
+problems elegantly without wrestling directly with synchronization primitives.
+
+As with most good coding practices, actors should have a single responsibility.
+Therefore, actors should be lightweight and cost very little to make.
+In practice, actor systems are made to handle enormous number of actors, meaning
+that actors are not implemented as system threads. Often times, actors are
+scheduled atop a thread pool.\\
+
+For the purpose of writing a World of Warcraft game server, and more generally
+an MMORPG game server, actors have an obvious appeal: each entity of the world
+could be represented as an actor.
+Interactions between entities would then be simple messages exchanged.
+
+There is no knowledge of how such a system would behave in practice: actors
+have an overhead, and having one actor per world entity might be too much.
+While the optimal granularity will have to be determined, it certainly will be
+much finer than it would be with system threads.
+
 % * What are actors
 % * Why are they nice
 % * Why would they fit well with the conception of an MMORPG
 
+\subsection{Technological choices}
+
+We chose to write the server in Scala, using the Akka library.
+Scala was an interesting choice for us, as it is a hybrid functional/imperative
+language, with JVM binary compatibility and wide enough adoption.
+It is a very rich language, with an extreme amount of flexibility and syntaxic
+sugar.
+
+For actors, Akka is the to-go library, which is also one of the reasons we chose
+Scala.
+
+As for other libraries, we prominently used \texttt{scodec}, for our
+serialization needs, and some elements of \texttt{BouncyCastle} for
+cryptography.
+
+On a related note, \texttt{git} was our version control system of choice.
+For the duration of the project, we've adhered strictly to peer-reviewed pull
+requests with necessary \texttt{TravisCI} (continuous integration) approval
+before merging into master.
+We feel these tools bring a lot of value to the team, and encourage their usage.
+
 \subsection{Networking}
 
-\subsection{Database storage}
+%\subsection{Database storage}
 
 \subsection{Administration}
 
 % * API and why it uses reflection (and what is refleciton, why it s dangerous
 % etc).
+
+\subsection{Unit tests}
 
 \section{Authentication server}
 
@@ -221,6 +278,20 @@ eventually distributed solution with a clean and hopefully elegant codebase.
 
 \section{Realm server}
 
+In World of Warcraft, the most basic way to split the work load is
+realms.
+Instead of having a single world where all players coexist, there exists many
+parallel and fully isolated worlds, to the point where characters (i.e.\ a
+player's progress) from one realm do not exist on another.
+
+Once past the authentication server, the client gets a list of potential realms.
+The players then selects a realm, and the client establishes a new TCP
+connection to that realm server.
+
+Similarly to the authentication server, the realm server will itself be one
+actor and will instantiate other actors, most notably the TCP listener and the
+packet handlers.
+
 % * Realm
 %     * Connection + cryptography
 %     * Characters management
@@ -229,10 +300,12 @@ eventually distributed solution with a clean and hopefully elegant codebase.
 %     * Moving entities
 %     * Concurrency stuff
 
-\subsection{Packet handler actor hierarchy}
+\subsection{Actor hierarchy}
+
+\subsubsection{Packet handlers}
 
 At the start of the RealmServer, using reflection (as done for the REST API),
-actors implementing the \texttt{PayloadHandlerFactory} trait are instantiated
+classes implementing the \texttt{PayloadHandlerFactory} trait are instantiated
 and a map associating each packet to the matching handler is built.
 
 Once a packet has arrived to the realm server and been deserialized
@@ -244,14 +317,31 @@ Note that the packet handlers actors are by design choice fully stateless: this
 has the benefit of allowing us to scale them out individually simply by adding a
 load balancing actor in front of one.
 
-\subsection{Connection}
+\subsubsection{Client connections}
+
+From the server side, once a TCP connection is received, a
+\texttt{NetworkWorker} actor is created by the \texttt{TCPHandler} actor.
+This actor's responsibility is to handle all aspects of networking for a client:
+\begin{itemize}
+    \item Receive incoming packets, decrypt them if appliable, deserialize them
+        and pass them to the correct packet handler
+    \item Serialize outgoing packets, encrypt them if appliable and send them
+        over the network
+\end{itemize}
+
+The \texttt{NetworkWorker} then creates a \texttt{Session} actor, which is
+responsible for maintaining all state related to the current game client.
+However, it does not handle anything related to the player being in the world,
+as that responsibility falls to the \texttt{SessionPlayer} actor.
+The \texttt{SessionPlayer} actor will be created when the player selects a
+character to play with (cf.~\ref{jtw}).
+
+\subsubsection{Cryptography}
 
 After the authentication server phase, the client and game server are both in
 possession of a cryptographically secure random shared secret.
 The client establishes a new TCP connection to the server and sends an initial
 packet telling the server which account is being used for authentication.
-
-\subsubsection{Cryptography}
 
 The server retrieves the cryptographic key associated with the account from the
 database.
@@ -265,26 +355,9 @@ The cipher is initialized using the shared secret.
 From that point onwards, the secret is used as an encryption key for all
 communications.
 However, it must be noted that only the headers of every packet
-(and not the contents itself) are encrypted.
-
-\subsubsection{Actor hierarchy}
-
-From the server side, once a TCP connection is received, a
-\texttt{NetworkWorker} actor is created by the TCP handler actor.
-This actor's responsibility is to handle all aspects of networking for a client:
-\begin{itemize}
-    \item Receive incoming packets, decrypt them if appliable, deserialize them
-        and pass them to the correct packet handler
-    \item Serialize outgoing packets, encrypt them if appliable and send them
-        over the network
-\end{itemize}
-
-The \texttt{NetworkWorker} then creates a \texttt{Session} actor, which is
-responsible for maintaining all state related to the current game client.
-However, it does not handle anything related to the player being in the world.
+(and not the contents) are encrypted.
 
 \subsection{Characters management}
-
 
 \subsection{World state}
 
@@ -294,7 +367,7 @@ As actions in the game must be visible for other characters, there needs to
 be a way to send messages to a set of players.
 
 On the official implementation of World of Warcraft, with the expected
-workloads, it would be necessary to separate the world is small subset that have
+workloads, it would be necessary to separate the world is small subsets that have
 much more workable sizes, e.g.\ by iterating only on units which are in the
 players field of view.
 
@@ -325,22 +398,14 @@ milliseconds are grouped together and sent out to all clients in form of the
 \texttt{ServerObjectUpdate} packet.
 Some actions, for example movements which require more real time handling,
 are not part of the events gathered for a world tick. However, an example of an
-event that is gathered is a player joining the world:
-\begin{itemize}
-    \item for the player itself, the packet would contain information about it's
-        own character, such as it's looks, current statistics and initial
-        position and all the other players that are already in world
-    \item for other players, the packet would contain similiar information,
-        telling them that a new player has spawned at some position
-\end{itemize}
+event that is gathered is a player joining the world (cf.~\ref{jtw}).
 
-For that process, the \texttt{WorldState} actor gathers events and then
-publishes a \texttt{DispatchWorldUpdate} event to the event stream. All
-\texttt{SessionPlayer} actors are subscribed to this event, and use the contents
-(the events that happened during the last tick) to build the
-\texttt{ServerObjectUpdate} packet.
+When a tick expires, the \texttt{WorldState} actor publishes a
+\texttt{DispatchWorldUpdate} event to the event stream.
+All \texttt{SessionPlayer} actors are subscribed to this event, and use the
+events contained within to build the \texttt{ServerObjectUpdate} packet.
 
-\subsubsection{Joining the world}
+\subsubsection{Joining the world}\label{jtw}
 
 When a player has selected it's character and joined the world, the
 \texttt{ClientPlayerLogin} packet is sent by the client.
@@ -359,28 +424,35 @@ Upon it's creation, the \texttt{SessionPlayer} actor publishes a
 On the next world tick, this event will be a part of the
 \texttt{DispatchWorldUpdate} message received by all \texttt{SessionPlayer}
 actors (including the sender).
-As written earlier, the client will know about its own character when receiving
-the initial \texttt{ServerObjectUpdate} which will this information.\\
 
-However, a player joining the world must also know about existing players. To
-handle that case, the \texttt{SessionPlayer} sends when created a
-\texttt{GetWorldState} message to the \texttt{WorldState} actor, which answers
-with a list of players of players currently in world.
+From the client's point of view, the loading screen lasts until it receives its
+first \texttt{ServerObjectUpdate} packet.
+Therefore, if a client has joined the world during the last tick, the contents
+of the \texttt{ServerObjectUpdate} packet include:
+\begin{itemize}
+    \item for the player itself, information about it's
+        own character, such as its looks, current statistics, initial
+        position and all the other players that are already in world
+    \item for other players, the packet would contain similiar information,
+        telling them that a new player has spawned at some position
+\end{itemize}
 
-This additional information is used when building the first
-\texttt{ServerObjectUpdate} packet, such that the client will have knowledge of
-all players currently in world.
+As a player joining the world must also know about existing players, the
+\texttt{SessionPlayer} sends upon creation a \texttt{GetWorldState} message to
+the \texttt{WorldState} actor, which answers with a list of players currently in
+world.
 
 \subsection{Player movement}
 
 There are various messages in the protocol used for movement.
 All of them have the same structure but use a different opcode, indicating what
 type of movement is being done.
+
 As the movements require direct handling instead of waiting for the next world
-tick, the messages are received by the \texttt{MovementHandler}, are adapted for
-network lag and directly forwarded to all the clients through, which is done by
-publish a \texttt{PlayerMoved} event to the event stream.
-The event is received by all \texttt{NetworkWorker} actor, who send the packet
+tick, the messages are received by the \texttt{MovementHandler}, adapted for
+network lag and directly forwarded to all the clients, by publishing a
+\texttt{PlayerMoved} event to the event stream.
+The event is received by all \texttt{NetworkWorker} actors, who send the packet
 to the client.
 
 Lag compensation is a simple process.
@@ -396,7 +468,9 @@ the clients.
 \subsection{Interesting challenges ahead}
 
 The featureset that is currently implemented is very limited, and a lot of the
-time was spent on necessary and yet unavoidable boilerplate code.
+time was spent on necessary and yet unavoidable boilerplate code or overcoming
+the steep learning curve.
+
 The environment of an MMORPG server however offers a lot of potential for
 challenging code situations.
 For the future of this project, on which we intend to continue to work, we
@@ -476,18 +550,18 @@ screen on the client's side.
 Thus, moving a Player's actor from one continent's node to another would
 cause little issue.
 
-Some actions (like chat, groups, guilds, instances, battlegrounds\ldots) 
+Certain actions (chat, groups, guilds, instances, battlegrounds\ldots) 
 require interacting with a player whose actor is on a different node.
 As these actions are not real time, node crossing overhead is not an issue.
 
 One remaining issue is that the client currently uses a single TCP connection,
 therefore there has to be a front end server through which all network data
 will pass.
-For production grade software with actual players, how much latency such a proxy
-would add depends on a lot of factors, e.g.\ the cluster's hardware
+For production grade software with actual players, latency added by such a proxy
+might matter and would depend on a lot of factors, e.g.\ the cluster's hardware
 configuration.
 
-For a technical demonstration such as this project however, this issue is
+For a technical demonstration such as this project however, this issue can be
 ignored.
 
 \subsection{Raycasting}
@@ -513,10 +587,37 @@ This is also way to open up to the domain of `server-side world physics'.
 
 \section{Conclusion}
 
-% * Conclusion
-%     * Reverse engineering difficulties
-% * Annex: Why Scala, no regrets tho
-% * Bibliography
+% WoW is major game and complex
+% Basing our work off reverse engineered work was a struggle
+% We highly enjoyed the opportunity offered by 4MMPF to provide our own topic
+% and work on something we liked, while having that work recognized as a
+% worthwhile learning endeavour.
+% From our code, we are happy with what we have learned in terms of programming,
+% but are a bit disappointed with not having been able to reach the distributed
+% stage in the provided time frame, as we feel like it would have made our piece
+% of software much cooler. We are however still happy with the featureset we've
+% implemented and, though we are now still improving our code base (because we
+% learned), we feel like we've set a good foundation for more features.
+
+World of Warcraft has played an important role in the video game industry.
+Working with such a complex video game was certainly a challenge.
+
+Indeed, while we mostly benefitted from reverse engineering work done by others,
+understanding the inner workings of the game server was a struggle we still
+faced regularly at the end of the semester.
+
+Every breakthrough, however, is remembered as an exciting and rewarding
+moment.
+
+Through this project, we have learnt a lot about both general programming and
+video game programming.
+It was an opportunity to see concrete application of our knowledge to a domain
+we enjoy and like.\\
+
+As we learnt and got more familiar with the actor pattern, we reworked our code
+base multiple times.
+Even as these lines are written, we are considering changing key points of our
+architecture because we feel they do not make sense anymore (potentially making
+what we wrote earlier inaccurate\ldots).
 
 \end{document}
-
