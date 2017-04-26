@@ -9,18 +9,18 @@ class CharacterCreateHandler extends PayloadHandler[ClientCharacterCreate] {
 
   def checkNameValidity(name: String): ResponseCodes.Value = {
     if (name.isEmpty) {
-      ResponseCodes.CharNameNoName
+      ResponseCodes.CharCreateFailed
     } else if (name.length >= ClientCharacterCreateEntry.MaxNameLength) {
-      ResponseCodes.CharNameFailure
+      ResponseCodes.CharCreateFailed
     } else {
-      ResponseCodes.CharNameSuccess
+      ResponseCodes.CharCreateSuccess
     }
   }
 
   override def process(payload: ClientCharacterCreate): Unit = {
     val response = checkNameValidity(payload.character.charInfo.name)
 
-    if (response == ResponseCodes.CharNameSuccess) {
+    if (response == ResponseCodes.CharCreateSuccess) {
         CharacterInfo.addCharacter(CharacterInfo.apply(Guid(CharacterInfo.getNextId, GuidType.Player),
           Position.mxyzo(0, -8937.25488f, -125.310707f, 82.8524399f, 0.662107527f),
           payload.character.charInfo))
