@@ -2,7 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage{fourier} % Adobe Utopia
-\usepackage[french]{babel}
+\usepackage[english]{babel}
 \usepackage{amsmath,amsfonts,amsthm}
 \usepackage{relsize}
 \usepackage[acronym,toc]{glossaries}
@@ -57,7 +57,7 @@ Floran NARENJI-SHESHKALANI}
 
 \maketitle
 
-\iffalse
+\iffalse{}
 * Reflection
 * Actor system/hierarchy
 * API
@@ -87,51 +87,17 @@ Floran NARENJI-SHESHKALANI}
     * Ahead of it's time ('research language')
     * Home grown language (der Schweiz)
 
-* Introduction
-    * Motivation
-    * TrinityCore
-        * It's not "translating C++ to Akka"
-        * We're doing cleanear, hopefully scalable
-    * Basic behavior of WoW client
-* Building blocks for a WoW server
-    * Actors and why
-    * Protocol (scodec)
-    * Database storage
-    * Networking
-    * API + Reflection
-* Auth
-    * Protocol description
-        * Sequence diagram
-        * Actor diagram
-        * Principle of each packet
-            * with it's cryptographical application
-    * Realm list building
-    * Account API
-    * AuthSession FSM
-* Realm
-    * Connection + cryptography
-    * Characters management
-    * World state
-        * Event stream
-    * Moving entities
-    * Concurrency stuff
-* Conclusion
-    * Reverse engineering difficulties
-* Annex: Why Scala, no regrets tho
-* Bibliography
-    
-
 \fi
 
 \section{Introduction}
 
-This project was an experiment in writing an authoritative server for an online
+This project was an experiment in writing a server for an online
 video game.
-The goal was to get hands-on experience about designing and building a
+The academic goal was to get hands-on experience about designing and building a
 complex server from scratch, without missing any aspects of it: from basic blocks
 such as networking, cryptography and concurrency to managing the world itself.
 
-\section{World of Warcraft}
+\subsection{World of Warcraft}
 
 For such a purpose, we choose the \gls{WoW} video game.
 In deed, writing our own video game client would have been both out of the scope
@@ -146,6 +112,175 @@ video game for which writing a server would be most interesting: being the most
 popular and populous game of its type for the last decade, the technical aspects
 were certain to be production grade. Furthermore, the protocol is well
 documented and there exists very advanced open source implementations of it.
+
+\subsection{General information about MMORPGs}
+
+MMORPGs are exclusively online video games: without a network connection, the
+game cannot be played. Unlike more traditionnal games such as first-person
+shooters, the players evolve in a fully shared persistent open world.
+
+In these games, the server is authoritative: in real time, each player tells of
+its actions to the server, which authorizes them and then sends out the
+information to the other players (for example, players will be informed when a
+nearby players attack a creature).
+In terms of network topology, this model is known as the star model, in which
+every communication goes through a central server.
+
+On a non-technical note, for the players of such game, the goals are often about
+creating a character and making it stronger, e.g.\ by fighting creatures and
+gaining equipment.
+
+\subsection{Stated objectives}
+
+This project was done as a part of the Ensimag's module named `Speciality
+project'.
+With World of Warcraft's development budget numbering in millions of dollars and
+a single semester of classes at our disposal, it was obvious that only a minimal
+subset of features from the original game server could be implemented.\
+
+The features to be implemented are:
+\begin{itemize}
+    \item Authentication
+    \item Realm selection
+    \item Character creation
+    \item Joining the world
+    \item Movement
+    \item Seeing other players move
+\end{itemize}
+
+While all these features are extremely basic and are all-together insufficient
+for anyone to consider actually playing the game, they did provide enough work
+to last until the end of the project.
+
+\subsection{TrinityCore}
+
+TrinityCore is an open source project for a game server that is compatible with
+the \gls{WoW} client.
+Unlike our implementation, their codebase is nearly 13 years old (through many
+forks) and provides a playing experience that is much closer (yet still not
+equal) to the official experience.
+
+The reverse engineering work was primarily done by this project and its
+predecessors, which is why we felt it was important to give them a special
+mention here.\\
+
+However, a codebase that is as old as TrinityCore is bound to have some
+flaws. Indeed, modern considerations, for example on distributed systems,
+scalability or open source code base management, did not exist when most of the
+work on TrinityCore was done.
+
+Though TrinityCore was indeed an inspiration for this project, our goal is not
+to simply translate code from C++ to Scala.
+With the usage of Scala and Akka actors, we intend to have a scalable and
+eventually distributed solution with a clean and hopefully elegant codebase.
+
+\section{Building blocks of a World of Warcraft game server}
+
+\subsection{Actors}
+
+% * What are actors
+% * Why are they nice
+% * Why would they fit well with the conception of an MMORPG
+
+\subsection{Networking}
+
+\subsection{Database storage}
+
+\subsection{Administration}
+
+% * API and why it uses reflection (and what is refleciton, why it s dangerous
+% etc).
+
+\section{Authentication server}
+
+% * Auth
+%     * Protocol description
+%         * Sequence diagram
+%         * Actor diagram
+%         * Principle of each packet
+%             * with it's cryptographical application
+%     * Realm list building
+%     * Account API
+%     * AuthSession FSM
+
+\section{Realm server}
+
+% * Realm
+%     * Connection + cryptography
+%     * Characters management
+%     * World state
+%         * Event stream
+%     * Moving entities
+%     * Concurrency stuff
+
+\subsection{Packet handler actor hierarchy}
+
+At the start of the RealmServer, using reflection (as done for the REST API),
+actors implementing the \texttt{PayloadHandlerFactory} trait are instantiated
+and a map associating each packet to the matching handler is built.
+
+Once a packet has arrived to the realm server and been deserialized
+successfully, its payload is passed to the correct handler.
+As an example of what a handler might do, the character enumeration request
+handler will load all characters for an account and build the responding packet.
+
+Note that the packet handlers actors are by design choice fully stateless: this
+has the benefit of allowing us to scale them out individually simply by adding a
+load balancing actor in front of one.
+
+\subsection{Connection}
+
+After the authentication server phase, the client and game server are both in
+possession of a cryptographically secure random shared secret.
+The client establishes a new TCP connection to the server and sends an initial
+packet telling the server which account is being used for authentication.
+
+\subsubsection{Cryptography}
+
+The server retrieves the cryptographic key associated with the account from the
+database.
+
+The algorithm used in the version of protocol we support (from
+2009) is RC4a (symmetric encryption) which is now known to be flawed.
+The variant used in the World of Warcraft protocol skips the first 1024 bytes,
+which are known to leak information.
+The cipher is initialized using the shared secret.
+
+From that point onwards, the secret is used as an encryption key for all
+communications.
+However, it must be noted that only the headers of every packet
+(and not the contents itself) are encrypted.
+
+\subsubsection{Actor hierarchy}
+
+From the server side, once a TCP connection is received, a
+\texttt{NetworkWorker} actor is created by the TCP handler actor.
+This actor's responsibility is to handle all aspects of networking for a client:
+\begin{itemize}
+    \item Receive incoming packets, decrypt them if appliable, deserialize them
+        and pass them to the correct packet handler
+    \item Serialize outgoing packets, encrypt them if appliable and send them
+        over the network
+\end{itemize}
+
+The \texttt{NetworkWorker} then creates a \texttt{Session} actor, which is
+responsible for maintaining all state related to the current game client.
+However, it does not handle anything related to the player being in game.
+
+\subsection{Characters management}
+
+\subsection{World state}
+
+When a player has selected it's character and joined the world,
+
+\subsection{Player movement}
+
+\section{Conclusion}
+
+% * Conclusion
+%     * Reverse engineering difficulties
+% * Annex: Why Scala, no regrets tho
+% * Bibliography
 
 \end{document}
 
