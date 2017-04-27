@@ -14,9 +14,12 @@ case class CharacterDescription(name: String,
                                 face: Int,
                                 hairStyle: Int,
                                 hairColor: Int,
-                                facialHair: Int)
+                                facialHair: Int) {
+}
 
 object CharacterDescription {
+  val MaxNameLength: Int = 12
+
   implicit val codec: Codec[CharacterDescription] = {
     ("name" | cstring) ::
       ("race" | Races.codec) ::

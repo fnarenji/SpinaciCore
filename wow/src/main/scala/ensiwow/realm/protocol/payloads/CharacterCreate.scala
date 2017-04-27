@@ -18,8 +18,6 @@ object ClientCharacterCreate {
 case class ClientCharacterCreateEntry(charInfo: CharacterDescription)
 
 object ClientCharacterCreateEntry {
-  val MaxNameLength: Int = 12
-
   implicit val codec: Codec[ClientCharacterCreateEntry] = {
     ("charInfo" | Codec[CharacterDescription]) ::
       // outfitId unused

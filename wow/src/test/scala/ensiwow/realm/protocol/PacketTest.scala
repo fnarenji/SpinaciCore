@@ -136,9 +136,9 @@ class ServerCharacterEnumTest extends PacketTest(
         Guid(8, GuidType.Player),
         CharacterDescription(
           "Garl",
-          race = Races.RaceHuman,
-          charClass = Classes.ClassRogue,
-          gender = Genders.GenderMale  ,
+          race = Races.Human,
+          charClass = Classes.Rogue,
+          gender = Genders.Male  ,
           skin = 8,
           face = 8,
           hairStyle = 7,
@@ -152,15 +152,15 @@ class ServerCharacterEnumTest extends PacketTest(
         0x02000000,
         0,
         0,
-        Pet(0, 0, 0)
+        Pet.None
       ),
       ServerCharacterEnumEntry(
         Guid(9, GuidType.Player),
         CharacterDescription(
           "Garm",
-          race = Races.RaceHuman,
-          charClass = Classes.ClassRogue,
-          gender = Genders.GenderMale,
+          race = Races.Human,
+          charClass = Classes.Rogue,
+          gender = Genders.Male,
           skin = 0,
           face = 6,
           hairStyle = 6,
@@ -174,7 +174,7 @@ class ServerCharacterEnumTest extends PacketTest(
         0x02000000,
         0,
         0,
-        Pet(0, 0, 0)
+        Pet.None
       )
     )
   )

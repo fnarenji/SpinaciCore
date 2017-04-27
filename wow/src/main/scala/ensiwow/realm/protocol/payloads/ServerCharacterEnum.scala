@@ -60,6 +60,8 @@ object ServerCharacterEnumEntry {
 case class Pet(displayId: Long, level: Long, family: Long)
 
 object Pet {
+  val None = Pet(0, 0, 0)
+
   implicit val codec: Codec[Pet] = {
     ("displayId" | uint32L) ::
       ("level" | uint32L) ::
