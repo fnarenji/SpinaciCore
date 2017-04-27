@@ -109,18 +109,19 @@ The source code under MIT license is available at
 \subsection{World of Warcraft}
 
 For such a purpose, we chose the World of Warcraft video game.
-In deed, writing our own video game client would have been both out of the scope
+Indeed, writing our own video game client would have been both out of the scope
 of this project and, in terms of time spent, mutually exclusive with writing the
 server for it.
 Moreover, the video game sector has by nature little to no available open source
 game clients that would fit the purpose of this project.
 Consequently, it was decided to settle on an existing video game.
 
-With prior knowledge and additional research, World of Warcraft was determined to be the
-video game for which writing a server would be most interesting: being the most
-popular and populous game of its type for the last decade, the technical aspects
-were certain to be production grade. Furthermore, the protocol is well
-documented and there exists very advanced open source implementations of it.
+With prior knowledge and additional research, World of Warcraft was determined
+to be the video game for which writing a server would be most interesting: being
+the most popular and populous game of its type for the last decade, the
+technical aspects were certain to be production grade.
+Furthermore, the protocol is well documented and there exists very advanced open
+source implementations of it.
 
 \subsubsection{Disclaimer}
 
@@ -169,7 +170,7 @@ The features to be implemented are:
 \end{itemize}
 
 While all these features are extremely basic and are all-together insufficient
-for anyone to consider actually playing the game, they did provide enough work
+for anyone to consider seriously playing the game, they did provide enough work
 to last until the end of the project.
 
 \subsection{TrinityCore}
@@ -177,8 +178,8 @@ to last until the end of the project.
 TrinityCore is an open source project for a game server that is compatible with
 the World of Warcraft client.
 Unlike our implementation, their codebase is nearly 13 years old (through many
-forks) and provides a playing experience that is much closer (yet still not
-equal) to the official experience.
+forks) and provides a playing experience that is much closer, but certainly
+inferior, to the official experience.
 
 The reverse engineering work was primarily done by this project and its
 predecessors, which is why we felt it was important to give them a special
@@ -210,7 +211,7 @@ An actor follows a few axioms:
     \item Messages exchanged by actors should contain only immutable data
 \end{itemize}
 
-The lack of mutable shared state make actors a way to express concurrent
+The lack of mutable shared state makes actors a way to express concurrent
 problems elegantly without wrestling directly with synchronization primitives.
 
 As with most good coding practices, actors should have a single responsibility.
@@ -222,7 +223,7 @@ scheduled atop a thread pool.\\
 For the purpose of writing a World of Warcraft game server, and more generally
 an MMORPG game server, actors have an obvious appeal: each entity of the world
 could be represented as an actor.
-Interactions between entities would then be simple messages exchanged.
+Interactions between entities would then be simple message exchanges.
 
 There is no knowledge of how such a system would behave in practice: actors
 have an overhead, and having one actor per world entity might be too much.
@@ -241,7 +242,7 @@ language, with JVM binary compatibility and wide enough adoption.
 It is a very rich language, with an extreme amount of flexibility and syntaxic
 sugar.
 
-For actors, Akka is the go-to library, which is also one of the reasons we chose
+For actors, Akka is the to-go library, which is also one of the reasons we chose
 Scala.
 
 As for other libraries, we prominently used \texttt{scodec}, for our
@@ -277,7 +278,7 @@ We feel these tools bring a lot of value to the team, and encourage their usage.
 \section{Authentication server}
 
 \subsection{SRP Protocol}
-The authentication server implements an SRP (Secure Remote Password) protocol 
+The authentication server implements the SRP (Secure Remote Password) protocol 
 in which, the client must demonstrate to the server that it knows the account's 
 name and password without sending the password itself.
 
@@ -285,7 +286,7 @@ The first step requires the client to start the communication with the server
 by providing the game's version and other parameters related to the computer. 
 Alongside, it provides also the username to which the authentication program 
 answers by sending a challenge, in case the previous parameters are 
-authorized by the server. The following step analyzes the validity of the 
+authorized by the server. The following step analyzes the valitidy of the 
 challenge's solution response, and if correct, it creates a session related to
 the player.
 Only then, the server will deliver the list of realms availables.
@@ -294,62 +295,67 @@ Only then, the server will deliver the list of realms availables.
     \item \texttt{ClientChallenge}
         The first connection aims at checking the validity of the game's version, 
         thus, the packet contains an instance of \texttt{VersionInfo} that will 
-        be analyzed and if valid, the packet's handler: 
+        be analyzed and if valid, the packet's handler
         \texttt{LogonChallengeHandler} will generate a challenge
 
     \item \texttt{ServerLogonChallenge}
-        The challenge is operated through an instance of \texttt{ServerChallenge} that describes
-        the first part of an SRP6 protocol implementation. This object contains a 
-        key, a generator of multiplicative group, a large prime number and a salt 
-        stored in the database associated to the username.
+        The challenge is represented by an instance of \texttt{ServerChallenge}
+        that describes the first part of an SRP6 protocol implementation. This
+        object contains a key, a multiplicative group generator, a large
+        prime number and a salt. It is stored in the database, associated to the
+        username.
 
     \item \texttt{ClientLogonProof}
-        In order to solve the challenge, the client generates a shared key and returns
-        a client key and a proof. With this information, the server is able to generate the
-        same shared key and compares the proof to the expected proof generated from the
-        shared key and the client key. 
+        In order to solve the challenge, the client generates a shared key and
+        returns a client key and a proof. With this information, the server is
+        able to generate the same shared key and compares the proof to the
+        expected proof generated from the shared key and the client key. 
 
     \item \texttt{ServerLogonProof}
         Whether the expected proof is matched or not, an instance of the packet 
-        \texttt{ServerLogonProof} is sent back to the client. The difference 
-        is that if the user entered a valid couple username and password, the packet 
+        \texttt{ServerLogonProof} is sent back to the client. The difference, 
+        is that if the user entered a valid username and password, the packet 
         will contain a success response code and a proof that certifies that the 
         server too has the same shared key. Otherwise, the response code will be 
         interpreted as a failed authentication.
 
     \item \texttt{ClientRealmlist}
-Afterwards, if the authentication succeeded, the client asks for the realms' list
+        Afterwards, if the authentication succeeded, the client asks for the
+        realms list
 
     \item \texttt{ServerRealmlist}
-        The response to the request is described by an array of realms each defined
-        by their nature and current state, such as the number of players or the population
-        level.
+        The response to the request is described by an array of realms each
+        defined by their nature and current state, such as the number of
+        characters or the population level.
+
 \end{itemize}
 
 \subsection{Authentication automaton}
+
 All the while, the authentication server goes through different states and
-behaviours. The packets received by the server are managed by \texttt{AuthSession} which 
-implements a finite state machine. The initial state, \texttt{StateNoData}, only handles
-logon challenges or reconnect challenges and subsequently switches to the
-appropriate state. \\
+behaviours. The packets received by the server are managed by the
+\texttt{AuthSession} actor which implements a finite state machine.
+The initial state, \texttt{StateNoData}, only handles logon challenges or
+reconnect challenges and subsequently switches to the appropriate state.
 
 For instance, after receiving a logon challenge, it shifts
 to \texttt{StateChallenge} which analyzes the challenge request and if valid, 
-sends back a challenge to the client and switches to \texttt{StateProof}, 
-otherwise, to \texttt{StateFailed}. \\
+sends back a challenge to the client and switches to \texttt{StateProof}. 
+Otherwise, it switches to \texttt{StateFailed}.
 
-Later on, in \texttt{StateProof}, it relays any logon proof to the appropriate handler
-which eventually will send back an \texttt{EventProofSuccess} containing the servers' logon
-proof. At this point, the automaton shifts to \texttt{StateRealmlist} where, when queried, 
-can ask the authentication server for the existing realm servers to be sent to
-the client. \\
+Later on, in \texttt{StateProof}, it relays any logon proof to the appropriate
+handler which eventually will send back an \texttt{EventProofSuccess} containing
+the servers' logon proof.
+At this point, the automaton shifts to \texttt{StateRealmlist} which, when
+queried, asks the \texttt{AuthServer} actor for the available realm servers to
+be sent to the client.
 
 \subsection{Account API}
+
 In order to interact with the database, the account management object is 
 complemented by \texttt{AccountAPI} which describes differents HTTP routes 
 and when one of them is triggered, the appropriate account's management method is
 executed. Therefore, allowing a remote and simple access to the database.
-
 
 \section{Realm server}
 
@@ -433,7 +439,9 @@ However, it must be noted that only the headers of every packet
 (and not the contents) are encrypted.
 
 \subsection{Characters management}
-\subsubsection{Characters creation}
+
+\subsubsection{Character creation}
+
 One of the features of the realm server is the ability to create characters.
 Once connected to it, the user can add a new character and choose its appearance; 
 these options are transcribed in the packet \texttt{ClientCharacterCreate} that
@@ -452,11 +460,12 @@ contains:
 \end{itemize}
 \end{multicols}
 
-The characters creation handler tests the validity of some fields and if successfull,
+The characters creation handler tests the validity of the fields and if successfull,
 adds the character to a list, as well as sending a \texttt{ServerCharacterCreate}
 consisting of a success response code.
 
 \subsubsection{Characters enumeration}
+
 When the realm server receives a payloadless packet with an opcode corresponding
 to a character enumeration, \texttt{CharacterEnumHandler} sends back an instance
 of \texttt{ServerCharacterEnum} which contains the array of the characters.
