@@ -28,6 +28,9 @@
 
 \usepackage{stmaryrd}
 \usepackage{url}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\captionsetup{width=0.7\textwidth}
 
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}
 \hoffset = -0pt
@@ -255,6 +258,8 @@ requests with necessary \texttt{TravisCI} (continuous integration) approval
 before merging into master.
 We feel these tools bring a lot of value to the team, and encourage their usage.
 
+For unit testing, we used the \texttt{scalatest} library.
+
 \subsection{Networking}
 
 %\subsection{Database storage}
@@ -266,6 +271,26 @@ We feel these tools bring a lot of value to the team, and encourage their usage.
 
 \subsection{Unit tests}
 
+The World of Warcraft client was written in C++, for the x86 architecture, which
+uses little-endian. 
+Our application run on the JVM, which uses big-endian.
+The World of Warcraft client expects strict adherence to it's binary format.
+
+Writing code while juggling byte orders adds a layer of complexity, making an
+already challenging task that much more difficult.
+Moreover, mistakes result in no error: the client will silently ignore any
+malformed packet, and wrong byte ordering will count as such.
+
+Hence, it was required of us to have exact binary compatibility with the client.
+In that regards, unit tests proved to be a most useful tool.
+Using reference packets extracted from actual game communications, we were able
+to write unit tests that validated the output of our serialization codecs.
+
+As we refactored our code or gained better knowledge of the third party
+libraries we were using, we made code improvements to stable
+features.
+Those often resulted in hard to spot mistakes, if not for unit tests.
+
 % * Auth
 %     * Protocol description
 %         * Sequence diagram
@@ -275,7 +300,12 @@ We feel these tools bring a lot of value to the team, and encourage their usage.
 %     * Realm list building
 %     * Account API
 %     * AuthSession FSM
+
 \section{Authentication server}
+
+The authentication server is the entry point to the World of Warcraft.  
+Its address is shipped with the client, and its purpose is essentially to
+validate the users credentials and offer the choice of realm.
 
 \subsection{SRP Protocol}
 The authentication server implements the SRP (Secure Remote Password) protocol 
@@ -290,6 +320,13 @@ authorized by the server. The following step analyzes the valitidy of the
 challenge's solution response, and if correct, it creates a session related to
 the player.
 Only then, the server will deliver the list of realms availables.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{authexch}
+    \caption{Sequence diagram for a successful authentication/realms list
+    exchange (excluding error cases)}
+\end{figure}
 
 \begin{itemize}
     \item \texttt{ClientChallenge}
@@ -329,6 +366,8 @@ Only then, the server will deliver the list of realms availables.
         characters or the population level.
 
 \end{itemize}
+
+\FloatBarrier{}
 
 \subsection{Authentication automaton}
 
@@ -382,6 +421,12 @@ packet handlers.
 %     * Concurrency stuff
 
 \subsection{Actor hierarchy}
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=\textwidth]{realmactors}
+    \caption{Actors hierarchy for a realm server}
+\end{figure}
 
 \subsubsection{Packet handlers}
 
