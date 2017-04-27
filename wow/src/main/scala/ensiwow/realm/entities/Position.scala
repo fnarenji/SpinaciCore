@@ -13,7 +13,7 @@ case class Position(mapId: Option[Long], x: Float, y: Float, z: Float, orientati
 object Position {
   def xyz(x: Float, y: Float, z: Float): Position = Position(None, z, y, z, None)
 
-  def xyzo(x: Float, y: Float, z: Float, o: Float): Position = Position(None, z, y, z, Some(o))
+  def xyzo(x: Float, y: Float, z: Float, o: Float): Position = Position(None, x, y, z, Some(o))
 
   def mxyz(mapId: Long, x: Float, y: Float, z: Float): Position = Position(Some(mapId), x, y, z, None)
 
