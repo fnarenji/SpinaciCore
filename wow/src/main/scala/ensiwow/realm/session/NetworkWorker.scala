@@ -89,7 +89,7 @@ class NetworkWorker extends Actor with ActorLogging {
     currHeader match {
       case Some(header) =>
         if (unprocessedBits.bytes.size >= header.payloadSize) {
-//          log.debug("Has header, no payload, parsing payload")
+          // log.debug("Has header and payload, parsing payload")
 
           val payloadBits = unprocessedBits.take(header.payloadSize * 8L)
           unprocessedBits = unprocessedBits.drop(header.payloadSize * 8L)
@@ -170,4 +170,3 @@ object NetworkWorker extends SessionActorCompanion {
 
   case class EventAuthenticated(sessionKey: BigInt) extends RealmSessionEvent
 
-}

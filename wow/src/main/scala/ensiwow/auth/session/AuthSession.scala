@@ -4,7 +4,7 @@ import akka.actor.{FSM, Props}
 import ensiwow.auth._
 import ensiwow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
 import ensiwow.auth.protocol.OpCodes
-import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlistPacket, ClientReconnectProof}
+import ensiwow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlist, ClientReconnectProof}
 import ensiwow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
 import ensiwow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
 import scodec.Attempt.{Failure, Successful}
@@ -130,7 +130,7 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
   when(StateRealmlist) {
     case Event(EventIncoming(bits), NoData) =>
-      val packet = PacketSerializer.deserialize[ClientRealmlistPacket](bits)
+      val packet = PacketSerializer.deserialize[ClientRealmlist](bits)
       log.debug(s"Received realm list request: $packet")
 
       authServer ! GetRealmlist

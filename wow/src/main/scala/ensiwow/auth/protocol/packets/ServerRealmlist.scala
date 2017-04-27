@@ -20,25 +20,25 @@ import scala.language.postfixOps
   * @param timezone        the time zone
   * @param id              the identifier
   */
-case class ServerRealmlistPacketEntry(realmType: Int,
-                                      lock: Int,
-                                      flags: Int,
-                                      name: String,
-                                      ip: String,
-                                      populationLevel: Float,
-                                      characterCount: Int,
-                                      timezone: Int,
-                                      id: Int)
+case class ServerRealmlistEntry(realmType: Int,
+                                lock: Int,
+                                flags: Int,
+                                name: String,
+                                ip: String,
+                                populationLevel: Float,
+                                characterCount: Int,
+                                timezone: Int,
+                                id: Int)
 
 /**
   * Data structure which describes the response to be sent
   *
   * @param realms a vector containing the realms
   */
-case class ServerRealmlistPacket(realms: Vector[ServerRealmlistPacketEntry]) extends ServerPacket
+case class ServerRealmlist(realms: Vector[ServerRealmlistEntry]) extends ServerPacket
 
-object ServerRealmlistPacketEntry {
-  implicit val codec: Codec[ServerRealmlistPacketEntry] = {
+object ServerRealmlistEntry {
+  implicit val codec: Codec[ServerRealmlistEntry] = {
     ("realmType" | uint8L) ::
       ("lock" | uint8L) ::
       ("flag" | uint8L) ::
@@ -48,18 +48,18 @@ object ServerRealmlistPacketEntry {
       ("characterCount" | uint8L) ::
       ("timezone" | uint8L) ::
       ("id" | uint8L)
-  }.as[ServerRealmlistPacketEntry]
+  }.as[ServerRealmlistEntry]
 }
 
-object ServerRealmlistPacket {
-  implicit val codec: Codec[ServerRealmlistPacket] = {
+object ServerRealmlist {
+  implicit val codec: Codec[ServerRealmlist] = {
     constantE(OpCodes.RealmList) ::
       variableSizeBytes(
         uint16L,
         constantE(0L)(uint32L) ::
-          ("realms" | variableSizeVector(uint16L, Codec[ServerRealmlistPacketEntry])) ::
+          ("realms" | variableSizeVector(uint16L, Codec[ServerRealmlistEntry])) ::
           constantE(0x10)(uint8L) ::
           constantE(0x00)(uint8L))
-  }.as[ServerRealmlistPacket]
+  }.as[ServerRealmlist]
 }
 
