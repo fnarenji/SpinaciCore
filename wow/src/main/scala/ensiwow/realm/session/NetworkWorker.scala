@@ -144,7 +144,7 @@ object NetworkWorker extends SessionActorCompanion {
   sealed trait RealmSessionEvent
 
   sealed class PayloadBearingEvent[T <: Payload with ServerSide](payload: T)
-    (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T])
+                                                                (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T])
     extends RealmSessionEvent {
     def serialize(sessionCipher: Option[SessionCipher]): BitVector = {
       PacketSerialization.outgoing(payload)(sessionCipher)(implicitly, implicitly)
@@ -152,7 +152,7 @@ object NetworkWorker extends SessionActorCompanion {
   }
 
   case class EventOutgoing[T <: Payload with ServerSide](payload: T)
-    (implicit opCodeProvider: OpCodeProvider[T], codec: Codec[T])
+                                                        (implicit opCodeProvider: OpCodeProvider[T], codec: Codec[T])
     extends PayloadBearingEvent[T](payload)
 
   case class EventOutgoingRaw(bits: BitVector, opCode: OpCodes.Value) extends RealmSessionEvent
@@ -166,7 +166,8 @@ object NetworkWorker extends SessionActorCompanion {
   case class EventTerminate(delayed: Boolean) extends RealmSessionEvent
 
   case class EventTerminateWithPayload[T <: Payload with ServerSide](payload: T)
-    (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T]) extends PayloadBearingEvent[T](payload)
+                                                                    (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T]) extends PayloadBearingEvent[T](payload)
 
   case class EventAuthenticated(sessionKey: BigInt) extends RealmSessionEvent
 
+}
