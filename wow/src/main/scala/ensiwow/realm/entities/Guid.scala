@@ -7,9 +7,10 @@ import scodec.codecs._
 /**
   * Represents a unique Guid attributed to an entity.
   */
-case class Guid(id: Guid.Id, guidType: GuidType.Value) {
+case class Guid(id: Guid.Id, guidType: GuidType.Value) extends Ordered[Guid] {
+  override def compare(that: Guid): Int = this.id - that.id
+
   require(id >= 0)
-  def max(other: Guid): Guid = Guid(this.id max other.id, this.guidType)
 }
 
 object Guid {

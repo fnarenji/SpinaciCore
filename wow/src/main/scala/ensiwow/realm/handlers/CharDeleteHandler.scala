@@ -6,24 +6,21 @@ import ensiwow.realm.protocol.payloads.{ClientCharacterDelete, ServerCharacterDe
 import ensiwow.realm.session.NetworkWorker
 
 /**
-  * Created by yanncolina on 14/04/17.
+  * Handles characters suppression requests
+  * If valid, the character will be removed from CharacterInfo's list
   */
 class CharDeleteHandler extends PayloadHandler[ClientCharacterDelete] {
 
   /**
-    * Processes an incoming payload
-    *
-    * @param payload payload to be processed
+    * Processes the client's suppression request
+    * @param payload it contains the identification of the targeted character
     */
   override protected def process(payload: ClientCharacterDelete): Unit = {
-    val response = if (CharacterInfo.contains(payload.guid)) {
+    val response = if (CharacterInfo.exists(payload.guid)) {
       ResponseCodes.CharDeleteSuccess
     } else {
+      CharacterInfo.deleteCharacter(payload.guid)
       ResponseCodes.CharDeleteFailure
-    }
-
-    response match {
-      case ResponseCodes.CharDeleteSuccess => CharacterInfo.deleteCharacter(payload.guid)
     }
 
     sender ! NetworkWorker.EventOutgoing(ServerCharacterDelete(response))

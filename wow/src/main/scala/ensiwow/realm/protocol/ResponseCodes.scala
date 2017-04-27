@@ -5,7 +5,6 @@ import scodec._
 import scodec.codecs._
 
 object ResponseCodes extends EncodableEnum(uint8L) {
-  // implicit val codec: Codec[ResponseCodes.Value] = enumerated(uint8L, ResponseCodes)
 
   val CharCreateSuccess = Value(47)
   val CharCreateError = Value(48)
