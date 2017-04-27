@@ -1,7 +1,6 @@
 package ensiwow.realm.protocol
 
 import ensiwow.realm.shared.EncodableEnum
-import scodec._
 import scodec.codecs._
 
 object ResponseCodes extends EncodableEnum(uint8L) {

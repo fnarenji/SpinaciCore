@@ -17,9 +17,9 @@ class CharDeleteHandler extends PayloadHandler[ClientCharacterDelete] {
     */
   override protected def process(payload: ClientCharacterDelete): Unit = {
     val response = if (CharacterInfo.exists(payload.guid)) {
+      CharacterInfo.deleteCharacter(payload.guid)
       ResponseCodes.CharDeleteSuccess
     } else {
-      CharacterInfo.deleteCharacter(payload.guid)
       ResponseCodes.CharDeleteFailure
     }
 
