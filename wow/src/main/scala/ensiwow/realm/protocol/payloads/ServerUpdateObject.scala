@@ -7,17 +7,18 @@ import ensiwow.realm.protocol._
 import scodec.Codec
 import scodec.bits._
 import scodec.codecs._
+import scala.collection.immutable
 
 /**
   * Object update payload
   */
-case class ServerUpdateObject(blocks: Vector[ServerUpdateBlock]) extends Payload with ServerSide
+case class ServerUpdateObject(blocks: immutable.Seq[ServerUpdateBlock]) extends Payload with ServerSide
 
 object ServerUpdateObject {
   implicit val opCodeProvider: OpCodeProvider[ServerUpdateObject] = OpCodes.SUpdateObject
 
   implicit val codec: Codec[ServerUpdateObject] =
-    ("blocks" | variableSizeVector(long2Int(uint32L), ServerUpdateBlock.codec)).as[ServerUpdateObject]
+    ("blocks" | sizePrefixedSeq(long2Int(uint32L), ServerUpdateBlock.codec)).as[ServerUpdateObject]
 }
 
 case class MoveSpeeds(
