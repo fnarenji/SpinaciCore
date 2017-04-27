@@ -100,16 +100,16 @@ class ServerLogonProofFailureTest extends AuthPacketTest[ServerLogonProof](
   ServerLogonProof(AuthResults.FailUnknownAccount, None, Some(ServerLogonProofFailure()))
 )
 
-class ClientRealmlistPacketTest extends AuthPacketTest[ClientRealmlistPacket](
+class ClientRealmlistTest extends AuthPacketTest[ClientRealmlist](
   hex"1000000000",
-  ClientRealmlistPacket()
+  ClientRealmlist()
 )
 
-class ServerRealmlistPacketTest extends AuthPacketTest[ServerRealmlistPacket](
+class ServerRealmlistTest extends AuthPacketTest[ServerRealmlist](
   hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000",
-  ServerRealmlistPacket(
+  ServerRealmlist(
     realms = Vector(
-      ServerRealmlistPacketEntry(
+      ServerRealmlistEntry(
         realmType = 1,
         lock = 0,
         flags = 0x2,

@@ -3,7 +3,7 @@ package ensiwow.auth
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.Application
 import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
-import ensiwow.auth.protocol.packets.{ServerRealmlistPacket, ServerRealmlistPacketEntry}
+import ensiwow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
 import ensiwow.auth.session.{AuthSession, EventRealmlist}
 import ensiwow.auth.utils.PacketSerializer
 import ensiwow.common.VersionInfo
@@ -31,8 +31,8 @@ class AuthServer extends Actor with ActorLogging {
   context.actorOf(TCPServer.props(AuthSession, address, port), TCPServer.PreferredName)
 
   // TODO: find a way to retrieve address and port
-  private val realms = Vector(ServerRealmlistPacketEntry(1, 0, 0, "EnsiWoW", "127.0.0.1:8085", 0, 1, 1, 1))
-  private val serverRealmlistPacket: ServerRealmlistPacket = ServerRealmlistPacket(realms)
+  private val realms = Vector(ServerRealmlistEntry(1, 0, 0, "EnsiWoW", "127.0.0.1:8085", 0, 1, 1, 1))
+  private val serverRealmlistPacket: ServerRealmlist = ServerRealmlist(realms)
   private val serverRealmlistPacketBits = PacketSerializer.serialize(serverRealmlistPacket)
   private val eventRealmlist: EventRealmlist = EventRealmlist(serverRealmlistPacketBits)
 

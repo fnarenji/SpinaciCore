@@ -10,14 +10,14 @@ import scala.language.postfixOps
 /**
   * A client realmlist request contains only four null bytes.
   */
-case class ClientRealmlistPacket() extends ClientPacket
+case class ClientRealmlist() extends ClientPacket
 
 /**
   * The client realmlist request descriptor.
   */
-object ClientRealmlistPacket {
-  implicit val codec: Codec[ClientRealmlistPacket] = {
+object ClientRealmlist {
+  implicit val codec: Codec[ClientRealmlist] = {
     constantE(OpCodes.RealmList) ::
       constantE(0L)(uint32L)
-  }.as[ClientRealmlistPacket]
+  }.as[ClientRealmlist]
 }
