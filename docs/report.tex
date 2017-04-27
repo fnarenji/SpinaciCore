@@ -241,7 +241,7 @@ language, with JVM binary compatibility and wide enough adoption.
 It is a very rich language, with an extreme amount of flexibility and syntaxic
 sugar.
 
-For actors, Akka is the to-go library, which is also one of the reasons we chose
+For actors, Akka is the go-to library, which is also one of the reasons we chose
 Scala.
 
 As for other libraries, we prominently used \texttt{scodec}, for our
@@ -285,7 +285,7 @@ The first step requires the client to start the communication with the server
 by providing the game's version and other parameters related to the computer. 
 Alongside, it provides also the username to which the authentication program 
 answers by sending a challenge, in case the previous parameters are 
-authorized by the server. The following step analyzes the valitidy of the 
+authorized by the server. The following step analyzes the validity of the 
 challenge's solution response, and if correct, it creates a session related to
 the player.
 Only then, the server will deliver the list of realms availables.
@@ -306,12 +306,12 @@ Only then, the server will deliver the list of realms availables.
     \item \texttt{ClientLogonProof}
         In order to solve the challenge, the client generates a shared key and returns
         a client key and a proof. With this information, the server is able to generate the
-        same shared key and compares de proof to the expected proof generated from the
+        same shared key and compares the proof to the expected proof generated from the
         shared key and the client key. 
 
     \item \texttt{ServerLogonProof}
-        Wether the expected proof is matched or not, an instance of the packet 
-        \texttt{ServerLogonProof} is sent back to the client. The difference, 
+        Whether the expected proof is matched or not, an instance of the packet 
+        \texttt{ServerLogonProof} is sent back to the client. The difference 
         is that if the user entered a valid couple username and password, the packet 
         will contain a success response code and a proof that certifies that the 
         server too has the same shared key. Otherwise, the response code will be 
