@@ -7,7 +7,8 @@ import scodec.codecs._
 
 import scala.language.postfixOps
 
-/** * Data structure which describes a realm
+/**
+  * Data structure which describes a realm
   *
   * @param realmType       the realm's type
   * @param lock            1 if it is locked otherwise 0
