@@ -11,7 +11,7 @@ class VariableSizeVectorTest extends FlatSpec with Matchers {
   behavior of "VariableSizeVectorTest"
 
   private val sizeBits = 16
-  private implicit val codec = variableSizeVector(uintL(sizeBits), uint32L)
+  private implicit val codec = sizePrefixedSeq(uintL(sizeBits), uint32L)
 
   private val emptyVector = Vector[Long]()
   private val emptyVectorBits = BitVector.low(sizeBits)

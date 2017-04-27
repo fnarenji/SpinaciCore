@@ -5,6 +5,7 @@ import ensiwow.common.codecs._
 import scodec._
 import scodec.codecs._
 
+import scala.collection.immutable
 import scala.language.postfixOps
 
 /**
@@ -35,7 +36,7 @@ case class ServerRealmlistEntry(realmType: Int,
   *
   * @param realms a vector containing the realms
   */
-case class ServerRealmlist(realms: Vector[ServerRealmlistEntry]) extends ServerPacket
+case class ServerRealmlist(realms: immutable.Seq[ServerRealmlistEntry]) extends ServerPacket
 
 object ServerRealmlistEntry {
   implicit val codec: Codec[ServerRealmlistEntry] = {
@@ -57,7 +58,7 @@ object ServerRealmlist {
       variableSizeBytes(
         uint16L,
         constantE(0L)(uint32L) ::
-          ("realms" | variableSizeVector(uint16L, Codec[ServerRealmlistEntry])) ::
+          ("realms" | sizePrefixedSeq(uint16L, Codec[ServerRealmlistEntry])) ::
           constantE(0x10)(uint8L) ::
           constantE(0x00)(uint8L))
   }.as[ServerRealmlist]

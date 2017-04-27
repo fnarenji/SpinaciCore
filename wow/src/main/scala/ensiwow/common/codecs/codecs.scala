@@ -4,8 +4,9 @@ import ensiwow.realm.protocol.objectupdates.UpdateFlags
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
-import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
+import scodec.{Attempt, Codec, DecodeResult, Decoder, Encoder, Err, SizeBound}
 
+import scala.collection.immutable
 import scala.language.postfixOps
 
 /**
@@ -61,15 +62,38 @@ package object codecs {
   def fixedUBigIntL(sizeInBytes: Long): Codec[BigInt] = new FixedUnsignedLBigIntCodec(sizeInBytes)
 
   /**
-    * Codec for decoding a vector that is prefixed by its size
+    * Codec for sequence
+    * @param codec codec for sequence element type
+    * @tparam T element type
+    * @return sequence codec
+    */
+  def seqCodec[T](codec: Codec[T], readLimit: Option[Int]) : Codec[immutable.Seq[T]] = new Codec[immutable.Seq[T]] {
+    def sizeBound = SizeBound.unknown
+
+    def encode(seq: immutable.Seq[T]) = Encoder.encodeSeq(codec)(seq)
+
+    def decode(buffer: BitVector) = Decoder.decodeCollect[immutable.Seq, T](codec, readLimit)(buffer)
+
+    override def toString = s"seq($codec)"
+  }
+
+  /**
+    * Codec for vector that is prefixed by its size
     *
     * @param sizeCodec  size codec
     * @param valueCodec vector element codec
     * @tparam T type of element
     * @return size prefixed vector codec
     */
-  def variableSizeVector[T](sizeCodec: Codec[Int], valueCodec: Codec[T]): Codec[Vector[T]] =
-    sizeCodec.consume(size => vectorOfN(provide(size), valueCodec))(_.size)
+  def sizePrefixedSeq[T](sizeCodec: Codec[Int], valueCodec: Codec[T]): Codec[immutable.Seq[T]] =
+    sizeCodec.consume[immutable.Seq[T]](size => {
+      val codec: Codec[immutable.Seq[T]] = seqCodec(valueCodec, Some(size))
+
+      codec.exmap[immutable.Seq[T]](seq => {
+        if (seq.size == size) Attempt.successful(seq)
+        else Attempt.failure(Err(s"Insufficient number of elements: decoded ${seq.size} but should have decoded $size"))
+      }, Attempt.successful).withToString(s"sizePrefixedSeq($sizeCodec, $valueCodec)")
+    })(_.size)
 
   /**
     * Server packet size codec

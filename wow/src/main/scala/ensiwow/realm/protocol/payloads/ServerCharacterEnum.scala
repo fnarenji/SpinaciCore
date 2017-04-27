@@ -7,6 +7,7 @@ import scodec.bits.ByteVector
 import scodec.codecs._
 import scodec.{Codec, _}
 
+import scala.collection.immutable
 import scala.language.postfixOps
 
 /**
@@ -14,13 +15,13 @@ import scala.language.postfixOps
   *
   * @param characters a vector of characters
   */
-case class ServerCharacterEnum(characters: Vector[ServerCharacterEnumEntry]) extends Payload with ServerSide
+case class ServerCharacterEnum(characters: immutable.Seq[ServerCharacterEnumEntry]) extends Payload with ServerSide
 
 object ServerCharacterEnum {
   implicit val opCodeProvider: OpCodeProvider[ServerCharacterEnum] = OpCodes.SCharEnum
 
   implicit val codec: Codec[ServerCharacterEnum] = {
-    "characters" | variableSizeVector(uint8L, Codec[ServerCharacterEnumEntry])
+    "characters" | sizePrefixedSeq(uint8L, Codec[ServerCharacterEnumEntry])
   }.as[ServerCharacterEnum]
 }
 
