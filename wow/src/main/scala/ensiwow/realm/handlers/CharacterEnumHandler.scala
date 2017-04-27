@@ -5,8 +5,6 @@ import ensiwow.realm.protocol.payloads._
 import ensiwow.realm.protocol.{OpCodes, PayloadlessPacketHandler, PayloadlessPacketHandlerFactory}
 import ensiwow.realm.session.NetworkWorker
 
-import scala.collection.parallel.ParMap
-
 /**
   * Handles player's characters list requests
   */
@@ -33,7 +31,6 @@ class CharacterEnumHandler extends PayloadlessPacketHandler {
 
   override protected def process(): Unit = {
     val charactersEnum = for (char <- CharacterInfo.getCharacters) yield completeDescription(char)
-    val map: ParMap[Nothing, Nothing] = ParMap()
 
     sender ! NetworkWorker.EventOutgoing(ServerCharacterEnum(charactersEnum.toVector))
   }
