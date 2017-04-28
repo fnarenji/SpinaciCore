@@ -7,6 +7,8 @@ import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
 
+import scala.reflect.ClassTag
+
 /**
   * Errors
   */
@@ -17,7 +19,8 @@ case class MalformedPacketException(err: Err) extends IOException(s"Malformed pa
 case class PacketPartialReadException(remainder: BitVector) extends IOException(s"Invalid packet partial read: " +
   s"$remainder")
 
-case class PacketSerializationException(err: Err) extends IOException(s"Packet couldn't be written: $err")
+case class PacketSerializationException[T: ClassTag](err: Err)
+  extends IOException(s"Packet ${implicitly[ClassTag[T]].runtimeClass.getSimpleName} couldn't be written: $err")
 
 object PacketSerializer {
   /**
