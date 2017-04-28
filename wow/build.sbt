@@ -6,6 +6,7 @@ scalaVersion := "2.12.1"
 
 scalacOptions += "-feature"
 scalacOptions += "-deprecation"
+scalacOptions += "-language:postfixOps"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
