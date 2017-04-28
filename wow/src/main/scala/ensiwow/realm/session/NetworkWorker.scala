@@ -95,7 +95,7 @@ class NetworkWorker extends Actor with ActorLogging {
           unprocessedBits = unprocessedBits.drop(header.payloadSize * 8L)
           currHeader = None
 
-          if (PayloadHandlerHelper.isHandled(header.opCode)) {
+          if (PacketHandlerHelper.isHandled(header.opCode)) {
 //            log.debug(s"Got packet $header/${payloadBits.bytes.length}")
 
             val handlerPath = RealmServer.handlerPath(header.opCode)

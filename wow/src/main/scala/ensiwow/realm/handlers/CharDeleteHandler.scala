@@ -1,7 +1,7 @@
 package ensiwow.realm.handlers
 
 import ensiwow.realm.entities.CharacterInfo
-import ensiwow.realm.protocol.{PayloadHandler, PayloadHandlerFactory, ResponseCodes}
+import ensiwow.realm.protocol.{CharacterDeletionResults, PayloadHandler, PayloadHandlerFactory}
 import ensiwow.realm.protocol.payloads.{ClientCharacterDelete, ServerCharacterDelete}
 import ensiwow.realm.session.NetworkWorker
 
@@ -18,9 +18,9 @@ class CharDeleteHandler extends PayloadHandler[ClientCharacterDelete] {
   override protected def process(payload: ClientCharacterDelete): Unit = {
     val response = if (CharacterInfo.exists(payload.guid)) {
       CharacterInfo.deleteCharacter(payload.guid)
-      ResponseCodes.CharDeleteSuccess
+      CharacterDeletionResults.Success
     } else {
-      ResponseCodes.CharDeleteFailure
+      CharacterDeletionResults.Failure
     }
 
     sender ! NetworkWorker.EventOutgoing(ServerCharacterDelete(response))

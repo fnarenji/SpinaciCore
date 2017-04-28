@@ -14,12 +14,12 @@ object ClientCharacterDelete {
 
 }
 
-case class ServerCharacterDelete(responseCode: ResponseCodes.Value) extends Payload with ServerSide
+case class ServerCharacterDelete(responseCode: CharacterDeletionResults.Value) extends Payload with ServerSide
 
 object ServerCharacterDelete {
   implicit val opCodeProvider: OpCodeProvider[ServerCharacterDelete] = OpCodes.SCharDelete
 
-  implicit val codec: Codec[ServerCharacterDelete] = ("responseCode" | ResponseCodes.codec).as[ServerCharacterDelete]
-
+  implicit val codec: Codec[ServerCharacterDelete] =
+    ("responseCode" | Codec[CharacterDeletionResults.Value]).as[ServerCharacterDelete]
 }
 

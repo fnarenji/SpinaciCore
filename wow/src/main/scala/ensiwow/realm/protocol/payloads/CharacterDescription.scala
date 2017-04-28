@@ -1,6 +1,6 @@
 package ensiwow.realm.protocol.payloads
 
-import ensiwow.realm.shared.{Classes, Genders, Races}
+import ensiwow.realm.entities.{Classes, Genders, Races}
 import scodec.Codec
 import scodec.codecs._
 

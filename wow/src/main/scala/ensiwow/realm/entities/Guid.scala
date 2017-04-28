@@ -16,11 +16,10 @@ case class Guid(id: Guid.Id, guidType: GuidType.Value) extends Ordered[Guid] {
 object Guid {
   type Id = Int
 
-
   val codec: Codec[Guid] = (
     ("guid" | uintL(24)) ::
       constantE(0)(uintL(24)) ::
-      ("guidType" | enumerated(uintL(16), GuidType))
+      ("guidType" | Codec[GuidType.Value])
     ).as[Guid]
 
   val packedCodec: Codec[Guid] = zeroPacked(8, codec)

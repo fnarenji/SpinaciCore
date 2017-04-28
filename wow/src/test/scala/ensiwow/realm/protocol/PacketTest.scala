@@ -1,10 +1,9 @@
 package ensiwow.realm.protocol
 
 import ensiwow.common.codecs.CodecTestUtils
-import ensiwow.realm.entities.{EntityType, Guid, GuidType, Position}
+import ensiwow.realm.entities._
 import ensiwow.realm.protocol.objectupdates.{UpdateFlags, UpdateType}
 import ensiwow.realm.protocol.payloads._
-import ensiwow.realm.shared.{Classes, Genders, Races}
 import org.scalatest.{FlatSpec, Matchers}
 import scodec.Codec
 import scodec.bits._

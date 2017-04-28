@@ -25,12 +25,13 @@ object ClientCharacterCreateEntry {
   }.as[ClientCharacterCreateEntry]
 }
 
-case class ServerCharacterCreate(responseCode: ResponseCodes.Value) extends Payload with ServerSide
+case class ServerCharacterCreate(responseCode: CharacterCreationResults.Value) extends Payload with ServerSide
 
 object ServerCharacterCreate {
   implicit val opCodeProvider: OpCodeProvider[ServerCharacterCreate] = OpCodes.SCharCreate
 
-  implicit val codec: Codec[ServerCharacterCreate] = ("responseCode" | ResponseCodes.codec).as[ServerCharacterCreate]
+  implicit val codec: Codec[ServerCharacterCreate] =
+    ("responseCode" | Codec[CharacterCreationResults.Value]).as[ServerCharacterCreate]
 }
 
 

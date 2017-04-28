@@ -1,9 +1,14 @@
 package ensiwow.realm.entities
 
+import ensiwow.realm.shared.{EnumCodecProvider, NumericCodecTag}
+import scodec.codecs._
+
 /**
   * Entity type part of Guid
   */
-object GuidType extends Enumeration {
+object GuidType extends Enumeration with EnumCodecProvider[Int] {
+  override protected val valueCodecTag: NumericCodecTag[Int] = uintL(16)
+
   val Item = Value(0x4000)
   val Container = Item
   val Player = Value(0x0000)
