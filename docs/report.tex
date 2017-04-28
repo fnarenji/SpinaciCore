@@ -261,11 +261,28 @@ We feel these tools bring a lot of value to the team, and encourage their usage.
 For unit testing, we used the \texttt{scalatest} library.
 
 \subsection{Networking}
+The interface between the authentication and realm servers, and the outside world
+(the clients) is managed by \texttt{TCPServer} actors, one for each server. 
+When created, this actor bounds itself to a socket using a custom IP address and 
+port and once connected, the actor sends a  message to the connection actor, 
+informing it about the custom handler who shall receive data from the socket.
 
 %\subsection{Database storage}
 
 \subsection{Administration}
-
+In order to interact and monitor the program, it has been decided that the 
+more flexible and scalable solution was to implement an HTTP RESTful Web service 
+managed by a remote client. The flexibility comes from the fact that the HTTP 
+routes are defined alongside the targeted methods of the server, which would
+eventually be seemlessly triggered by the game client or the administration 
+client. In order to detect all the possible routes, the \texttt{WebServer} 
+implements a runtime reflexion feature, which by examining its own structure, 
+is able to collects all the routes defined in the program and fuse them 
+together.  Reflection is a powerfull yet dangerous tool. Indeed, in addition 
+of examining and introspecting the code, it is also possible to modify it, 
+which could lead to unexpected behaviours. Moreover, analyzing the code is
+a heavy operation, which, when done in runtime, can significantly slow down 
+the execution.
 % * API and why it uses reflection (and what is refleciton, why it s dangerous
 % etc).
 
