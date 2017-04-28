@@ -140,7 +140,7 @@ This project is under the MIT license, as found in the repository's root folder.
 \subsection{General information about MMORPGs}
 
 MMORPGs are exclusively online video games: without a network connection, the
-game cannot be played. Unlike more traditionnal games such as first-person
+game cannot be played. Unlike more traditional games such as first-person
 shooters, the players evolve in a fully shared persistent open world.
 
 In these games, the server is authoritative: in real time, each player tells of
@@ -156,7 +156,7 @@ gaining equipment.
 
 \subsection{Stated objectives}
 
-This project was done as a part of the Ensimag's module named `Speciality
+This project was done as a part of the Ensimag's module named `Specialty
 project'.
 With World of Warcraft's development budget numbering in millions of dollars and
 a single semester of classes at our disposal, it was obvious that only a minimal
@@ -242,7 +242,7 @@ much finer than it would be with system threads.
 We chose to write the server in Scala, using the Akka library.
 Scala was an interesting choice for us, as it is a hybrid functional/imperative
 language, with JVM binary compatibility and wide enough adoption.
-It is a very rich language, with an extreme amount of flexibility and syntaxic
+It is a very rich language, with an extreme amount of flexibility and syntactic
 sugar.
 
 For actors, Akka is the to-go library, which is also one of the reasons we chose
@@ -274,13 +274,13 @@ In order to interact and monitor the program, it has been decided that the
 more flexible and scalable solution was to implement an HTTP RESTful Web service 
 managed by a remote client. The flexibility comes from the fact that the HTTP 
 routes are defined alongside the targeted methods of the server, which would
-eventually be seemlessly triggered by the game client or the administration 
+eventually be seamlessly triggered by the game client or the administration 
 client. In order to detect all the possible routes, the \texttt{WebServer} 
-implements a runtime reflexion feature, which by examining its own structure, 
+implements a runtime reflection feature, which by examining its own structure, 
 is able to collects all the routes defined in the program and fuse them 
-together.  Reflection is a powerfull yet dangerous tool. Indeed, in addition 
+together.  Reflection is a powerful yet dangerous tool. Indeed, in addition 
 of examining and introspecting the code, it is also possible to modify it, 
-which could lead to unexpected behaviours. Moreover, analyzing the code is
+which could lead to unexpected behaviors. Moreover, analyzing the code is
 a heavy operation, which, when done in runtime, can significantly slow down 
 the execution.
 % * API and why it uses reflection (and what is refleciton, why it s dangerous
@@ -333,10 +333,10 @@ The first step requires the client to start the communication with the server
 by providing the game's version and other parameters related to the computer. 
 Alongside, it provides also the username to which the authentication program 
 answers by sending a challenge, in case the previous parameters are 
-authorized by the server. The following step analyzes the valitidy of the 
+authorized by the server. The following step analyzes the validity of the 
 challenge's solution response, and if correct, it creates a session related to
 the player.
-Only then, the server will deliver the list of realms availables.
+Only then, the server will deliver the list of realms available.
 
 \begin{figure}[htb!]
     \centering
@@ -389,7 +389,7 @@ Only then, the server will deliver the list of realms availables.
 \subsection{Authentication automaton}
 
 All the while, the authentication server goes through different states and
-behaviours. The packets received by the server are managed by the
+behaviors. The packets received by the server are managed by the
 \texttt{AuthSession} actor which implements a finite state machine.
 The initial state, \texttt{StateNoData}, only handles logon challenges or
 reconnect challenges and subsequently switches to the appropriate state.
@@ -409,7 +409,7 @@ be sent to the client.
 \subsection{Account API}
 
 In order to interact with the database, the account management object is 
-complemented by \texttt{AccountAPI} which describes differents HTTP routes 
+complemented by \texttt{AccountAPI} which describes different HTTP routes 
 and when one of them is triggered, the appropriate account's management method is
 executed. Therefore, allowing a remote and simple access to the database.
 
@@ -466,9 +466,9 @@ From the server side, once a TCP connection is received, a
 \texttt{NetworkWorker} actor is created by the \texttt{TCPHandler} actor.
 This actor's responsibility is to handle all aspects of networking for a client:
 \begin{itemize}
-    \item Receive incoming packets, decrypt them if appliable, deserialize them
+    \item Receive incoming packets, decrypt them if applicable, deserialize them
         and pass them to the correct packet handler
-    \item Serialize outgoing packets, encrypt them if appliable and send them
+    \item Serialize outgoing packets, encrypt them if applicable and send them
         over the network
 \end{itemize}
 
@@ -522,7 +522,7 @@ contains:
 \end{itemize}
 \end{multicols}
 
-The characters creation handler tests the validity of the fields and if successfull,
+The characters creation handler tests the validity of the fields and if successful,
 adds the character to a list, as well as sending a \texttt{ServerCharacterCreate}
 consisting of a success response code.
 
@@ -606,7 +606,7 @@ of the \texttt{ServerObjectUpdate} packet include:
     \item for the player itself, information about it's
         own character, such as its looks, current statistics, initial
         position and all the other players that are already in world
-    \item for other players, the packet would contain similiar information,
+    \item for other players, the packet would contain similar information,
         telling them that a new player has spawned at some position
 \end{itemize}
 
@@ -640,7 +640,7 @@ the clients.
 
 \subsection{Interesting challenges ahead}
 
-The featureset that is currently implemented is very limited, and a lot of the
+The feature set that is currently implemented is very limited, and a lot of the
 time was spent on necessary and yet unavoidable boilerplate code or overcoming
 the steep learning curve.
 
@@ -715,7 +715,7 @@ in four main continents (named Kalimdor, the Eastern Kingdoms, Northrend and
 Outland).
 
 There is little communication between those continents: most actors of a
-contient (creatures, various game objects) are created and will always reside
+continent (creatures, various game objects) are created and will always reside
 within said continent.
 
 Players can switch continents, but it is not seamless as it requires a loading
@@ -739,8 +739,8 @@ ignored.
 
 \subsection{Raycasting}
 
-When two entities of the world are interacting with one another, they most of
-the time must have line of sight on one another.
+When two entities of the world are interacting with one another, they oftentimes 
+must have line of sight on one another.
 Concretely, it would not make sense to be able to cast spells on a creature from
 behind a wall.
 A common problem is knowing who is in line of sight of whom in real time.
@@ -752,7 +752,7 @@ There are then well-known algorithms to check for line of sight.
 
 An interesting part of this approach would be to split off the actors
 responsible for this work to another machine. With a low enough network latency
-(e.g. InfiniBand) and a machine with hardware optimised for such
+(e.g. InfiniBand) and a machine with hardware optimized for such
 calculations (e.g.\ multiple GPUs if the calculations lend themselves well to
 to GPU computing), this design could offer improvements in scalability.
 
