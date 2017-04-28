@@ -42,3 +42,4 @@ object AuthResults {
     }.as[AuthResult]
   }
 }
+

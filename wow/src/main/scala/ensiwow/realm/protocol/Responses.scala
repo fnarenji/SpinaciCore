@@ -1,12 +1,15 @@
 package ensiwow.realm.protocol
 
-import scodec.Codec
+import ensiwow.realm.shared.{EnumCodecProvider, NumericCodecTag}
 import scodec.codecs._
 
 /**
-  * Enumeration of response codes
+  * Enumerations of response codes
   */
-object AuthResponses extends Enumeration {
+
+object AuthResponses extends Enumeration with EnumCodecProvider[Int] {
+  override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+
   val Ok = Value(12)
   val Failed = Value(13)
   val Reject = Value(14)
@@ -30,8 +33,21 @@ object AuthResponses extends Enumeration {
   val Suspended = Value(32)
   val ParentalControl = Value(33)
   val LockedEnforced = Value(34)
+}
 
-  implicit val codec: Codec[AuthResponses.Value] = enumerated(uint8L, AuthResponses)
+object CharacterCreationResults extends Enumeration with EnumCodecProvider[Int] {
+  override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+
+  val Success = Value(47)
+  val Error = Value(48)
+  val Failed = Value(49)
+}
+
+object CharacterDeletionResults extends Enumeration with EnumCodecProvider[Int] {
+  override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+
+  val Success = Value(71)
+  val Failure = Value(72)
 }
 
 // Other response codec, to be used when necessary in their own enums

@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.Application
 import ensiwow.common.VersionInfo
 import ensiwow.common.network.TCPServer
-import ensiwow.realm.protocol.{OpCodes, PayloadHandlerHelper}
+import ensiwow.realm.protocol.{OpCodes, PacketHandlerHelper}
 import ensiwow.realm.session.NetworkWorker
 import ensiwow.realm.world.WorldState
 
@@ -17,7 +17,7 @@ class RealmServer extends Actor with ActorLogging {
 
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
-  PayloadHandlerHelper.spawnActors(context)
+  PacketHandlerHelper.spawnActors(this)
   context.actorOf(TCPServer.props(NetworkWorker, address, port), TCPServer.PreferredName)
   context.actorOf(WorldState.props, WorldState.PreferredName)
 
@@ -31,5 +31,5 @@ object RealmServer {
   val ActorPath = s"${Application.actorPath}/$PreferredName"
   val WorldStatePath = s"$ActorPath/${WorldState.PreferredName}"
 
-  def handlerPath(opCode: OpCodes.Value) = s"$ActorPath/${PayloadHandlerHelper.PreferredName(opCode)}"
+  def handlerPath(opCode: OpCodes.Value) = s"$ActorPath/${PacketHandlerHelper.PreferredName(opCode)}"
 }

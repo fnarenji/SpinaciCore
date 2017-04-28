@@ -1,12 +1,11 @@
 package ensiwow.realm.entities
 
 import ensiwow.realm.protocol.payloads.CharacterDescription
-import ensiwow.realm.shared.{Classes, Genders, Races}
 import scodec.bits._
 import scodec.codecs._
 
-import scala.collection.{GenIterable, parallel}
 import scala.collection.parallel.mutable
+import scala.collection.{GenIterable, parallel}
 
 /**
   * Game character info

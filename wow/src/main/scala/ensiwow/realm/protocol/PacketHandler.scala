@@ -68,7 +68,7 @@ abstract class PayloadlessPacketHandler extends PacketHandler {
 
       _currentOpCode = header.opCode
 
-      process
+      process()
   }
 }
 

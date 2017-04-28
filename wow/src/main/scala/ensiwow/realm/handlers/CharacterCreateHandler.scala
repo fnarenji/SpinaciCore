@@ -1,7 +1,7 @@
 package ensiwow.realm.handlers
 
 import ensiwow.realm.entities.{CharacterInfo, Position}
-import ensiwow.realm.protocol.{PayloadHandler, PayloadHandlerFactory, ResponseCodes}
+import ensiwow.realm.protocol.{CharacterCreationResults, PayloadHandler, PayloadHandlerFactory}
 import ensiwow.realm.protocol.payloads.{CharacterDescription, ClientCharacterCreate, ServerCharacterCreate}
 import ensiwow.realm.session.NetworkWorker
 
@@ -16,11 +16,11 @@ class CharacterCreateHandler extends PayloadHandler[ClientCharacterCreate] {
     * @param name the name of the desired character
     * @return the response code of the response packet
     */
-  def checkNameValidity(name: String): ResponseCodes.Value = {
+  def checkNameValidity(name: String): CharacterCreationResults.Value = {
     if (name.isEmpty || name.length >= CharacterDescription.MaxNameLength) {
-      ResponseCodes.CharCreateFailed
+      CharacterCreationResults.Failed
     } else {
-      ResponseCodes.CharCreateSuccess
+      CharacterCreationResults.Success
     }
   }
 
@@ -31,7 +31,7 @@ class CharacterCreateHandler extends PayloadHandler[ClientCharacterCreate] {
   override def process(payload: ClientCharacterCreate): Unit = {
     val response = checkNameValidity(payload.character.charInfo.name)
 
-    if (response == ResponseCodes.CharCreateSuccess) {
+    if (response == CharacterCreationResults.Success) {
         CharacterInfo.addCharacter(
           CharacterInfo(CharacterInfo.getNextGuid,
           Position.mxyzo(0, -8937.25488f, -125.310707f, 82.8524399f, 0.662107527f),
