@@ -8,7 +8,7 @@ scalacOptions += "-feature"
 scalacOptions += "-deprecation"
 scalacOptions += "-language:postfixOps"
 
-libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.12.1"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.16"
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.4.16"
@@ -26,6 +26,6 @@ libraryDependencies += "org.scodec" % "scodec-akka_2.12" % "0.3.0"
 
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.56"
 
-libraryDependencies += "org.clapper" %% "classutil" % "1.1.2"
+libraryDependencies += "io.github.lukehutch" % "fast-classpath-scanner" % "2.0.19"
 
 logBuffered in Test := false
