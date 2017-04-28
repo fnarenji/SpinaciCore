@@ -12,7 +12,12 @@ import scala.collection.parallel.mutable
   * Game character info
   */
 case class CharacterInfo(guid: Guid, selfBytes: ByteVector, otherBytes: ByteVector, description: CharacterDescription) {
-  var position: Position = _
+  private var _position: Position = _
+
+  def position: Position = _position
+  def position_=(newPosition: Position): Unit = {
+    _position = newPosition.merge(_position)
+  }
 
   val ref: CharacterRef = new CharacterRef(this)
 }
