@@ -8,6 +8,22 @@ import scodec.codecs._
   * Position of an entity (immutable)
   */
 case class Position(mapId: Option[Long], x: Float, y: Float, z: Float, orientation: Option[Float]) {
+  /**
+    * Merges another position with the current one.
+    * Values from current position are preferred.
+    *
+    * @param p other position
+    * @return merged position
+    */
+  def merge(p: Position): Position = {
+    Position(
+      mapId.orElse(p.mapId),
+      x,
+      y,
+      z,
+      orientation.orElse(p.orientation)
+    )
+  }
 }
 
 object Position {
