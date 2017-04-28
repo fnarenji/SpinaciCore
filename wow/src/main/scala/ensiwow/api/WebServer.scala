@@ -13,9 +13,15 @@ trait API {
 }
 
 object WebServer extends HttpApp {
+  private val apis = Reflection.objectsOf[API]
+
+  println(s"API components: ${apis map (_.getClass.getName) reduceLeft (_ + ", " + _)}")
+
   /**
     * Retrieves a list of objects implementing the trait API.
     */
-  override val route: Route = Reflection.objectsOf[API] map (_.route) reduceLeft(_ ~ _)
+  override val route: Route = {
+    apis map (_.route) reduceLeft(_ ~ _)
+  }
 }
 
