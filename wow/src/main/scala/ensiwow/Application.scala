@@ -6,6 +6,7 @@ import ensiwow.api.WebServer
 import ensiwow.auth.AuthServer
 import ensiwow.realm.RealmServer
 import ensiwow.realm.handlers.PlayerLoginHandler
+import ensiwow.utils.Reflection
 
 /**
   * Created by sknz on 1/31/17.
@@ -14,6 +15,8 @@ object Application {
   private var startTime: Long = _
 
   def main(args: Array[String]): Unit = {
+    Reflection.eagerLoadClasses()
+
     val system = ActorSystem("EnsiWoW")
 
     startTime = System.currentTimeMillis()

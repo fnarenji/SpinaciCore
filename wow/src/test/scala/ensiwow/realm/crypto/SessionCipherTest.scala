@@ -1,9 +1,7 @@
 package ensiwow.realm.crypto
 
-import ensiwow.realm.protocol.ClientHeader
 import ensiwow.utils.BigIntExtensions._
 import org.scalatest.{FlatSpec, Matchers}
-import scodec.Codec
 import scodec.bits.{ByteVector, _}
 
 /**
@@ -22,7 +20,6 @@ class SessionCipherTest extends FlatSpec with Matchers {
       val cryptedArray = crypted.toArray
       cipher.decrypt(cryptedArray)
       cryptedArray shouldEqual decrypted.toArray
-      println(Codec[ClientHeader].decodeValue(decrypted.bits).require)
     }
 
     decrypt(hex"2FB030BAE9F7", hex"0004ff040000")
