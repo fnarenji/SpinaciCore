@@ -7,7 +7,7 @@ import akka.pattern.ask
 import akka.testkit.TestActorRef
 import akka.util.Timeout
 import ensiwow.auth.session.AuthSession
-import org.scalatest.{AsyncFlatSpec, Matchers}
+import org.scalatest.{AsyncFlatSpec, DoNotDiscover, Matchers}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -15,6 +15,7 @@ import scala.language.postfixOps
 /**
   * Testing the TCP server
   */
+@DoNotDiscover
 class TCPServerTest extends AsyncFlatSpec with Matchers {
   implicit val timeout = Timeout(2 second)
   implicit val system = ActorSystem()
@@ -27,7 +28,7 @@ class TCPServerTest extends AsyncFlatSpec with Matchers {
 
   behavior of "TCPServer"
 
-  ignore must "be bound when created" in {
+  it must "be bound when created" in {
     val future = (serverRef ? GetAddress).mapTo[InetSocketAddress]
     future map { _ shouldEqual expectedAddress }
   }
