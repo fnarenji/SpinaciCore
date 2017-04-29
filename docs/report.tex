@@ -8,6 +8,7 @@
 \usepackage[acronym,toc]{glossaries}
 \usepackage{svg}
 \usepackage{enumitem}
+\usepackage{nameref}
 \usepackage[ampersand]{easylist}
 \usepackage{graphicx}
 
@@ -261,28 +262,39 @@ We feel these tools bring a lot of value to the team, and encourage their usage.
 For unit testing, we used the \texttt{scalatest} library.
 
 \subsection{Networking}
-The interface between the authentication and realm servers, and the outside world
-(the clients) is managed by \texttt{TCPServer} actors, one for each server. 
-When created, this actor bounds itself to a socket using a custom IP address and 
-port and once connected, the actor sends a  message to the connection actor, 
-informing it about the custom handler who shall receive data from the socket.
+
+The interface between the authentication and realm servers, and the outside
+world (the clients) is managed by the \texttt{TCPServer} actors, one for each
+server. 
+When created, this actor binds itself to a socket using a custom IP address and
+port.
+Once connected, the actor spawns a \texttt{TCPHandler} actor, which itself is
+configured to spawn the adequate actor for either the authentication or realm
+servers.
+The \texttt{TCPHandler} actor receives and emits data from the socket.
 
 %\subsection{Database storage}
 
 \subsection{Administration}
-In order to interact and monitor the program, it has been decided that the 
-more flexible and scalable solution was to implement an HTTP RESTful Web service 
-managed by a remote client. The flexibility comes from the fact that the HTTP 
-routes are defined alongside the targeted methods of the server, which would
-eventually be seamlessly triggered by the game client or the administration 
-client. In order to detect all the possible routes, the \texttt{WebServer} 
-implements a runtime reflection feature, which by examining its own structure, 
-is able to collects all the routes defined in the program and fuse them 
-together.  Reflection is a powerful yet dangerous tool. Indeed, in addition 
-of examining and introspecting the code, it is also possible to modify it, 
-which could lead to unexpected behaviors. Moreover, analyzing the code is
-a heavy operation, which, when done in runtime, can significantly slow down 
-the execution.
+
+In order to interact and monitor the server, it has been decided that the most
+flexible and adaptable solution was to implement an RESTful web service, to be
+used by a remote client.
+The flexibility comes from the fact that the HTTP routes are defined alongside
+the targeted methods of the server, which would eventually be seamlessly
+triggered by the game client or the administrative client.
+Each part of the application willing to expose an API simply needs to
+implemented the \texttt{API} trait.
+In order to gather all the routes, the \texttt{WebServer} implements a
+runtime reflection feature, which, by examining the compiled program, is able to
+collects all the routes defined in the program and fuse them together.
+
+Reflection is a powerful yet dangerous tool.
+Indeed, in addition to examining and introspecting the code, it is also possible
+to modify it, which could lead to unexpected behaviors, specially sicne there is
+no compiler to ensure coherency.
+Moreover, analyzing the code is a heavy operation, which, when done in runtime,
+can significantly slow down the execution.
 % * API and why it uses reflection (and what is refleciton, why it s dangerous
 % etc).
 
@@ -688,7 +700,7 @@ specially with a concurrent environment.
 
 Generally speaking, this field of research is known as spatial indices.
 
-\subsection{Distributed application}
+\subsection{Distributed application}\label{distr}
 
 As it currently stands, our application only benefits from `vertical scaling':
 the only way bigger workloads can be handled, ignoring better code, is by using
@@ -772,25 +784,39 @@ This is also way to open up to the domain of `server-side world physics'.
 % implemented and, though we are now still improving our code base (because we
 % learned), we feel like we've set a good foundation for more features.
 
-World of Warcraft has played an important role in the video game industry.
-Working with such a complex video game was certainly a challenge.
+World of Warcraft has been a corner stone of online gaming for years now.
+While it was a thrilling experience to work on game we enjoyed so much, it was
+certainly not the simplest choice.
+Indeed, reverse-engineering, even when done by others, introduces a lot of
+uncertainty in otherwise simple tasks.
 
-Indeed, while we mostly benefitted from reverse engineering work done by others,
-understanding the inner workings of the game server was a struggle we still
-faced regularly at the end of the semester.
+Far from our minds to back down from difficulty, working in such conditions was
+valuable training to further develop our instincts for programming and
+more importantly debugging. 
 
-Every breakthrough, however, is remembered as an exciting and rewarding
-moment.
+In terms of academia, we highly appreciated the opportunity offered by the
+`Specialty project' module to develop an idea of our own from proposal
+to final application.
+By the same token, we also value the recognition and trust our work receives
+when it is acknowledged as a worthwhile learning endeavour by the school's
+faculty.
 
-Through this project, we have learnt a lot about both general programming and
-video game programming.
-It was an opportunity to see concrete application of our knowledge to a domain
-we enjoy and like.\\
+On the topic of the final software, we would have enjoyed being able to fit the
+changes described in~\ref{distr}~(\nameref{distr}) in the available time.
+We felt those changes would really have brought a sense of closure to the
+project, as they would definitely have ticked the `scalability' checkbox.
 
-As we learnt and got more familiar with the actor pattern, we reworked our code
-base multiple times.
-Even as these lines are written, we are considering changing key points of our
-architecture because we feel they do not make sense anymore (potentially making
-what we wrote earlier inaccurate\ldots).
+Nonetheless, we've had the occasion to explore many different domains of
+computer engineering, from software architecture to cryptography.
+We attained our objectives in terms of featureset, and managed to do so while
+keeping our code clean and faithful to its own principles.
+
+On a similar topic, we never waivered in our dedication to writing unit tests
+and obtaining peer and continuous integration approval before merges, which
+we believe was a factor of success.
+
+Finally, we would like to express our thanks to Mr Franck ROUSSEAU, Blizzard
+Entertainement, the World of Warcraft emulation community and all others
+involved.
 
 \end{document}
