@@ -33,6 +33,14 @@
 \usepackage{caption}
 \captionsetup{width=0.7\textwidth}
 
+\usepackage{hyperref}
+\hypersetup{colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}
 \hoffset = -0pt
 \voffset = -20pt
@@ -94,6 +102,10 @@ Floran NARENJI-SHESHKALANI}
     * Home grown language (der Schweiz)
 
 \fi
+
+\pagebreak
+\tableofcontents
+\pagebreak
 
 \section{Introduction}
 
@@ -205,6 +217,8 @@ Though TrinityCore was indeed an inspiration for this project, our goal is not
 to simply translate code from C++ to Scala.
 With the usage of Scala and Akka actors, we intend to have a scalable and
 eventually distributed solution with a clean and hopefully elegant codebase.
+
+% \clearpage
 
 \section{Building blocks of a World of Warcraft game server}
 
@@ -337,6 +351,8 @@ Those often resulted in hard to spot mistakes, if not for unit tests.
 %     * Account API
 %     * AuthSession FSM
 
+% \clearpage
+
 \section{Authentication server}
 
 The authentication server is the entry point to the World of Warcraft.  
@@ -436,6 +452,8 @@ In order to interact with the database, the account management object is
 complemented by \texttt{AccountAPI} which describes different HTTP routes 
 and when one of them is triggered, the appropriate account's management method is
 executed. Therefore, allowing a remote and simple access to the database.
+
+% \clearpage
 
 \section{Realm server}
 
@@ -629,6 +647,8 @@ On the next world tick, this event will be a part of the
 \texttt{DispatchWorldUpdate} message received by all \texttt{SessionPlayer}
 actors (including the sender).
 
+\begin{sloppypar}
+
 From the client's point of view, the loading screen lasts until it receives its
 first \texttt{ServerObjectUpdate} packet.
 Therefore, if a client has joined the world during the last tick, the contents
@@ -640,6 +660,8 @@ of the \texttt{ServerObjectUpdate} packet include:
     \item for other players, the packet would contain similar information,
         telling them that a new player has spawned at some position
 \end{itemize}
+
+\end{sloppypar}
 
 As a player joining the world must also know about existing players, the
 \texttt{SessionPlayer} sends upon creation a \texttt{GetWorldState} message to
@@ -698,7 +720,7 @@ These features could be:
 These basic features also serve as openings for more technically interesting
 features.
 
-\subsection{Non playing characters}
+\subsubsection{Non playing characters}
 
 Adding non-players characters to the game opens up a lot of interesting
 challenges.
@@ -719,7 +741,7 @@ specially with a concurrent environment.
 
 Generally speaking, this field of research is known as spatial indices.
 
-\subsection{Distributed application}\label{distr}
+\subsubsection{Distributed application}\label{distr}
 
 As it currently stands, our application only benefits from `vertical scaling':
 the only way bigger workloads can be handled, ignoring better code, is by using
@@ -768,7 +790,7 @@ configuration.
 For a technical demonstration such as this project however, this issue can be
 ignored.
 
-\subsection{Raycasting}
+\subsubsection{Raycasting}
 
 When two entities of the world are interacting with one another, they oftentimes 
 must have line of sight on one another.
@@ -788,6 +810,8 @@ calculations (e.g.\ multiple GPUs if the calculations lend themselves well to
 to GPU computing), this design could offer improvements in scalability.
 
 This is also way to open up to the domain of `server-side world physics'.
+
+% \clearpage
 
 \section{Conclusion}
 
@@ -837,5 +861,33 @@ we believe was a factor of success.
 Finally, we would like to express our thanks to Mr Franck ROUSSEAU, Blizzard
 Entertainement, the World of Warcraft emulation community and all others
 involved.
+
+\section{References}
+
+\begingroup{}
+\renewcommand{\section}[2]{}%
+\begin{thebibliography}{9}
+    \bibitem{Scala API documentation}
+    Scala API documentation,
+    \url{https://www.scala-lang.org/api/current/}
+
+    \bibitem{Akka API documentation}
+    Akka API documentation,
+    \url{http://doc.akka.io/docs/akka/current/scala.html}
+
+    \bibitem{scodec API documentation}
+    scodec API documentation,
+    \url{http://scodec.org/api/scodec-core/1.9.0/}
+
+    \bibitem{FastClasspathScanner documentation}
+    FCP documentation,
+    \url{https://github.com/lukehutch/fast-classpath-scanner/wiki}
+
+    \bibitem{TrinityCore} 
+    TrinityCore,
+    \url{https://www.trinitycore.org/}
+
+\end{thebibliography}
+\endgroup{}
 
 \end{document}
