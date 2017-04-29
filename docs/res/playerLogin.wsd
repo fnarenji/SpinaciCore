@@ -1,0 +1,17 @@
+# WebSequenceDiagram file
+
+title Joining a realm
+
+Client B->PlayerLoginHandler: ClientPlayerLogin
+PlayerLoginHandler->Session B: PlayerLogin
+Session B->*SessionPlayer B:
+SessionPlayer B->EventStream: PlayerJoined B
+EventStream->WorldState: PlayerJoined B
+SessionPlayer B->WorldState: GetWorldState
+WorldState->SessionPlayer B: WorldState(has player A)
+WorldState->WorldState: World tick
+WorldState->EventStream: DispatchWorldUpdate
+EventStream->SessionPlayer A: DispatchWorldUpdate
+EventStream->SessionPlayer B: DispatchWorldUpdate
+SessionPlayer A->Client A: ServerUpdateObject\n(create player B)
+SessionPlayer B->Client B: ServerUpdateObject\n(create self + player A)

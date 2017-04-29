@@ -90,7 +90,7 @@ Floran NARENJI-SHESHKALANI}
     * Preferred language for Akka actors (ugly in Java)
     * Strongly typed
     * Full of syntaxic sugar
-    * Ahead of it's time ('research language')
+    * Ahead of its time ('research language')
     * Home grown language (der Schweiz)
 
 \fi
@@ -126,6 +126,13 @@ the most popular and populous game of its type for the last decade, the
 technical aspects were certain to be production grade.
 Furthermore, the protocol is well documented and there exists very advanced open
 source implementations of it.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{wow}
+\end{figure}
+
+\FloatBarrier{}
 
 \subsubsection{Disclaimer}
 
@@ -254,7 +261,7 @@ serialization needs, and some elements of \texttt{BouncyCastle} for
 cryptography.
 
 On a related note, \texttt{git} was our version control system of choice.
-For the duration of the project, we've adhered strictly to peer-reviewed pull
+For the duration of the project, we have adhered strictly to peer-reviewed pull
 requests with necessary \texttt{TravisCI} (continuous integration) approval
 before merging into master.
 We feel these tools bring a lot of value to the team, and encourage their usage.
@@ -303,7 +310,7 @@ can significantly slow down the execution.
 The World of Warcraft client was written in C++, for the x86 architecture, which
 uses little-endian. 
 Our application run on the JVM, which uses big-endian.
-The World of Warcraft client expects strict adherence to it's binary format.
+The World of Warcraft client expects strict adherence to its binary format.
 
 Writing code while juggling byte orders adds a layer of complexity, making an
 already challenging task that much more difficult.
@@ -325,7 +332,7 @@ Those often resulted in hard to spot mistakes, if not for unit tests.
 %         * Sequence diagram
 %         * Actor diagram
 %         * Principle of each packet
-%             * with it's cryptographical application
+%             * with its cryptographical application
 %     * Realm list building
 %     * Account API
 %     * AuthSession FSM
@@ -569,12 +576,6 @@ As a common communication channel between all actors of the world, we use Akka's
 publisher/subscriber pattern: it offers subscribers ability to filter on the
 types of messages they want to receive.
 
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{playerLogin}
-    \caption{Sequence diagram of a player joining a realm}
-\end{figure}
-
 \subsubsection{WorldState actor}
 
 The \texttt{WorldState} actor's responsibility is to maintain knowledge about
@@ -603,7 +604,14 @@ events contained within to build the \texttt{ServerObjectUpdate} packet.
 
 \subsubsection{Joining the world}\label{jtw}
 
-When a player has selected it's character and joined the world, the
+\begin{figure}[htb!]
+    \hspace*{-2.5cm}
+    \centering
+    \includegraphics[width=0.95\paperwidth]{playerLogin}
+    \caption{Sequence diagram of player B joining the realm}
+\end{figure}
+
+When a player has selected its character and joined the world, the
 \texttt{ClientPlayerLogin} packet is sent by the client.
 
 The \texttt{PlayerLoginHandler} actor then sends an event to the \texttt{Session}
@@ -615,7 +623,7 @@ However, to enforce the single responsibility principle, it was decided to move
 this responsibility to a separator actor, \texttt{SessionPlayer} that is created
 by the \texttt{Session} actor once the client has selected its player.\\
 
-Upon it's creation, the \texttt{SessionPlayer} actor publishes a
+Upon its creation, the \texttt{SessionPlayer} actor publishes a
 \texttt{PlayerJoined} event to the event stream.  
 On the next world tick, this event will be a part of the
 \texttt{DispatchWorldUpdate} message received by all \texttt{SessionPlayer}
@@ -626,7 +634,7 @@ first \texttt{ServerObjectUpdate} packet.
 Therefore, if a client has joined the world during the last tick, the contents
 of the \texttt{ServerObjectUpdate} packet include:
 \begin{itemize}
-    \item for the player itself, information about it's
+    \item for the player itself, information about its
         own character, such as its looks, current statistics, initial
         position and all the other players that are already in world
     \item for other players, the packet would contain similar information,
@@ -702,7 +710,7 @@ information it can display on screen.
 As such, it is interesting to discuss ways to split up the world in smaller
 pieces.
 Of course, as the World of Warcraft client and player perceives the world
-as one big continuous space, it's not possible to put hard barriers between
+as one big continuous space, it is not possible to put hard barriers between
 these smaller pieces.
 A common approach is to layer the world with a grid, where every entity belongs
 to a cell. As entities (even creatures) can move freely between different cells 
@@ -724,7 +732,7 @@ computers.
 In our case, Akka supports horizontal scaling: it is possible for an
 \texttt{ActorSystem} to be spread amongst multiple machines (Akka Cluster
 containing Akka Nodes).
-However, it's not automatic and it is the programmer's responsibility to
+However, it is not automatic and it is the programmer's responsibility to
 correctly assign actors to nodes.
 Indeed, having actors that communicate a lot on different nodes will incur
 serialization and network overhead for every message, which would result in a
@@ -791,9 +799,9 @@ This is also way to open up to the domain of `server-side world physics'.
 % From our code, we are happy with what we have learned in terms of programming,
 % but are a bit disappointed with not having been able to reach the distributed
 % stage in the provided time frame, as we feel like it would have made our piece
-% of software much cooler. We are however still happy with the featureset we've
+% of software much cooler. We are however still happy with the featureset we have
 % implemented and, though we are now still improving our code base (because we
-% learned), we feel like we've set a good foundation for more features.
+% learned), we feel like we have set a good foundation for more features.
 
 World of Warcraft has been a corner stone of online gaming for years now.
 While it was a thrilling experience to work on game we enjoyed so much, it was
@@ -817,10 +825,10 @@ changes described in~\ref{distr}~(\nameref{distr}) in the available time.
 We felt those changes would really have brought a sense of closure to the
 project, as they would definitely have ticked the `scalability' checkbox.
 
-Nonetheless, we've had the occasion to explore many different domains of
-computer engineering, from software architecture to cryptography.
-We attained our objectives in terms of featureset, and managed to do so while
-keeping our code clean and faithful to its own principles.
+Nonetheless, we had the occasion to explore many different domains of
+computer engineering, from software architecture to cryptography.  We attained
+our objectives in terms of featureset, and managed to do so while keeping our
+code clean and faithful to its own principles.
 
 On a similar topic, we never waivered in our dedication to writing unit tests
 and obtaining peer and continuous integration approval before merges, which
