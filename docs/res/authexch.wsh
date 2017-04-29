@@ -1,0 +1,23 @@
+# WebSequenceDiagram file
+
+title Successful authentication + realm exchange
+
+Client->+Auth: LogonChallenge
+note over Auth: Account exists\n&& valid misc. info.
+Auth->+SRP6a: compute challenge
+SRP6a->Auth: SRP6Challenge object
+Auth->Client: LogonChallenge
+note over Client: Now has shared secret
+Client->Auth: LogonProof
+Auth->SRP6a: validate proof
+SRP6a->-Auth: proof is valid + server proof
+note over Auth: Now has shared secret
+Auth->Client: LogonProof w/ server proof
+note over Client: Validates proof
+note over Client, Auth: Both are now authenticated
+loop until realm selected, every 5 seconds
+    Client->Auth: Realm list request
+    Auth->Client: Realm list
+end
+Client->Auth: Disconnect
+deactivate Auth
