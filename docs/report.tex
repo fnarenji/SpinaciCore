@@ -8,7 +8,6 @@
 \usepackage[acronym,toc]{glossaries}
 \usepackage{svg}
 \usepackage{enumitem}
-\usepackage{nameref}
 \usepackage[ampersand]{easylist}
 \usepackage{graphicx}
 
@@ -29,17 +28,6 @@
 
 \usepackage{stmaryrd}
 \usepackage{url}
-\usepackage[section]{placeins}
-\usepackage{caption}
-\captionsetup{width=0.7\textwidth}
-
-\usepackage{hyperref}
-\hypersetup{colorlinks,
-    citecolor=black,
-    filecolor=black,
-    linkcolor=black,
-    urlcolor=black
-}
 
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}
 \hoffset = -0pt
@@ -98,14 +86,10 @@ Floran NARENJI-SHESHKALANI}
     * Preferred language for Akka actors (ugly in Java)
     * Strongly typed
     * Full of syntaxic sugar
-    * Ahead of its time ('research language')
+    * Ahead of it's time ('research language')
     * Home grown language (der Schweiz)
 
 \fi
-
-\pagebreak
-\tableofcontents
-\pagebreak
 
 \section{Introduction}
 
@@ -125,26 +109,18 @@ The source code under MIT license is available at
 \subsection{World of Warcraft}
 
 For such a purpose, we chose the World of Warcraft video game.
-Indeed, writing our own video game client would have been both out of the scope
+In deed, writing our own video game client would have been both out of the scope
 of this project and, in terms of time spent, mutually exclusive with writing the
 server for it.
 Moreover, the video game sector has by nature little to no available open source
 game clients that would fit the purpose of this project.
 Consequently, it was decided to settle on an existing video game.
 
-With prior knowledge and additional research, World of Warcraft was determined
-to be the video game for which writing a server would be most interesting: being
-the most popular and populous game of its type for the last decade, the
-technical aspects were certain to be production grade.
-Furthermore, the protocol is well documented and there exists very advanced open
-source implementations of it.
-
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=0.5\textwidth]{wow}
-\end{figure}
-
-\FloatBarrier{}
+With prior knowledge and additional research, World of Warcraft was determined to be the
+video game for which writing a server would be most interesting: being the most
+popular and populous game of its type for the last decade, the technical aspects
+were certain to be production grade. Furthermore, the protocol is well
+documented and there exists very advanced open source implementations of it.
 
 \subsubsection{Disclaimer}
 
@@ -160,7 +136,7 @@ This project is under the MIT license, as found in the repository's root folder.
 \subsection{General information about MMORPGs}
 
 MMORPGs are exclusively online video games: without a network connection, the
-game cannot be played. Unlike more traditional games such as first-person
+game cannot be played. Unlike more traditionnal games such as first-person
 shooters, the players evolve in a fully shared persistent open world.
 
 In these games, the server is authoritative: in real time, each player tells of
@@ -176,7 +152,7 @@ gaining equipment.
 
 \subsection{Stated objectives}
 
-This project was done as a part of the Ensimag's module named `Specialty
+This project was done as a part of the Ensimag's module named `Speciality
 project'.
 With World of Warcraft's development budget numbering in millions of dollars and
 a single semester of classes at our disposal, it was obvious that only a minimal
@@ -193,7 +169,7 @@ The features to be implemented are:
 \end{itemize}
 
 While all these features are extremely basic and are all-together insufficient
-for anyone to consider seriously playing the game, they did provide enough work
+for anyone to consider actually playing the game, they did provide enough work
 to last until the end of the project.
 
 \subsection{TrinityCore}
@@ -201,8 +177,8 @@ to last until the end of the project.
 TrinityCore is an open source project for a game server that is compatible with
 the World of Warcraft client.
 Unlike our implementation, their codebase is nearly 13 years old (through many
-forks) and provides a playing experience that is much closer, but certainly
-inferior, to the official experience.
+forks) and provides a playing experience that is much closer (yet still not
+equal) to the official experience.
 
 The reverse engineering work was primarily done by this project and its
 predecessors, which is why we felt it was important to give them a special
@@ -217,8 +193,6 @@ Though TrinityCore was indeed an inspiration for this project, our goal is not
 to simply translate code from C++ to Scala.
 With the usage of Scala and Akka actors, we intend to have a scalable and
 eventually distributed solution with a clean and hopefully elegant codebase.
-
-% \clearpage
 
 \section{Building blocks of a World of Warcraft game server}
 
@@ -236,7 +210,7 @@ An actor follows a few axioms:
     \item Messages exchanged by actors should contain only immutable data
 \end{itemize}
 
-The lack of mutable shared state makes actors a way to express concurrent
+The lack of mutable shared state make actors a way to express concurrent
 problems elegantly without wrestling directly with synchronization primitives.
 
 As with most good coding practices, actors should have a single responsibility.
@@ -248,7 +222,7 @@ scheduled atop a thread pool.\\
 For the purpose of writing a World of Warcraft game server, and more generally
 an MMORPG game server, actors have an obvious appeal: each entity of the world
 could be represented as an actor.
-Interactions between entities would then be simple message exchanges.
+Interactions between entities would then be simple messages exchanged.
 
 There is no knowledge of how such a system would behave in practice: actors
 have an overhead, and having one actor per world entity might be too much.
@@ -264,10 +238,10 @@ much finer than it would be with system threads.
 We chose to write the server in Scala, using the Akka library.
 Scala was an interesting choice for us, as it is a hybrid functional/imperative
 language, with JVM binary compatibility and wide enough adoption.
-It is a very rich language, with an extreme amount of flexibility and syntactic
+It is a very rich language, with an extreme amount of flexibility and syntaxic
 sugar.
 
-For actors, Akka is the to-go library, which is also one of the reasons we chose
+For actors, Akka is the go-to library, which is also one of the reasons we chose
 Scala.
 
 As for other libraries, we prominently used \texttt{scodec}, for our
@@ -275,92 +249,35 @@ serialization needs, and some elements of \texttt{BouncyCastle} for
 cryptography.
 
 On a related note, \texttt{git} was our version control system of choice.
-For the duration of the project, we have adhered strictly to peer-reviewed pull
+For the duration of the project, we've adhered strictly to peer-reviewed pull
 requests with necessary \texttt{TravisCI} (continuous integration) approval
 before merging into master.
 We feel these tools bring a lot of value to the team, and encourage their usage.
 
-For unit testing, we used the \texttt{scalatest} library.
-
 \subsection{Networking}
-
-The interface between the authentication and realm servers, and the outside
-world (the clients) is managed by the \texttt{TCPServer} actors, one for each
-server. 
-When created, this actor binds itself to a socket using a custom IP address and
-port.
-Once connected, the actor spawns a \texttt{TCPHandler} actor, which itself is
-configured to spawn the adequate actor for either the authentication or realm
-servers.
-The \texttt{TCPHandler} actor receives and emits data from the socket.
 
 %\subsection{Database storage}
 
 \subsection{Administration}
 
-In order to interact and monitor the server, it has been decided that the most
-flexible and adaptable solution was to implement an RESTful web service, to be
-used by a remote client.
-The flexibility comes from the fact that the HTTP routes are defined alongside
-the targeted methods of the server, which would eventually be seamlessly
-triggered by the game client or the administrative client.
-Each part of the application willing to expose an API simply needs to
-implemented the \texttt{API} trait.
-In order to gather all the routes, the \texttt{WebServer} implements a
-runtime reflection feature, which, by examining the compiled program, is able to
-collects all the routes defined in the program and fuse them together.
-
-Reflection is a powerful yet dangerous tool.
-Indeed, in addition to examining and introspecting the code, it is also possible
-to modify it, which could lead to unexpected behaviors, specially since there is
-no compiler to ensure coherency.
-Moreover, analyzing the code is a heavy operation, which, when done in runtime,
-can significantly slow down the execution.
 % * API and why it uses reflection (and what is refleciton, why it s dangerous
 % etc).
 
 \subsection{Unit tests}
-
-The World of Warcraft client was written in C++, for the x86 architecture, which
-uses little-endian. 
-Our application run on the JVM, which uses big-endian.
-The World of Warcraft client expects strict adherence to its binary format.
-
-Writing code while juggling byte orders adds a layer of complexity, making an
-already challenging task that much more difficult.
-Moreover, mistakes result in no error: the client will silently ignore any
-malformed packet, and wrong byte ordering will count as such.
-
-Hence, it was required of us to have exact binary compatibility with the client.
-In that regards, unit tests proved to be a most useful tool.
-Using reference packets extracted from actual game communications, we were able
-to write unit tests that validated the output of our serialization codecs.
-
-As we refactored our code or gained better knowledge of the third party
-libraries we were using, we made code improvements to stable
-features.
-Those often resulted in hard to spot mistakes, if not for unit tests.
 
 % * Auth
 %     * Protocol description
 %         * Sequence diagram
 %         * Actor diagram
 %         * Principle of each packet
-%             * with its cryptographical application
+%             * with it's cryptographical application
 %     * Realm list building
 %     * Account API
 %     * AuthSession FSM
-
-% \clearpage
-
 \section{Authentication server}
 
-The authentication server is the entry point to the World of Warcraft.  
-Its address is shipped with the client, and its purpose is essentially to
-validate the users credentials and offer the choice of realm.
-
 \subsection{SRP Protocol}
-The authentication server implements the SRP (Secure Remote Password) protocol 
+The authentication server implements an SRP (Secure Remote Password) protocol 
 in which, the client must demonstrate to the server that it knows the account's 
 name and password without sending the password itself.
 
@@ -371,89 +288,68 @@ answers by sending a challenge, in case the previous parameters are
 authorized by the server. The following step analyzes the validity of the 
 challenge's solution response, and if correct, it creates a session related to
 the player.
-Only then, the server will deliver the list of realms available.
-
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{authexch}
-    \caption{Sequence diagram for a successful authentication/realms list
-    exchange (excluding error cases)}
-\end{figure}
+Only then, the server will deliver the list of realms availables.
 
 \begin{itemize}
     \item \texttt{ClientChallenge}
         The first connection aims at checking the validity of the game's version, 
         thus, the packet contains an instance of \texttt{VersionInfo} that will 
-        be analyzed and if valid, the packet's handler
+        be analyzed and if valid, the packet's handler: 
         \texttt{LogonChallengeHandler} will generate a challenge
 
     \item \texttt{ServerLogonChallenge}
-        The challenge is represented by an instance of \texttt{ServerChallenge}
-        that describes the first part of an SRP6 protocol implementation. This
-        object contains a key, a multiplicative group generator, a large
-        prime number and a salt. It is stored in the database, associated to the
-        username.
+        The challenge is operated through an instance of \texttt{ServerChallenge} that describes
+        the first part of an SRP6 protocol implementation. This object contains a 
+        key, a generator of multiplicative group, a large prime number and a salt 
+        stored in the database associated to the username.
 
     \item \texttt{ClientLogonProof}
-        In order to solve the challenge, the client generates a shared key and
-        returns a client key and a proof. With this information, the server is
-        able to generate the same shared key and compares the proof to the
-        expected proof generated from the shared key and the client key. 
+        In order to solve the challenge, the client generates a shared key and returns
+        a client key and a proof. With this information, the server is able to generate the
+        same shared key and compares the proof to the expected proof generated from the
+        shared key and the client key. 
 
     \item \texttt{ServerLogonProof}
         Whether the expected proof is matched or not, an instance of the packet 
-        \texttt{ServerLogonProof} is sent back to the client. The difference, 
-        is that if the user entered a valid username and password, the packet 
+        \texttt{ServerLogonProof} is sent back to the client. The difference 
+        is that if the user entered a valid couple username and password, the packet 
         will contain a success response code and a proof that certifies that the 
         server too has the same shared key. Otherwise, the response code will be 
         interpreted as a failed authentication.
 
     \item \texttt{ClientRealmlist}
-        Afterwards, if the authentication succeeded, the client asks for the
-        realms list
+Afterwards, if the authentication succeeded, the client asks for the realms' list
 
     \item \texttt{ServerRealmlist}
-        The response to the request is described by an array of realms each
-        defined by their nature and current state, such as the number of
-        characters or the population level.
-
+        The response to the request is described by an array of realms each defined
+        by their nature and current state, such as the number of players or the population
+        level.
 \end{itemize}
 
-\FloatBarrier{}
-
 \subsection{Authentication automaton}
-
 All the while, the authentication server goes through different states and
-behaviors. The packets received by the server are managed by the
-\texttt{AuthSession} actor which implements a finite state machine.
-The initial state, \texttt{StateNoData}, only handles logon challenges or
-reconnect challenges and subsequently switches to the appropriate state.
+behaviours. The packets received by the server are managed by \texttt{AuthSession} which 
+implements a finite state machine. The initial state, \texttt{StateNoData}, only handles
+logon challenges or reconnect challenges and subsequently switches to the
+appropriate state. \\
 
 For instance, after receiving a logon challenge, it shifts
 to \texttt{StateChallenge} which analyzes the challenge request and if valid, 
-sends back a challenge to the client and switches to \texttt{StateProof}. 
-Otherwise, it switches to \texttt{StateFailed}.
+sends back a challenge to the client and switches to \texttt{StateProof}, 
+otherwise, to \texttt{StateFailed}. \\
 
-Later on, in \texttt{StateProof}, it relays any logon proof to the appropriate
-handler which eventually will send back an \texttt{EventProofSuccess} containing
-the servers' logon proof.
-At this point, the automaton shifts to \texttt{StateRealmlist} which, when
-queried, asks the \texttt{AuthServer} actor for the available realm servers to
-be sent to the client.
+Later on, in \texttt{StateProof}, it relays any logon proof to the appropriate handler
+which eventually will send back an \texttt{EventProofSuccess} containing the servers' logon
+proof. At this point, the automaton shifts to \texttt{StateRealmlist} where, when queried, 
+can ask the authentication server for the existing realm servers to be sent to
+the client. \\
 
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=\textwidth]{authSession}
-    \caption{Authentication automaton}
-\end{figure}
 \subsection{Account API}
-
 In order to interact with the database, the account management object is 
-complemented by \texttt{AccountAPI} which describes different HTTP routes 
+complemented by \texttt{AccountAPI} which describes differents HTTP routes 
 and when one of them is triggered, the appropriate account's management method is
 executed. Therefore, allowing a remote and simple access to the database.
 
-% \clearpage
 
 \section{Realm server}
 
@@ -481,12 +377,6 @@ packet handlers.
 
 \subsection{Actor hierarchy}
 
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=\textwidth]{realmactors}
-    \caption{Actors hierarchy for a realm server}
-\end{figure}
-
 \subsubsection{Packet handlers}
 
 At the start of the RealmServer, using reflection (as done for the REST API),
@@ -508,9 +398,9 @@ From the server side, once a TCP connection is received, a
 \texttt{NetworkWorker} actor is created by the \texttt{TCPHandler} actor.
 This actor's responsibility is to handle all aspects of networking for a client:
 \begin{itemize}
-    \item Receive incoming packets, decrypt them if applicable, deserialize them
+    \item Receive incoming packets, decrypt them if appliable, deserialize them
         and pass them to the correct packet handler
-    \item Serialize outgoing packets, encrypt them if applicable and send them
+    \item Serialize outgoing packets, encrypt them if appliable and send them
         over the network
 \end{itemize}
 
@@ -543,9 +433,7 @@ However, it must be noted that only the headers of every packet
 (and not the contents) are encrypted.
 
 \subsection{Characters management}
-
-\subsubsection{Character creation}
-
+\subsubsection{Characters creation}
 One of the features of the realm server is the ability to create characters.
 Once connected to it, the user can add a new character and choose its appearance; 
 these options are transcribed in the packet \texttt{ClientCharacterCreate} that
@@ -564,12 +452,11 @@ contains:
 \end{itemize}
 \end{multicols}
 
-The characters creation handler tests the validity of the fields and if successful,
+The characters creation handler tests the validity of some fields and if successful,
 adds the character to a list, as well as sending a \texttt{ServerCharacterCreate}
 consisting of a success response code.
 
 \subsubsection{Characters enumeration}
-
 When the realm server receives a payloadless packet with an opcode corresponding
 to a character enumeration, \texttt{CharacterEnumHandler} sends back an instance
 of \texttt{ServerCharacterEnum} which contains the array of the characters.
@@ -622,14 +509,7 @@ events contained within to build the \texttt{ServerObjectUpdate} packet.
 
 \subsubsection{Joining the world}\label{jtw}
 
-\begin{figure}[htb!]
-    \hspace*{-2.5cm}
-    \centering
-    \includegraphics[width=0.95\paperwidth]{playerLogin}
-    \caption{Sequence diagram of player B joining the realm}
-\end{figure}
-
-When a player has selected its character and joined the world, the
+When a player has selected it's character and joined the world, the
 \texttt{ClientPlayerLogin} packet is sent by the client.
 
 The \texttt{PlayerLoginHandler} actor then sends an event to the \texttt{Session}
@@ -641,27 +521,23 @@ However, to enforce the single responsibility principle, it was decided to move
 this responsibility to a separator actor, \texttt{SessionPlayer} that is created
 by the \texttt{Session} actor once the client has selected its player.\\
 
-Upon its creation, the \texttt{SessionPlayer} actor publishes a
+Upon it's creation, the \texttt{SessionPlayer} actor publishes a
 \texttt{PlayerJoined} event to the event stream.  
 On the next world tick, this event will be a part of the
 \texttt{DispatchWorldUpdate} message received by all \texttt{SessionPlayer}
 actors (including the sender).
-
-\begin{sloppypar}
 
 From the client's point of view, the loading screen lasts until it receives its
 first \texttt{ServerObjectUpdate} packet.
 Therefore, if a client has joined the world during the last tick, the contents
 of the \texttt{ServerObjectUpdate} packet include:
 \begin{itemize}
-    \item for the player itself, information about its
+    \item for the player itself, information about it's
         own character, such as its looks, current statistics, initial
         position and all the other players that are already in world
-    \item for other players, the packet would contain similar information,
+    \item for other players, the packet would contain similiar information,
         telling them that a new player has spawned at some position
 \end{itemize}
-
-\end{sloppypar}
 
 As a player joining the world must also know about existing players, the
 \texttt{SessionPlayer} sends upon creation a \texttt{GetWorldState} message to
@@ -693,7 +569,7 @@ the clients.
 
 \subsection{Interesting challenges ahead}
 
-The feature set that is currently implemented is very limited, and a lot of the
+The featureset that is currently implemented is very limited, and a lot of the
 time was spent on necessary and yet unavoidable boilerplate code or overcoming
 the steep learning curve.
 
@@ -720,7 +596,7 @@ These features could be:
 These basic features also serve as openings for more technically interesting
 features.
 
-\subsubsection{Non playing characters}
+\subsection{Non playing characters}
 
 Adding non-players characters to the game opens up a lot of interesting
 challenges.
@@ -732,7 +608,7 @@ information it can display on screen.
 As such, it is interesting to discuss ways to split up the world in smaller
 pieces.
 Of course, as the World of Warcraft client and player perceives the world
-as one big continuous space, it is not possible to put hard barriers between
+as one big continuous space, it's not possible to put hard barriers between
 these smaller pieces.
 A common approach is to layer the world with a grid, where every entity belongs
 to a cell. As entities (even creatures) can move freely between different cells 
@@ -741,7 +617,7 @@ specially with a concurrent environment.
 
 Generally speaking, this field of research is known as spatial indices.
 
-\subsubsection{Distributed application}\label{distr}
+\subsection{Distributed application}
 
 As it currently stands, our application only benefits from `vertical scaling':
 the only way bigger workloads can be handled, ignoring better code, is by using
@@ -754,7 +630,7 @@ computers.
 In our case, Akka supports horizontal scaling: it is possible for an
 \texttt{ActorSystem} to be spread amongst multiple machines (Akka Cluster
 containing Akka Nodes).
-However, it is not automatic and it is the programmer's responsibility to
+However, it's not automatic and it is the programmer's responsibility to
 correctly assign actors to nodes.
 Indeed, having actors that communicate a lot on different nodes will incur
 serialization and network overhead for every message, which would result in a
@@ -768,7 +644,7 @@ in four main continents (named Kalimdor, the Eastern Kingdoms, Northrend and
 Outland).
 
 There is little communication between those continents: most actors of a
-continent (creatures, various game objects) are created and will always reside
+contient (creatures, various game objects) are created and will always reside
 within said continent.
 
 Players can switch continents, but it is not seamless as it requires a loading
@@ -790,10 +666,10 @@ configuration.
 For a technical demonstration such as this project however, this issue can be
 ignored.
 
-\subsubsection{Raycasting}
+\subsection{Raycasting}
 
-When two entities of the world are interacting with one another, they oftentimes 
-must have line of sight on one another.
+When two entities of the world are interacting with one another, they most of
+the time must have line of sight on one another.
 Concretely, it would not make sense to be able to cast spells on a creature from
 behind a wall.
 A common problem is knowing who is in line of sight of whom in real time.
@@ -805,13 +681,11 @@ There are then well-known algorithms to check for line of sight.
 
 An interesting part of this approach would be to split off the actors
 responsible for this work to another machine. With a low enough network latency
-(e.g. InfiniBand) and a machine with hardware optimized for such
+(e.g. InfiniBand) and a machine with hardware optimised for such
 calculations (e.g.\ multiple GPUs if the calculations lend themselves well to
 to GPU computing), this design could offer improvements in scalability.
 
 This is also way to open up to the domain of `server-side world physics'.
-
-% \clearpage
 
 \section{Conclusion}
 
@@ -823,71 +697,29 @@ This is also way to open up to the domain of `server-side world physics'.
 % From our code, we are happy with what we have learned in terms of programming,
 % but are a bit disappointed with not having been able to reach the distributed
 % stage in the provided time frame, as we feel like it would have made our piece
-% of software much cooler. We are however still happy with the featureset we have
+% of software much cooler. We are however still happy with the featureset we've
 % implemented and, though we are now still improving our code base (because we
-% learned), we feel like we have set a good foundation for more features.
+% learned), we feel like we've set a good foundation for more features.
 
-World of Warcraft has been a corner stone of online gaming for years now.
-While it was a thrilling experience to work on game we enjoyed so much, it was
-certainly not the simplest choice.
-Indeed, reverse-engineering, even when done by others, introduces a lot of
-uncertainty in otherwise simple tasks.
+World of Warcraft has played an important role in the video game industry.
+Working with such a complex video game was certainly a challenge.
 
-Far from our minds to back down from difficulty, working in such conditions was
-valuable training to further develop our instincts for programming and
-more importantly debugging. 
+Indeed, while we mostly benefitted from reverse engineering work done by others,
+understanding the inner workings of the game server was a struggle we still
+faced regularly at the end of the semester.
 
-In terms of academia, we highly appreciated the opportunity offered by the
-`Specialty project' module to develop an idea of our own from proposal
-to final application.
-By the same token, we also value the recognition and trust our work receives
-when it is acknowledged as a worthwhile learning endeavor by the school's
-faculty.
+Every breakthrough, however, is remembered as an exciting and rewarding
+moment.
 
-On the topic of the final software, we would have enjoyed being able to fit the
-changes described in~\ref{distr}~(\nameref{distr}) in the available time.
-We felt those changes would really have brought a sense of closure to the
-project, as they would definitely have ticked the `scalability' checkbox.
+Through this project, we have learnt a lot about both general programming and
+video game programming.
+It was an opportunity to see concrete application of our knowledge to a domain
+we enjoy and like.\\
 
-Nonetheless, we had the occasion to explore many different domains of
-computer engineering, from software architecture to cryptography.  We attained
-our objectives in terms of featureset, and managed to do so while keeping our
-code clean and faithful to its own principles.
-
-On a similar topic, we never waivered in our dedication to writing unit tests
-and obtaining peer and continuous integration approval before merges, which
-we believe was a factor of success.
-
-Finally, we would like to express our thanks to Mr Franck ROUSSEAU, Blizzard
-Entertainement, the World of Warcraft emulation community and all others
-involved.
-
-\section{References}
-
-\begingroup{}
-\renewcommand{\section}[2]{}%
-\begin{thebibliography}{9}
-    \bibitem{Scala API documentation}
-    Scala API documentation,
-    \url{https://www.scala-lang.org/api/current/}
-
-    \bibitem{Akka API documentation}
-    Akka API documentation,
-    \url{http://doc.akka.io/docs/akka/current/scala.html}
-
-    \bibitem{scodec API documentation}
-    scodec API documentation,
-    \url{http://scodec.org/api/scodec-core/1.9.0/}
-
-    \bibitem{FastClasspathScanner documentation}
-    FCP documentation,
-    \url{https://github.com/lukehutch/fast-classpath-scanner/wiki}
-
-    \bibitem{TrinityCore} 
-    TrinityCore,
-    \url{https://www.trinitycore.org/}
-
-\end{thebibliography}
-\endgroup{}
+As we learnt and got more familiar with the actor pattern, we reworked our code
+base multiple times.
+Even as these lines are written, we are considering changing key points of our
+architecture because we feel they do not make sense anymore (potentially making
+what we wrote earlier inaccurate\ldots).
 
 \end{document}
