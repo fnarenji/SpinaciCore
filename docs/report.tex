@@ -291,7 +291,7 @@ collects all the routes defined in the program and fuse them together.
 
 Reflection is a powerful yet dangerous tool.
 Indeed, in addition to examining and introspecting the code, it is also possible
-to modify it, which could lead to unexpected behaviors, specially sicne there is
+to modify it, which could lead to unexpected behaviors, specially since there is
 no compiler to ensure coherency.
 Moreover, analyzing the code is a heavy operation, which, when done in runtime,
 can significantly slow down the execution.
@@ -418,6 +418,11 @@ At this point, the automaton shifts to \texttt{StateRealmlist} which, when
 queried, asks the \texttt{AuthServer} actor for the available realm servers to
 be sent to the client.
 
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=\textwidth]{authSession}
+    \caption{Authentication automaton}
+\end{figure}
 \subsection{Account API}
 
 In order to interact with the database, the account management object is 
@@ -563,6 +568,12 @@ As a common communication channel between all actors of the world, we use Akka's
 \texttt{EventStream}, which is an advanced implementation of the
 publisher/subscriber pattern: it offers subscribers ability to filter on the
 types of messages they want to receive.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{playerLogin}
+    \caption{Sequence diagram of a player joining a realm}
+\end{figure}
 
 \subsubsection{WorldState actor}
 
@@ -798,7 +809,7 @@ In terms of academia, we highly appreciated the opportunity offered by the
 `Specialty project' module to develop an idea of our own from proposal
 to final application.
 By the same token, we also value the recognition and trust our work receives
-when it is acknowledged as a worthwhile learning endeavour by the school's
+when it is acknowledged as a worthwhile learning endeavor by the school's
 faculty.
 
 On the topic of the final software, we would have enjoyed being able to fit the
