@@ -259,7 +259,7 @@ much finer than it would be with system threads.
 % * Why are they nice
 % * Why would they fit well with the conception of an MMORPG
 
-\subsection{Technological choices}
+\subsection{Technological choices and project management}
 
 We chose to write the server in Scala, using the Akka library.
 Scala was an interesting choice for us, as it is a hybrid functional/imperative
@@ -274,13 +274,14 @@ As for other libraries, we prominently used \texttt{scodec}, for our
 serialization needs, and some elements of \texttt{BouncyCastle} for
 cryptography.
 
-On a related note, \texttt{git} was our version control system of choice.
-For the duration of the project, we have adhered strictly to peer-reviewed pull
-requests with necessary \texttt{TravisCI} (continuous integration) approval
-before merging into master.
-We feel these tools bring a lot of value to the team, and encourage their usage.
-
 For unit testing, we used the \texttt{scalatest} library.
+
+On a related note, \texttt{git} (on GitHub) was our version control system of
+choice.  For the duration of the project, we have adhered strictly to
+peer-reviewed pull requests with necessary \texttt{TravisCI} (continuous
+integration) approval before merging into master.
+Task tracking was done using a Trello board.
+We feel these tools bring a lot of value to the team, and encourage their usage.
 
 \subsection{Networking}
 
