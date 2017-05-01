@@ -290,10 +290,8 @@ world (the clients) is managed by the \texttt{TCPServer} actors, one for each
 server. 
 When created, this actor binds itself to a socket using a custom IP address and
 port.
-Once connected, the actor spawns a \texttt{TCPHandler} actor, which itself is
-configured to spawn the adequate actor for either the authentication or realm
-servers.
-The \texttt{TCPHandler} actor receives and emits data from the socket.
+Once connected, the actor spawns a \texttt{TCPHandler} actor, which redirects the
+incoming packets to the appropriate handler and sends the outgoing packets.
 
 %\subsection{Database storage}
 
@@ -366,7 +364,8 @@ in which, the client must demonstrate to the server that it knows the account's
 name and password without sending the password itself.
 
 The first step requires the client to start the communication with the server
-by providing the game's version and other parameters related to the computer. 
+by providing the game's version and other parameters related to the client's
+execution context. 
 Alongside, it provides also the username to which the authentication program 
 answers by sending a challenge, in case the previous parameters are 
 authorized by the server. The following step analyzes the validity of the 
@@ -382,26 +381,26 @@ Only then, the server will deliver the list of realms available.
 \end{figure}
 
 \begin{itemize}
-    \item \texttt{ClientChallenge}
+    \item \texttt{Challenge request}
         The first connection aims at checking the validity of the game's version, 
         thus, the packet contains an instance of \texttt{VersionInfo} that will 
         be analyzed and if valid, the packet's handler
         \texttt{LogonChallengeHandler} will generate a challenge
 
-    \item \texttt{ServerLogonChallenge}
+    \item \texttt{Sending the challenge}
         The challenge is represented by an instance of \texttt{ServerChallenge}
         that describes the first part of an SRP6 protocol implementation. This
         object contains a key, a multiplicative group generator, a large
         prime number and a salt. It is stored in the database, associated to the
         username.
 
-    \item \texttt{ClientLogonProof}
+    \item \texttt{Client's proof}
         In order to solve the challenge, the client generates a shared key and returns
         a client key and a proof. With this information, the server is able to generate the
         same shared key and compares the proof to the expected proof generated from the
-        shared key and the client key. 
+        shared key and the sent key. 
 
-    \item \texttt{ServerLogonProof}
+    \item \texttt{Server's proof}
         Whether the expected proof is matched or not, an instance of the packet 
         \texttt{ServerLogonProof} is sent back to the client. The difference 
         is that if the user entered a valid couple username and password, the packet 
@@ -409,11 +408,11 @@ Only then, the server will deliver the list of realms available.
         server too has the same shared key. Otherwise, the response code will be 
         interpreted as a failed authentication.
 
-    \item \texttt{ClientRealmlist}
-        Afterwards, if the authentication succeeded, the client asks for the
+    \item \texttt{Realms' list request}
+        Afterwards, if the authentication succeeded, the client may ask for the
         realms list
 
-    \item \texttt{ServerRealmlist}
+    \item \texttt{Realms' list response}
         The response to the request is described by an array of realms each
         defined by their nature and current state, such as the number of
         characters or the population level.
@@ -490,7 +489,7 @@ packet handlers.
 
 \subsubsection{Packet handlers}
 
-At the start of the RealmServer, using reflection (as done for the REST API),
+At the start of the \texttt{RealmServer}, using reflection (as done for the REST API),
 classes implementing the \texttt{PayloadHandlerFactory} trait are instantiated
 and a map associating each packet to the matching handler is built.
 
@@ -567,7 +566,8 @@ contains:
 
 The characters creation handler tests the validity of the fields and if successful,
 adds the character to a list, as well as sending a \texttt{ServerCharacterCreate}
-consisting of a success response code.
+consisting of a success response code. The next step would be to manage the existing
+characters through the database. 
 
 \subsubsection{Characters enumeration}
 
