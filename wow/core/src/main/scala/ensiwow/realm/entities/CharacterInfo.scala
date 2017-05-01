@@ -21,7 +21,7 @@ case class CharacterInfo(guid: Guid, selfBytes: ByteVector, otherBytes: ByteVect
   val ref: CharacterRef = new CharacterRef(this)
 }
 
-class CharacterRef(characterInfo: CharacterInfo) {
+class CharacterRef(private val characterInfo: CharacterInfo) {
   def guid: Guid = characterInfo.guid
 
   def position: Position = characterInfo.position
