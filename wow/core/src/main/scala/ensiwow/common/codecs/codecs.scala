@@ -275,7 +275,7 @@ package object codecs {
     private type Value = e.Value
     private val ValueSet = e.ValueSet
 
-    assert(UpdateFlags.values.max.id <= math.pow(2, codec.sizeBound.exact.get - 1).toInt)
+    require(UpdateFlags.values.max.id <= math.pow(2, codec.sizeBound.exact.get - 1).toInt)
 
     override def decode(bits: BitVector): Attempt[DecodeResult[ValueSet]] = {
       codec.decode(bits) match {
