@@ -387,7 +387,7 @@ Only then, the server will deliver the list of realms available.
         be analyzed and if valid, the packet's handler
         \texttt{LogonChallengeHandler} will generate a challenge
 
-    \item \texttt{Sending the challenge}
+    \item \texttt{Challenge response}
         The challenge is represented by an instance of \texttt{ServerChallenge}
         that describes the first part of an SRP6 protocol implementation. This
         object contains a key, a multiplicative group generator, a large
@@ -408,11 +408,11 @@ Only then, the server will deliver the list of realms available.
         server too has the same shared key. Otherwise, the response code will be 
         interpreted as a failed authentication.
 
-    \item \texttt{Realms' list request}
+    \item \texttt{Realms list request}
         Afterwards, if the authentication succeeded, the client may ask for the
         realms list
 
-    \item \texttt{Realms' list response}
+    \item \texttt{Realms list response}
         The response to the request is described by an array of realms each
         defined by their nature and current state, such as the number of
         characters or the population level.
