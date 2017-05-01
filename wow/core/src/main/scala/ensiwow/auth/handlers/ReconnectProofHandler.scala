@@ -19,7 +19,7 @@ class ReconnectProofHandler extends Actor with ActorLogging {
     case ReconnectProof(packet, ReconnectChallengeData(login, random)) =>
       var event: AuthSessionEvent = EventReconnectProofFailure
 
-      Account.getSessionKey(login) map { sessionKey =>
+      Account.findByLogin(login) map { case Account(_, _, _, Some(sessionKey)) =>
           val verified = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sessionKey)
 
           if (verified) {

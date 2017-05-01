@@ -6,6 +6,7 @@ import ensiwow.auth.data.Account
 import ensiwow.auth.protocol.AuthResults
 import ensiwow.auth.protocol.packets.{ClientChallenge, ServerLogonChallenge, ServerLogonChallengeSuccess}
 import ensiwow.auth.session.{ChallengeData, EventChallengeFailure, EventChallengeSuccess}
+import ensiwow.common.VersionInfo
 
 import scala.util.Random
 
@@ -19,40 +20,47 @@ class LogonChallengeHandler extends Actor with ActorLogging {
 
   override def receive: PartialFunction[Any, Unit] = {
     case LogonChallenge(packet) =>
-      val error = ChallengeHelper.validate(packet)
+      def versionCheck = if (packet.versionInfo != VersionInfo.SupportedVersionInfo) {
+        Some(AuthResults.FailVersionInvalid)
+      } else {
+        None
+      }
 
-      val event = error match {
-        case Some(authResult) =>
-          val challenge = ServerLogonChallenge(authResult, None)
-
-          log.debug(s"Challenge failure response: $challenge")
-
-          EventChallengeFailure(challenge)
-        case None =>
-          val userName = packet.login
-
-          val srp6Identity = Account.getSaltAndVerifier(userName)
-
-          val srp6Challenge = srp6.computeChallenge(srp6Identity)
+      val login = packet.login
+      def getAccount: Option[AuthResults.AuthResult] = Account.findByLogin(login) match {
+        case Some(Account(_, _, identity, _)) =>
+          val srp6Challenge = srp6.computeChallenge(identity)
 
           // Results
-          val challengeData = ChallengeData(packet.login, srp6Identity, srp6Challenge)
+          val challengeData = ChallengeData(packet.login, identity, srp6Challenge)
 
           val Unk3BitCount = 16 * 8
           val unk3 = BigInt(Unk3BitCount, Random)
           assert(unk3 > 0)
 
           val success = ServerLogonChallengeSuccess(srp6Challenge.serverKey, Srp6Constants.g.toInt, Srp6Constants.N,
-            srp6Identity.salt, unk3)
+            identity.salt, unk3)
           val response = ServerLogonChallenge(AuthResults.Success, Some(success))
 
           log.debug(s"Challenge success response: $response")
           log.debug(s"Challenge values: $challengeData")
 
-          EventChallengeSuccess(response, challengeData)
+          sender ! EventChallengeSuccess(response, challengeData)
+
+          None
+        case _ =>
+          Some(AuthResults.FailUnknownAccount)
       }
 
-      sender ! event
+      val error = versionCheck.orElse(getAccount)
+
+      error foreach { authResult =>
+        val challenge = ServerLogonChallenge(authResult, None)
+
+        log.debug(s"Challenge failure response: $challenge")
+
+        sender ! EventChallengeFailure(challenge)
+      }
   }
 }
 
