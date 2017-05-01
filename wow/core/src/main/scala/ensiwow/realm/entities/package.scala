@@ -1,6 +1,6 @@
 package ensiwow.realm
 
-import ensiwow.realm.shared.{EnumCodecProvider, NumericCodecTag}
+import ensiwow.common.codecs.{EnumCodecProvider, NumericCodecTag}
 import scodec.codecs._
 
 /**

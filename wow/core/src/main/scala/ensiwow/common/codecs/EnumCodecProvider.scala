@@ -1,13 +1,13 @@
-package ensiwow.realm.shared
+package ensiwow.common.codecs
 
 import scodec._
+
+import scala.language.implicitConversions
 
 /**
   * Enumeration trait providing a codec for a Numeric type.
   */
-trait EnumCodecProvider[T] {
-  this: Enumeration =>
-
+trait EnumCodecProvider[T] extends Enumeration {
   /**
     * Codec numeric tag
     */
