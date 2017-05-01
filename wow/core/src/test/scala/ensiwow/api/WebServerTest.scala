@@ -6,13 +6,14 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ensiwow.auth.data.Account
 import ensiwow.auth.data.AccountAPI.AccountReq
 import ensiwow.utils.Reflection
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{Ignore, Matchers, WordSpec}
 import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 
 /**
   * Testing WebServer's responses to account's oriented requests.
   */
+@Ignore
 class WebServerTest extends WordSpec with Matchers with ScalatestRouteTest {
   Reflection.eagerLoadClasses()
 
