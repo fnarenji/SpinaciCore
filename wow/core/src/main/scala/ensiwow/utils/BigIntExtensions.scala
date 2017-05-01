@@ -1,9 +1,13 @@
 package ensiwow.utils
 
+import java.math.BigInteger
+
 /**
   * Additional functions for unsigned BigInt little endian serialization/deserialization
   */
 object BigIntExtensions {
+  implicit def javaBigIntegerToBigIntOpt(x: Option[BigInteger]): Option[BigInt] = x map BigInt.apply
+
   implicit class RichBigInt(val value: BigInt) extends AnyVal {
     private def requiredSize = (value.bitLength + 7) / 8
 

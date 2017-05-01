@@ -2,12 +2,17 @@ package ensiwow.auth
 
 import akka.actor.{Actor, ActorLogging, Props}
 import ensiwow.Application
-import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
+import ensiwow.auth.crypto.Srp6Protocol
+import ensiwow.auth.data.Account
+import ensiwow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler,
+ReconnectProofHandler}
 import ensiwow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
 import ensiwow.auth.session.{AuthSession, EventRealmlist}
 import ensiwow.auth.utils.PacketSerializer
 import ensiwow.common.VersionInfo
+import ensiwow.common.database.Databases
 import ensiwow.common.network.TCPServer
+import scalikejdbc._
 
 case object GetRealmlist
 
@@ -22,6 +27,8 @@ class AuthServer extends Actor with ActorLogging {
   val port = 3724
 
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
+
+  initializeDatabase()
 
   // TODO: should handlers be put in a pool so that they scale accordingly to the load ?
   context.actorOf(LogonChallengeHandler.props, LogonChallengeHandler.PreferredName)
@@ -39,6 +46,53 @@ class AuthServer extends Actor with ActorLogging {
   override def receive: PartialFunction[Any, Unit] = {
     case GetRealmlist => sender() ! eventRealmlist
   }
+
+  /**
+    * Creates connection to database and sets it up if necessary
+    */
+  private def initializeDatabase(): Unit = {
+    ConnectionPool.add(Databases.AuthServer,
+      "jdbc:postgresql://localhost:5432/ensiwow_auth?currentSchema=ensiwow", "ensiwow", "")
+
+    createSchema()
+
+    def createSchema() = {
+      val createDatabase = NamedDB(Databases.AuthServer) readOnly { implicit session =>
+        val tableCount =
+          sql"""
+            select count(*) as count
+            from information_schema.tables
+            where table_name = 'account'
+          """
+            .map(_.int("count"))
+            .single()
+            .apply()
+            .get
+
+        tableCount == 0
+      }
+
+      // TODO: replace this with migration management
+      if (createDatabase) {
+        NamedDB(Databases.AuthServer) autoCommit { implicit session =>
+          sql"drop table if exists account".execute().apply()
+          sql"""
+            create table account
+            (
+              id serial8 primary key,
+              login varchar(64),
+              verifier numeric(100,0),
+              salt numeric(100,0),
+              session_key numeric(100,0)
+            )
+          """.execute().apply()
+
+          Account.create("T", new Srp6Protocol().computeSaltAndVerifier("T", "T"))(session)
+        }
+      }
+    }
+  }
+
 }
 
 object AuthServer {

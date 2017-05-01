@@ -12,15 +12,15 @@ case class AuthSession(packet: ClientAuthSession)
   */
 class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
   override def process(payload: ClientAuthSession): Unit = {
-    val userName = payload.login
+    val login = payload.login
 
-    Account.getSessionKey(userName) match {
-      case Some(sessionKey) =>
+    Account.findByLogin(login) match {
+      case Some(Account(_, _, _, Some(sessionKey))) =>
         val response = ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
 
         sender ! NetworkWorker.EventAuthenticated(sessionKey)
         sender ! NetworkWorker.EventOutgoing(response)
-      case None =>
+      case _ =>
         val response = ServerAuthResponse(AuthResponses.Failed, None)
 
         sender ! NetworkWorker.EventTerminateWithPayload(response)
