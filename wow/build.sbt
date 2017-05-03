@@ -1,31 +1,17 @@
 name := "wow"
+version := "0.1"
 
-version := "1.0"
-
-scalaVersion := "2.12.1"
-
-scalacOptions += "-feature"
-scalacOptions += "-deprecation"
-scalacOptions += "-language:postfixOps"
-
-libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.12.1"
-
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.16"
-libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.4.16"
-libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.16"
-libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.0.4"
-libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.4"
-libraryDependencies += "com.typesafe.akka" %% "akka-http-testkit" % "10.0.4"
-
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1"
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
-
-libraryDependencies += "org.scodec" % "scodec-bits_2.12" % "1.1.4"
-libraryDependencies += "org.scodec" % "scodec-core_2.12" % "1.10.3"
-libraryDependencies += "org.scodec" % "scodec-akka_2.12" % "0.3.0"
-
-libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.56"
-
-libraryDependencies += "io.github.lukehutch" % "fast-classpath-scanner" % "2.0.19"
-
+// Disable log buffering for faster output
 logBuffered in Test := false
+
+run := run in Compile in core
+
+lazy val macros = (project in file("macros"))
+    .settings(Common.Settings)
+    .settings(libraryDependencies ++= Dependencies.Core)
+
+lazy val core = (project in file("core"))
+    .settings(Common.Settings)
+    .settings(libraryDependencies ++= Dependencies.Core)
+    .dependsOn(macros)
+
