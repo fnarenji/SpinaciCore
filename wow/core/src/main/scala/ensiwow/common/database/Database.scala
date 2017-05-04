@@ -7,21 +7,36 @@ import scalikejdbc._
   */
 object Database {
   def configure(): Unit = {
-    GlobalSettings.loggingSQLAndTime = GlobalSettings.loggingSQLAndTime.copy(printUnprocessedStackTrace = false, stackTraceDepth =  0, singleLineMode = true)
+    GlobalSettings.loggingSQLAndTime = GlobalSettings.loggingSQLAndTime.copy(
+      printUnprocessedStackTrace = false,
+      stackTraceDepth = 0,
+      singleLineMode = true)
   }
 }
 
 /**
-  * Databases tokens
+  * Databases connection tokens
   */
 object Databases extends Enumeration {
+  /**
+    * Auth database connection token
+    */
   val AuthServer = Value
 
-  def addRealmServer(id: Int): Unit ={
+  /**
+    * Creates a token for a realm server
+    * @param id realm server id
+    */
+  def addRealmServer(id: Int): Unit = {
     require(id > 0)
     Value(id)
   }
 
+  /**
+    * Get database connection token for realm server
+    * @param id realm server id
+    * @return database connection token
+    */
   def RealmServer(id: Int): Databases.Value = {
     // This assert exists because of pain and suffering
     require(id > 0)
