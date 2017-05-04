@@ -1,40 +1,43 @@
 package ensiwow.auth.data
 
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ensiwow.auth.crypto.{Srp6Identity, Srp6Protocol}
 import ensiwow.api.API
-import ensiwow.common.database.Databases
+import ensiwow.common.database.{Databases, RichColumn, databasefields}
 import ensiwow.utils.BigIntExtensions._
 import scalikejdbc._
 import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 
-final case class Account(
-  id: Long,
-  login: String,
-  var identity: Srp6Identity,
-  var sessionKey: Option[BigInt] = None)
+import scala.language.dynamics
+import scala.language.experimental.macros
 
 /**
   * Account information
   */
-object Account extends SQLSyntaxSupport[Account] {
+final case class Account(
+  id: Long,
+  login: String,
+  @databasefields("salt", "verifier")
+  var identity: Srp6Identity,
+  var sessionKey: Option[BigInt] = None)
+
+object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
   override def connectionPoolName: Any = Databases.AuthServer
 
   def apply(s: SyntaxProvider[Account])(rs: WrappedResultSet): Account = apply(s.resultName)(rs)
 
   def apply(rn: ResultName[Account])(rs: WrappedResultSet): Account = {
-    val id = rs.long(column.id)
-    val login = rs.string(column.login)
+    val id = rs.long(c.id)
+    val login = rs.string(c.login)
 
-    val salt = rs.bigInt(column.c("salt"))
-    val verifier = rs.bigInt(column.c("verifier"))
+    val salt = rs.bigInt(c.salt)
+    val verifier = rs.bigInt(c.verifier)
     val identity = Srp6Identity(salt, verifier)
 
-    val sessionKey = rs.bigIntOpt(column.sessionKey)
+    val sessionKey = rs.bigIntOpt(c.sessionKey)
 
     Account(id, login, identity, sessionKey)
   }
@@ -47,55 +50,54 @@ object Account extends SQLSyntaxSupport[Account] {
   }.map(Account(syntax)).single.apply()
 
   def findByLogin(login: String)(implicit session: DBSession = autoSession): Option[Account] =
-    find(sqls.eq(column.login, login))
+    find(sqls.eq(c.login, login))
 
   def findById(id: Long)(implicit session: DBSession = autoSession): Option[Account] =
-    find(sqls.eq(column.id, id))
+    find(sqls.eq(c.id, id))
 
   def save(account: Account)(implicit session: DBSession = autoSession): Int = withSQL {
     update(Account)
       .set(
-        column.c("salt") -> account.identity.salt,
-        column.c("verifier") -> account.identity.verifier,
-        column.sessionKey -> account.sessionKey
+        c.salt -> account.identity.salt,
+        c.verifier -> account.identity.verifier,
+        c.sessionKey -> account.sessionKey
       )
       .where
-      .eq(column.id, account.id)
+      .eq(c.id, account.id)
   }.update.apply()
 
   def saveIdentity(login: String, identity: Srp6Identity)(implicit session: DBSession = autoSession): Unit = assert(
     withSQL {
       update(Account)
         .set(
-          column.c("salt") -> identity.salt,
-          column.c("verifier") -> identity.verifier
+          c.salt -> identity.salt,
+          c.verifier -> identity.verifier
         )
         .where
-        .eq(column.login, login)
+        .eq(c.login, login)
     }.update.apply() > 0)
 
   def saveSessionKey(login: String, sessionKey: BigInt)(implicit session: DBSession = autoSession): Unit = assert(
     withSQL {
       update(Account)
         .set(
-          column.sessionKey -> sessionKey
+          c.sessionKey -> sessionKey
         )
         .where
-        .eq(column.login, login)
+        .eq(c.login, login)
     }.update.apply() > 0)
 
   def create(login: String, identity: Srp6Identity)(implicit session: DBSession = autoSession): Long = withSQL {
     insert.into(Account)
       .namedValues(
-        column.login -> login,
-        column.c("salt") -> identity.salt,
-        column.c("verifier") -> identity.verifier
+        c.login -> login,
+        c.salt -> identity.salt,
+        c.verifier -> identity.verifier
       )
   }.updateAndReturnGeneratedKey.apply()
 }
 
 object AccountAPI extends API {
-
   case class AccountReq(login: String, password: String)
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
