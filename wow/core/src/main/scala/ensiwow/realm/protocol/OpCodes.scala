@@ -1,13 +1,13 @@
 package ensiwow.realm.protocol
 
-import ensiwow.common.codecs.{EnumCodecProvider, NumericCodecTag}
+import scodec.Codec
 import scodec.codecs._
 
 /**
   * Realm protocol OpCodes.
   */
-object OpCodes extends Enumeration with EnumCodecProvider[Int] {
-  override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+object OpCodes extends Enumeration {
+  implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
   // Client
   val BootMe = Value(0x001)

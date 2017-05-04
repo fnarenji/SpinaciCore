@@ -1,22 +1,22 @@
 package ensiwow.realm
 
-import ensiwow.common.codecs.{EnumCodecProvider, NumericCodecTag}
+import scodec.Codec
 import scodec.codecs._
 
 /**
   * Created by sknz on 4/28/17.
   */
 package object entities {
-  object Genders extends Enumeration with EnumCodecProvider[Int] {
-    override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+  object Genders extends Enumeration {
+    implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
     val Male = Value(0)
     val Female = Value(1)
     val None = Value(2)
   }
 
-  object Races extends Enumeration with EnumCodecProvider[Int] {
-    override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+  object Races extends Enumeration {
+    implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
     val Human = Value(1)
     val Orc = Value(2)
@@ -30,8 +30,8 @@ package object entities {
     val Draenei = Value(11)
   }
 
-  object Classes extends Enumeration with EnumCodecProvider[Int] {
-    override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+  object Classes extends Enumeration {
+    implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
     val Warrior = Value(1)
     val Paladin = Value(2)

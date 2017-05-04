@@ -1,13 +1,13 @@
 package ensiwow.realm.entities
 
-import ensiwow.common.codecs.{EnumCodecProvider, NumericCodecTag}
+import scodec.Codec
 import scodec.codecs._
 
 /**
   * Entity types
   */
-object EntityType extends Enumeration with EnumCodecProvider[Int] {
-  override protected val valueCodecTag: NumericCodecTag[Int] = uint8L
+object EntityType extends Enumeration {
+  implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
   val Object = Value(0)
   val Item = Value(1)
