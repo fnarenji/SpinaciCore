@@ -30,8 +30,8 @@ class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor with A
             listener ! "connect failed"
             context stop self
 
-        case c @ Connected(remote, local) =>
-            log.debug("[CLIENT] Connected from: " + local + " to: " + remote)
+        case c @ Connected(dist, local) =>
+            log.debug("[CLIENT] Connected from: " + local + " to: " + dist)
             listener ! c
             val connection = sender()
             connection ! Register(self)
@@ -40,7 +40,7 @@ class Client(remote: InetSocketAddress, listener: ActorRef) extends Actor with A
                 case data: ByteString =>
                     log.debug("[CLIENT] Sent : " + data)
                     connection ! Write(data)
-                case CommandFailed(w: Write) =>
+                case CommandFailed(_: Write) =>
                     // O/S buffer was full
                     listener ! "write failed"
                 case Received(data) =>

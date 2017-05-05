@@ -1,6 +1,7 @@
 package ensiwow.common.codecs
 
 import org.scalatest.{FlatSpec, Matchers}
+import scodec.Codec
 import scodec.bits._
 
 /**
@@ -9,10 +10,10 @@ import scodec.bits._
 class ServerPacketSizeCodecTest extends FlatSpec with Matchers {
   behavior of "serverPacketSizeCodec"
 
-  implicit val codec = serverPacketSizeCodec
+  implicit val codec: Codec[Int] = serverPacketSizeCodec
 
-  val boundary = math.pow(2, 15).toInt
-  val maxValue = math.pow(2, 23).toInt - 1
+  val boundary: Int = math.pow(2, 15).toInt
+  val maxValue: Int = math.pow(2, 23).toInt - 1
 
   it must "deserialize min value" in CodecTestUtils.decode(hex"0002".bits, 2)
   it must "serialize min value" in CodecTestUtils.encode(hex"0002".bits, 2)

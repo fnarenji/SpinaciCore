@@ -11,15 +11,9 @@ import scodec.bits._
 /**
   * Server packet serialization/deserialization test, without encryption
   */
-sealed class PacketTest[Payload <: Payload, Header <: PacketHeader](
-  headerBytes: ByteVector,
-  referenceHeader: Header,
-  payloadBytes: ByteVector,
-  referencePayload: Payload)
-  (
-    implicit payloadCodec: Codec[Payload],
-    headerCodec: Codec[Header])
-  extends FlatSpec with Matchers {
+sealed class PacketTest[A <: Payload, B <: PacketHeader](
+  headerBytes: ByteVector, referenceHeader: B, payloadBytes: ByteVector, referencePayload: A)
+  (implicit payloadCodec: Codec[A], headerCodec: Codec[B]) extends FlatSpec with Matchers {
   behavior of referencePayload.getClass.getSimpleName
 
   it must "deserialize header as expected" in CodecTestUtils.decode(headerBytes.bits, referenceHeader)
@@ -33,14 +27,14 @@ sealed class PacketTest[Payload <: Payload, Header <: PacketHeader](
   }
 }
 
-class ServerPacketTest[Payload <: Payload with ServerSide](
+class ServerPacketTest[A <: Payload with ServerSide](
   headerBytes: ByteVector,
   referenceHeader: ServerHeader,
   payloadBytes: ByteVector,
-  referencePayload: Payload)
+  referencePayload: A)
   (
-    implicit payloadCodec: Codec[Payload],
-    opCodeProvider: OpCodeProvider[Payload])
+    implicit payloadCodec: Codec[A],
+    opCodeProvider: OpCodeProvider[A])
   extends PacketTest(headerBytes, referenceHeader, payloadBytes, referencePayload)(payloadCodec, Codec[ServerHeader]) {
   it must "serialize as expected" in {
     PacketSerialization.outgoing(referencePayload)(None) shouldEqual (headerBytes ++ payloadBytes).bits
@@ -137,7 +131,7 @@ class ServerCharacterEnumTest extends PacketTest(
           "Garl",
           race = Races.Human,
           charClass = Classes.Rogue,
-          gender = Genders.Male  ,
+          gender = Genders.Male,
           skin = 8,
           face = 8,
           hairStyle = 7,
@@ -168,7 +162,7 @@ class ServerCharacterEnumTest extends PacketTest(
         ),
         1,
         12,
-        Position.mxyz(0, -8947.659f , -133.04663f, 83.662796f),
+        Position.mxyz(0, -8947.659f, -133.04663f, 83.662796f),
         0,
         0x02000000,
         0,

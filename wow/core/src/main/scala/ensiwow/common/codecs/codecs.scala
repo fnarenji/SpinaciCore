@@ -63,16 +63,19 @@ package object codecs {
 
   /**
     * Codec for sequence
+    *
     * @param codec codec for sequence element type
     * @tparam A element type
     * @return sequence codec
     */
-  def seqCodec[A](codec: Codec[A], readLimit: Option[Int]) : Codec[immutable.Seq[A]] = new Codec[immutable.Seq[A]] {
-    def sizeBound = SizeBound.unknown
+  def seqCodec[A](codec: Codec[A], readLimit: Option[Int]): Codec[immutable.Seq[A]] = new Codec[immutable.Seq[A]] {
+    def sizeBound: SizeBound = SizeBound.unknown
 
-    def encode(seq: immutable.Seq[A]) = Encoder.encodeSeq(codec)(seq)
+    def encode(seq: immutable.Seq[A]): Attempt[BitVector] = Encoder.encodeSeq(codec)(seq)
 
-    def decode(buffer: BitVector) = Decoder.decodeCollect[immutable.Seq, A](codec, readLimit)(buffer)
+    def decode(buffer: BitVector): Attempt[DecodeResult[immutable.Seq[A]]] = Decoder.decodeCollect[immutable.Seq, A](
+      codec,
+      readLimit)(buffer)
 
     override def toString = s"seq($codec)"
   }
@@ -90,8 +93,12 @@ package object codecs {
       val codec: Codec[immutable.Seq[A]] = seqCodec(valueCodec, Some(size))
 
       codec.exmap[immutable.Seq[A]](seq => {
-        if (seq.size == size) Attempt.successful(seq)
-        else Attempt.failure(Err(s"Insufficient number of elements: decoded ${seq.size} but should have decoded $size"))
+        if (seq.size == size) {
+          Attempt.successful(seq)
+        } else {
+          Attempt
+            .failure(Err(s"Insufficient number of elements: decoded ${seq.size} but should have decoded $size"))
+        }
       }, Attempt.successful).withToString(s"sizePrefixedSeq($sizeCodec, $valueCodec)")
     })(_.size)
 
@@ -260,7 +267,8 @@ package object codecs {
 
   /**
     * Encode a set of flags as a fixed length bitmask
-    * @param e enum object
+    *
+    * @param e     enum object
     * @param codec codec for bitmask
     * @tparam A enumeration type
     * @tparam I integer type for bitmask
@@ -311,6 +319,7 @@ package object codecs {
 
   /**
     * Treats an Option[A] as if it was required
+    *
     * @param codec codec for T
     * @tparam A type of optional
     * @return Option[A] codec that is not optional
@@ -326,7 +335,8 @@ package object codecs {
 
   /**
     * Prefixes the output of the codec by a bitmask indicating which bytes are non null, and zero packs null bytes
-    * @param size bitmask size
+    *
+    * @param size  bitmask size
     * @param codec codec to filter
     * @tparam A type of codec
     * @return zero packing codec for type T

@@ -9,8 +9,6 @@ import scodec.bits._
   * Test for Packet Header parsing
   */
 class ServerHeaderTest extends FlatSpec with Matchers {
-  implicit val codec = Codec[ServerHeader]
-
   behavior of "ServerPacketHeader"
 
   private val header = ServerHeader(40, OpCodes.SAuthChallenge)
@@ -21,8 +19,6 @@ class ServerHeaderTest extends FlatSpec with Matchers {
 }
 
 class ClientHeaderTest extends FlatSpec with Matchers {
-  implicit val codec = Codec[ClientHeader]
-
   behavior of "ClientPacketHeader"
 
   private val header = ClientHeader(269, OpCodes.AuthSession)
