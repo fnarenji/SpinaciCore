@@ -11,7 +11,7 @@ import scodec.interop.akka._
 /**
   * Handles an open TCP connection.
   */
-class TCPHandler[T <: SessionActorCompanion](companion: T, connection: ActorRef) extends Actor with ActorLogging {
+class TCPHandler[A <: SessionActorCompanion](companion: A, connection: ActorRef) extends Actor with ActorLogging {
   private val session = context.actorOf(companion.props, companion.PreferredName)
 
   def receive: PartialFunction[Any, Unit] = {
@@ -36,7 +36,8 @@ class TCPHandler[T <: SessionActorCompanion](companion: T, connection: ActorRef)
 }
 
 object TCPHandler {
-  def props[T <: SessionActorCompanion](companion: T, connection: ActorRef): Props = Props(classOf[TCPHandler[T]], companion, connection)
+  def props[A <: SessionActorCompanion](companion: A, connection: ActorRef): Props =
+    Props(classOf[TCPHandler[A]], companion, connection)
 
   def PreferredName(inetSocketAddress: InetSocketAddress) =
     s"Handler@${inetSocketAddress.getHostString}:${inetSocketAddress.getPort}"

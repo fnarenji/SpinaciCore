@@ -15,7 +15,8 @@ case object GetAddress
   *
   * @constructor send a Bind command to the TCP manager
   */
-class TCPServer[T <: SessionActorCompanion](val companion: T, val address: String, val port: Int) extends Actor with ActorLogging {
+class TCPServer[A <: SessionActorCompanion](val companion: A, val address: String, val port: Int)
+  extends Actor with ActorLogging {
   log.debug("Binding server with socket")
   IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(address, port))
 
@@ -35,7 +36,7 @@ class TCPServer[T <: SessionActorCompanion](val companion: T, val address: Strin
 }
 
 object TCPServer {
-  def props[T <: SessionActorCompanion](companion: T, address: String, port: Int): Props = Props(classOf[TCPServer[T]],
+  def props[A <: SessionActorCompanion](companion: A, address: String, port: Int): Props = Props(classOf[TCPServer[A]],
     companion,
     address,
     port)
