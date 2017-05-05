@@ -130,7 +130,7 @@ object AccountAPI extends API {
           } ~
             path("delete") {
               pathEnd {
-                entity(as[String]) { login =>
+                entity(as[String]) { _ =>
                   // TODO: Delete account
                   // It must exist
                   // Account.deleteAccount(user.username, user.password)

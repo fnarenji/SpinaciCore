@@ -3,10 +3,11 @@ package ensiwow.realm.protocol
 import ensiwow.common.codecs.CodecTestUtils
 import ensiwow.realm.entities.{Guid, GuidType}
 import org.scalatest.{FlatSpec, Matchers}
+import scodec.Codec
 import scodec.bits._
 
 class GuidTest extends FlatSpec with Matchers {
-  implicit val codec = Guid.packedCodec
+  implicit val codec: Codec[Guid] = Guid.packedCodec
 
   behavior of "Guid"
 

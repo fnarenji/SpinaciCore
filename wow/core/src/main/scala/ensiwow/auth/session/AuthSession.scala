@@ -71,11 +71,10 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
 
       logonProofHandler ! LogonProof(packet, challengeData)
       stay using challengeData
-    case Event(EventProofSuccess(packet, proofData), _: ChallengeData) =>
+    case Event(EventProofSuccess(packet), _: ChallengeData) =>
       log.debug(s"Sending successful proof $packet")
       val bits = PacketSerializer.serialize(packet)
 
-      // TODO: shared key should be saved to database
       context.parent ! TCPHandler.OutgoingPacket(bits)
       goto(StateRealmlist) using NoData
     case Event(EventProofFailure(packet), _: ChallengeData) =>

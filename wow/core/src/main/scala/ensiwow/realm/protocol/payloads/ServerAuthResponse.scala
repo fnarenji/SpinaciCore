@@ -45,10 +45,8 @@ case class ServerAuthResponse(response: AuthResponses.Value,
 
   require(successResponses.contains(response) == success.nonEmpty)
 
-  success match {
-    case Some(success) =>
-      require(response == AuthResponses.WaitQueue == success.queue.nonEmpty)
-    case None =>
+  success foreach { _success =>
+      require(response == AuthResponses.WaitQueue == _success.queue.nonEmpty)
   }
 }
 

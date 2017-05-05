@@ -29,7 +29,7 @@ class NetworkWorker extends Actor with ActorLogging {
   private var currHeader: Option[ClientHeader] = None
 
   // Send initial challenge packet
-  sendAuthChallenge
+  sendAuthChallenge()
 
   override def receive: Receive = {
     case EventIncoming(bits) =>
@@ -120,7 +120,7 @@ class NetworkWorker extends Actor with ActorLogging {
     context.stop(self)
   }
 
-  private def sendAuthChallenge = {
+  private def sendAuthChallenge() = {
     val SeedSizeBits = ServerAuthChallenge.SeedSize * 8
 
     val UInt32MaxValue = 0x7FFFFFFFL

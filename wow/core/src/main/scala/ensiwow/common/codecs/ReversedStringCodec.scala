@@ -24,5 +24,5 @@ private[codecs] final class ReversedStringCodec(stringCodec: Codec[String]) exte
     }
   }
 
-  override def toString = s"Reversed ${stringCodec}"
+  override def toString = s"Reversed $stringCodec"
 }

@@ -20,7 +20,7 @@ case class EventLogonSuccess(packet: ServerLogonProof, proofData: ProofData) ext
 
 case class EventRealmlist(bits: BitVector) extends AuthSessionEvent
 
-case class EventProofSuccess(packet: ServerLogonProof, proofData: ProofData) extends AuthSessionEvent
+case class EventProofSuccess(packet: ServerLogonProof) extends AuthSessionEvent
 
 case class EventReconnectChallengeSuccess(packet: ServerReconnectChallenge,
                                           reconnectChallengeData: ReconnectChallengeData) extends AuthSessionEvent
