@@ -10,8 +10,8 @@ import scodec.bits._
 /**
   * Test checking for encoding/decoding idempotency
   */
-abstract class AuthPacketTest[T](bytes: ByteVector, reference: T)
-                                (implicit val codec: Codec[T]) extends FlatSpec with Matchers {
+abstract class AuthPacketTest[A](bytes: ByteVector, reference: A)
+                                (implicit val codec: Codec[A]) extends FlatSpec with Matchers {
   private val packetBits = bytes.bits
 
   behavior of reference.getClass.getSimpleName

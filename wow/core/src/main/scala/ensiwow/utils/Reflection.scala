@@ -40,13 +40,13 @@ object Reflection {
   /**
     * Finds all objects inheriting from type T
     *
-    * @tparam T type from which objects should inherit
+    * @tparam A type from which objects should inherit
     * @return list of inheriting objects
     */
-  def objectsOf[T: ClassTag : TypeTag]: Iterable[T] = {
+  def objectsOf[A: ClassTag : TypeTag]: Iterable[A] = {
     // Get generic type information
-    val clazz = implicitly[ClassTag[T]].runtimeClass
-    val selfType = typeOf[T]
+    val clazz = implicitly[ClassTag[A]].runtimeClass
+    val selfType = typeOf[A]
 
     val name = clazz.getCanonicalName
 
@@ -56,7 +56,7 @@ object Reflection {
     impls ++= classInfo.getSubclasses.asScala
     impls ++= classInfo.getClassesImplementing.asScala
 
-    val objects = mutable.MutableList[T]()
+    val objects = mutable.MutableList[A]()
 
     for (impl <- impls) {
       // Find implementation module info
@@ -73,7 +73,7 @@ object Reflection {
           assert(refl.isStatic)
 
           val inst = refl.instance
-          val cast = inst.asInstanceOf[T]
+          val cast = inst.asInstanceOf[A]
 
           objects += cast
         }

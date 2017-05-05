@@ -78,9 +78,9 @@ class NetworkWorker extends Actor with ActorLogging {
   }
 
   private def processBufferedBits(): Unit = {
-//    log.debug(s"Have ${unprocessedBits.bytes.size} bytes waiting to be processed")
+    //    log.debug(s"Have ${unprocessedBits.bytes.size} bytes waiting to be processed")
     if (currHeader.isEmpty && unprocessedBits.sizeGreaterThanOrEqual(Codec[ClientHeader].sizeBound.exact.get)) {
-//      log.debug("No header, parsing next one")
+      //      log.debug("No header, parsing next one")
       val (header, remaining) = PacketSerialization.incomingHeader(unprocessedBits)(sessionCipher)
       currHeader = Some(header)
       unprocessedBits = remaining
@@ -96,7 +96,7 @@ class NetworkWorker extends Actor with ActorLogging {
           currHeader = None
 
           if (PacketHandlerHelper.isHandled(header.opCode)) {
-//            log.debug(s"Got packet $header/${payloadBits.bytes.length}")
+            //            log.debug(s"Got packet $header/${payloadBits.bytes.length}")
 
             val handlerPath = RealmServer.handlerPath(header.opCode)
             val handler = context.actorSelection(handlerPath)
@@ -108,10 +108,10 @@ class NetworkWorker extends Actor with ActorLogging {
 
           processBufferedBits()
         } else {
-//          log.debug("Has header, no payload, not enough data")
+          //          log.debug("Has header, no payload, not enough data")
         }
       case None =>
-//        log.debug("No header, not enough data for next one")
+      //        log.debug("No header, not enough data for next one")
     }
   }
 
@@ -143,17 +143,17 @@ object NetworkWorker extends SessionActorCompanion {
 
   sealed trait RealmSessionEvent
 
-  sealed class PayloadBearingEvent[T <: Payload with ServerSide](payload: T)
-                                                                (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T])
+  sealed class PayloadBearingEvent[A <: Payload with ServerSide](payload: A)
+    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A])
     extends RealmSessionEvent {
     def serialize(sessionCipher: Option[SessionCipher]): BitVector = {
       PacketSerialization.outgoing(payload)(sessionCipher)(implicitly, implicitly)
     }
   }
 
-  case class EventOutgoing[T <: Payload with ServerSide](payload: T)
-                                                        (implicit opCodeProvider: OpCodeProvider[T], codec: Codec[T])
-    extends PayloadBearingEvent[T](payload)
+  case class EventOutgoing[A <: Payload with ServerSide](payload: A)
+    (implicit opCodeProvider: OpCodeProvider[A], codec: Codec[A])
+    extends PayloadBearingEvent[A](payload)
 
   case class EventOutgoingRaw(bits: BitVector, opCode: OpCodes.Value) extends RealmSessionEvent
 
@@ -165,8 +165,8 @@ object NetworkWorker extends SessionActorCompanion {
 
   case class EventTerminate(delayed: Boolean) extends RealmSessionEvent
 
-  case class EventTerminateWithPayload[T <: Payload with ServerSide](payload: T)
-                                                                    (implicit codec: Codec[T], opCodeProvider: OpCodeProvider[T]) extends PayloadBearingEvent[T](payload)
+  case class EventTerminateWithPayload[A <: Payload with ServerSide](payload: A)
+    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]) extends PayloadBearingEvent[A](payload)
 
   case class EventAuthenticated(sessionKey: BigInt) extends RealmSessionEvent
 

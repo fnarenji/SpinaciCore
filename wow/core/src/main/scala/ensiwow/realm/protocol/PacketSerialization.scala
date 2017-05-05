@@ -16,11 +16,11 @@ object PacketSerialization {
     * @param payload      payload to serialize
     * @param payloadCodec codec used to serialize payload
     * @param opCode       payload opcode
-    * @tparam T payload type
+    * @tparam A payload type
     * @return (header, payload) bits
     */
-  def outgoingSplit[T <: Payload with ServerSide](payload: T, opCode: OpCodes.Value)
-    (implicit payloadCodec: Codec[T]): (BitVector, BitVector) = {
+  def outgoingSplit[A <: Payload with ServerSide](payload: A, opCode: OpCodes.Value)
+    (implicit payloadCodec: Codec[A]): (BitVector, BitVector) = {
 
     payloadCodec.encode(payload) match {
       case Successful(payloadBits) =>
@@ -58,12 +58,12 @@ object PacketSerialization {
     * @param cipher         optional encryption cipher to be used
     * @param payloadCodec   codec used to serialize payload
     * @param opCodeProvider opcode provider for payload type
-    * @tparam T payload type
+    * @tparam A payload type
     * @return bits of packet containing (encrypted) header and serialized payload
     */
-  def outgoing[T <: Payload with ServerSide](payload: T)(cipher: Option[SessionCipher])(
-    implicit payloadCodec: Codec[T],
-    opCodeProvider: OpCodeProvider[T]): BitVector = {
+  def outgoing[A <: Payload with ServerSide](payload: A)(cipher: Option[SessionCipher])(
+    implicit payloadCodec: Codec[A],
+    opCodeProvider: OpCodeProvider[A]): BitVector = {
     payloadCodec.encode(payload) match {
       case Successful(payloadBits) =>
         outgoing(payloadBits, opCodeProvider.opCode)(cipher)

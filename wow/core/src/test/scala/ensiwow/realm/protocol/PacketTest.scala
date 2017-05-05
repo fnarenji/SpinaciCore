@@ -11,14 +11,14 @@ import scodec.bits._
 /**
   * Server packet serialization/deserialization test, without encryption
   */
-sealed class PacketTest[TPayload <: Payload, THeader <: PacketHeader](
+sealed class PacketTest[Payload <: Payload, Header <: PacketHeader](
   headerBytes: ByteVector,
-  referenceHeader: THeader,
+  referenceHeader: Header,
   payloadBytes: ByteVector,
-  referencePayload: TPayload)
+  referencePayload: Payload)
   (
-    implicit payloadCodec: Codec[TPayload],
-    headerCodec: Codec[THeader])
+    implicit payloadCodec: Codec[Payload],
+    headerCodec: Codec[Header])
   extends FlatSpec with Matchers {
   behavior of referencePayload.getClass.getSimpleName
 
@@ -33,14 +33,14 @@ sealed class PacketTest[TPayload <: Payload, THeader <: PacketHeader](
   }
 }
 
-class ServerPacketTest[TPayload <: Payload with ServerSide](
+class ServerPacketTest[Payload <: Payload with ServerSide](
   headerBytes: ByteVector,
   referenceHeader: ServerHeader,
   payloadBytes: ByteVector,
-  referencePayload: TPayload)
+  referencePayload: Payload)
   (
-    implicit payloadCodec: Codec[TPayload],
-    opCodeProvider: OpCodeProvider[TPayload])
+    implicit payloadCodec: Codec[Payload],
+    opCodeProvider: OpCodeProvider[Payload])
   extends PacketTest(headerBytes, referenceHeader, payloadBytes, referencePayload)(payloadCodec, Codec[ServerHeader]) {
   it must "serialize as expected" in {
     PacketSerialization.outgoing(referencePayload)(None) shouldEqual (headerBytes ++ payloadBytes).bits

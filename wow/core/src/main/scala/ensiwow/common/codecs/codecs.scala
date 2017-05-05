@@ -51,10 +51,10 @@ package object codecs {
     *
     * @param t     expected constant
     * @param codec codec to encode constant
-    * @tparam T type of constant
+    * @tparam A type of constant
     * @return constant codec
     */
-  def constantE[T](t: T)(implicit codec: Codec[T]): Codec[Unit] = constant(codec.encode(t).require)
+  def constantE[A](t: A)(implicit codec: Codec[A]): Codec[Unit] = constant(codec.encode(t).require)
 
   /**
     * Codec for big integers
@@ -64,15 +64,15 @@ package object codecs {
   /**
     * Codec for sequence
     * @param codec codec for sequence element type
-    * @tparam T element type
+    * @tparam A element type
     * @return sequence codec
     */
-  def seqCodec[T](codec: Codec[T], readLimit: Option[Int]) : Codec[immutable.Seq[T]] = new Codec[immutable.Seq[T]] {
+  def seqCodec[A](codec: Codec[A], readLimit: Option[Int]) : Codec[immutable.Seq[A]] = new Codec[immutable.Seq[A]] {
     def sizeBound = SizeBound.unknown
 
-    def encode(seq: immutable.Seq[T]) = Encoder.encodeSeq(codec)(seq)
+    def encode(seq: immutable.Seq[A]) = Encoder.encodeSeq(codec)(seq)
 
-    def decode(buffer: BitVector) = Decoder.decodeCollect[immutable.Seq, T](codec, readLimit)(buffer)
+    def decode(buffer: BitVector) = Decoder.decodeCollect[immutable.Seq, A](codec, readLimit)(buffer)
 
     override def toString = s"seq($codec)"
   }
@@ -82,14 +82,14 @@ package object codecs {
     *
     * @param sizeCodec  size codec
     * @param valueCodec vector element codec
-    * @tparam T type of element
+    * @tparam A type of element
     * @return size prefixed vector codec
     */
-  def sizePrefixedSeq[T](sizeCodec: Codec[Int], valueCodec: Codec[T]): Codec[immutable.Seq[T]] =
-    sizeCodec.consume[immutable.Seq[T]](size => {
-      val codec: Codec[immutable.Seq[T]] = seqCodec(valueCodec, Some(size))
+  def sizePrefixedSeq[A](sizeCodec: Codec[Int], valueCodec: Codec[A]): Codec[immutable.Seq[A]] =
+    sizeCodec.consume[immutable.Seq[A]](size => {
+      val codec: Codec[immutable.Seq[A]] = seqCodec(valueCodec, Some(size))
 
-      codec.exmap[immutable.Seq[T]](seq => {
+      codec.exmap[immutable.Seq[A]](seq => {
         if (seq.size == size) Attempt.successful(seq)
         else Attempt.failure(Err(s"Insufficient number of elements: decoded ${seq.size} but should have decoded $size"))
       }, Attempt.successful).withToString(s"sizePrefixedSeq($sizeCodec, $valueCodec)")
@@ -166,11 +166,11 @@ package object codecs {
     *
     * @param codec      value codec
     * @param upperBound upper bound
-    * @tparam T value type
+    * @tparam A value type
     * @return bound checking codec
     */
-  def upperBound[T: Ordering](codec: Codec[T], upperBound: T): Codec[T] = {
-    def boundsCheck(value: T) = {
+  def upperBound[A: Ordering](codec: Codec[A], upperBound: A): Codec[A] = {
+    def boundsCheck(value: A) = {
       import Ordering.Implicits._
 
       if (value <= upperBound) {
@@ -247,13 +247,13 @@ package object codecs {
     * Fixes a value, not written nor read to stream
     *
     * @param value value to fix
-    * @tparam T type of value
+    * @tparam A type of value
     * @return fixed codec
     */
-  def fixed[T](value: T): Codec[T] = new Codec[T] {
-    override def decode(bits: BitVector): Attempt[DecodeResult[T]] = Attempt.Successful(DecodeResult(value, bits))
+  def fixed[A](value: A): Codec[A] = new Codec[A] {
+    override def decode(bits: BitVector): Attempt[DecodeResult[A]] = Attempt.Successful(DecodeResult(value, bits))
 
-    override def encode(value: T): Attempt[BitVector] = Attempt.Successful(BitVector.empty)
+    override def encode(value: A): Attempt[BitVector] = Attempt.Successful(BitVector.empty)
 
     override def sizeBound: SizeBound = SizeBound.exact(0)
   }
@@ -262,11 +262,11 @@ package object codecs {
     * Encode a set of flags as a fixed length bitmask
     * @param e enum object
     * @param codec codec for bitmask
-    * @tparam T enumeration type
+    * @tparam A enumeration type
     * @tparam I integer type for bitmask
     * @return bitmask codec
     */
-  def fixedBitmask[T <: Enumeration, I](e: T, codec: Codec[I])
+  def fixedBitmask[A <: Enumeration, I](e: A, codec: Codec[I])
     (implicit numeric: Integral[I]): Codec[e.ValueSet] = new Codec[e.ValueSet] {
 
     import numeric._
@@ -310,12 +310,12 @@ package object codecs {
   }
 
   /**
-    * Treats an Option[T] as if it was required
+    * Treats an Option[A] as if it was required
     * @param codec codec for T
-    * @tparam T type of optional
-    * @return Option[T] codec that is not optional
+    * @tparam A type of optional
+    * @return Option[A] codec that is not optional
     */
-  def requiredOptional[T](codec: Codec[T]): Codec[Option[T]] = {
+  def requiredOptional[A](codec: Codec[A]): Codec[Option[A]] = {
     codec.exmap(v => Attempt.Successful(Some(v)), o => o match {
       case Some(v) =>
         Attempt.Successful(v)
@@ -328,10 +328,10 @@ package object codecs {
     * Prefixes the output of the codec by a bitmask indicating which bytes are non null, and zero packs null bytes
     * @param size bitmask size
     * @param codec codec to filter
-    * @tparam T type of codec
+    * @tparam A type of codec
     * @return zero packing codec for type T
     */
-  def zeroPacked[T](size: Int, codec: Codec[T]): Codec[T] = filtered(codec, new Codec[BitVector] {
+  def zeroPacked[A](size: Int, codec: Codec[A]): Codec[A] = filtered(codec, new Codec[BitVector] {
     override def decode(bits: BitVector): Attempt[DecodeResult[BitVector]] = {
       bits.acquireThen(size)(x => Attempt.failure(Err(x)), maskBits => {
         val reversedMask = maskBits.reverseBitOrder
