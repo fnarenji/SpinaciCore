@@ -5,6 +5,7 @@ import scala.language.dynamics
 import scalikejdbc._
 
 package object database {
+  case class DatabaseConfiguration(connection: String, username: String, password: String)
 
   /**
     * Implements dynamic selection of columns based on analysis of class contents by macro
