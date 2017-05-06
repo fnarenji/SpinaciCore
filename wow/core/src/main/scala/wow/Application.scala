@@ -2,12 +2,14 @@ package wow
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.settings.ServerSettings
+import wow.utils.Reflection
+import scalikejdbc.ConnectionPool
 import wow.api.WebServer
 import wow.auth.AuthServer
 import wow.common.database.Database
 import wow.realm.RealmServer
-import wow.utils.Reflection
-import scalikejdbc.{ConnectionPool, DB}
+import pureconfig._
+import wow.common.config.deriveIntMap
 
 /**
   * Created by sknz on 1/31/17.
@@ -15,18 +17,24 @@ import scalikejdbc.{ConnectionPool, DB}
 object Application {
   private var startTime: Long = _
 
-  def main(args: Array[String]): Unit = {
-    Database.configure()
+  val configuration: ApplicationConfiguration = loadConfigOrThrow[ApplicationConfiguration]("wow")
 
+  def main(args: Array[String]): Unit = {
     Reflection.eagerLoadClasses()
+
+    Database.configure()
 
     val system = ActorSystem("wow")
 
     startTime = System.currentTimeMillis()
-    system.actorOf(AuthServer.props, AuthServer.PreferredName)
-    system.actorOf(RealmServer.props, RealmServer.PreferredName)
 
-    WebServer.startServer("localhost", 8080, ServerSettings(system), system)
+    system.actorOf(AuthServer.props, AuthServer.PreferredName)
+    for (id <- configuration.realms.keys) {
+      system.actorOf(RealmServer.props(id), RealmServer.PreferredName)
+    }
+
+    WebServer.startServer(configuration.webServer.host, configuration.webServer.port, ServerSettings(system), system)
+
     system.terminate()
 
     ConnectionPool.closeAll()
@@ -36,5 +44,6 @@ object Application {
     System.currentTimeMillis() - startTime
   }
 
-  val actorPath = "akka://wow/user"
+  val ActorPath = "akka://wow/user"
 }
+

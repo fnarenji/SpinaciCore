@@ -25,3 +25,4 @@ object WebServer extends HttpApp {
   }
 }
 
+case class WebServerConfiguration(host: String, port: Int)
