@@ -2,25 +2,70 @@ package wow.realm.session
 
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.actor.{Actor, ActorLogging, Props}
-import wow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
-import wow.realm.RealmServer
-import wow.realm.crypto.SessionCipher
-import wow.realm.protocol._
-import wow.realm.protocol.payloads.ServerAuthChallenge
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import scodec.Codec
 import scodec.bits.BitVector
-import scodec.{Codec, Err}
+import wow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
+import wow.realm.crypto.SessionCipher
+import wow.realm.handlers.HandledBy
+import wow.realm.protocol.payloads.ServerAuthChallenge
+import wow.realm.protocol.{OpCodes, _}
+import wow.realm.session.NetworkWorker.HandlePacket
+import wow.realm.{RealmContext, RealmContextData}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Random
 
-
 /**
   * Handles a realm session's networking
   */
-class NetworkWorker extends Actor with ActorLogging {
-  context.actorOf(Session.props, Session.PreferredName)
+class NetworkWorker(override implicit val realm: RealmContextData)
+  extends Actor
+          with ActorLogging
+          with PacketHandlerTag
+          with RealmContext
+          with CanSendPackets {
+
+  var _session: Option[ActorRef] = None
+
+  def session: ActorRef = {
+    if (_session.isEmpty) {
+      throw new IllegalStateException("Session actor ref is not set")
+    }
+    _session.get
+  }
+
+  def session_=(sessionRef: ActorRef): Unit = _session = {
+    if (_session.nonEmpty) {
+      throw new IllegalStateException("Session actor ref can only be set once")
+    }
+
+    Some(sessionRef)
+  }
+
+  var _player: Option[ActorRef] = None
+
+  def player: ActorRef = {
+    if (_player.isEmpty) {
+      throw new IllegalStateException("Player actor ref is not set")
+    }
+
+    _player.get
+  }
+
+  def player_=(playerRef: ActorRef): Unit = {
+    if (_player.nonEmpty) {
+      throw new IllegalStateException("Player actor ref is already set and should not be overwritten")
+    }
+
+    _player = Some(playerRef)
+  }
+
+  def player_=(none: Option[Nothing]): Unit = {
+    require(none.isEmpty)
+    _player = None
+  }
 
   private val terminationDelay = 5 second
   private var sessionCipher: Option[SessionCipher] = None
@@ -34,47 +79,32 @@ class NetworkWorker extends Actor with ActorLogging {
   override def receive: Receive = {
     case EventIncoming(bits) =>
       unprocessedBits = unprocessedBits ++ bits
-
       processBufferedBits()
 
-    case ev@NetworkWorker.EventOutgoing(payload) =>
-      log.debug(s"Sending $payload")
-      val bits = ev.serialize(sessionCipher)
+    case ev: NetworkWorker.SendPayload[_] =>
+      sendRaw(ev.serialize(sessionCipher))
 
-      context.parent ! TCPHandler.OutgoingPacket(bits)
+    case NetworkWorker.SendRawPayload(payloadBits, opCode) =>
+      sendRaw(payloadBits, opCode)
 
-    case NetworkWorker.EventOutgoingRaw(payloadBits, opCode) =>
-      val bits = PacketSerialization.outgoing(payloadBits, opCode)(sessionCipher)
+    case NetworkWorker.SendRaw(bits) =>
+      sendRaw(bits)
 
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-
-    case NetworkWorker.EventOutgoingSplit(headerBits, payloadBits) =>
+    case NetworkWorker.SendSplit(headerBits, payloadBits) =>
       val bits = PacketSerialization.outgoing(headerBits, payloadBits)(sessionCipher)
 
-      context.parent ! TCPHandler.OutgoingPacket(bits)
+      sendRaw(bits)
 
-    case NetworkWorker.EventTerminate(delayed) =>
+    case NetworkWorker.Terminate(delayed) =>
       if (delayed) {
-        context.system.scheduler.scheduleOnce(terminationDelay)(terminate())(context.dispatcher)
+        terminateDelayed()
       } else {
-        terminate()
+        terminateNow()
       }
 
-    case ev@NetworkWorker.EventTerminateWithPayload(payload) =>
-      log.debug(s"Sending $payload")
-      val bits = ev.serialize(sessionCipher)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-
-      context.system.scheduler.scheduleOnce(terminationDelay)(terminate())(context.dispatcher)
-
-    case NetworkWorker.EventHandlerFailure(err: Err) =>
-      log.debug(s"Failure to handle packet ($err), disconnect client")
-      terminate()
-
-    case NetworkWorker.EventAuthenticated(sessionKey) =>
-      log.debug(s"Session key set up: $sessionKey")
-      sessionCipher = Some(new SessionCipher(sessionKey))
+    case ev: NetworkWorker.TerminateWithPayload[_] =>
+      sendRaw(ev.serialize(sessionCipher))
+      terminateDelayed()
   }
 
   private def processBufferedBits(): Unit = {
@@ -95,15 +125,15 @@ class NetworkWorker extends Actor with ActorLogging {
           unprocessedBits = unprocessedBits.drop(header.payloadSize * 8L)
           currHeader = None
 
-          if (PacketHandlerHelper.isHandled(header.opCode)) {
-            //            log.debug(s"Got packet $header/${payloadBits.bytes.length}")
-
-            val handlerPath = RealmServer.handlerPath(header.opCode)
-            val handler = context.actorSelection(handlerPath)
-
-            handler ! EventPacket(header, payloadBits)
-          } else {
-            log.info(s"Got unhandled packet $header/${payloadBits.bytes.length}")
+          PacketHandler(header) match {
+            case HandledBy.NetworkWorker =>
+              PacketHandler(header, payloadBits)(this)
+            case HandledBy.Session =>
+              session ! HandlePacket(header, payloadBits)
+            case HandledBy.Player =>
+              player ! HandlePacket(header, payloadBits)
+            case HandledBy.Unhandled =>
+              log.info(s"Unhandled packet ${header.opCode}")
           }
 
           processBufferedBits()
@@ -115,18 +145,16 @@ class NetworkWorker extends Actor with ActorLogging {
     }
   }
 
-  private def terminate() = {
-    context.parent ! TCPHandler.Disconnect
-    context.stop(self)
+  val authSeed: Long = {
+    val UInt32MaxValue = 0x7FFFFFFFL
+    ThreadLocalRandom.current().nextLong(UInt32MaxValue)
   }
 
   private def sendAuthChallenge() = {
     val SeedSizeBits = ServerAuthChallenge.SeedSize * 8
 
-    val UInt32MaxValue = 0x7FFFFFFFL
-
     val authChallenge = ServerAuthChallenge(
-      ThreadLocalRandom.current().nextLong(UInt32MaxValue),
+      authSeed,
       BigInt(SeedSizeBits, Random),
       BigInt(SeedSizeBits, Random))
 
@@ -134,40 +162,70 @@ class NetworkWorker extends Actor with ActorLogging {
 
     context.parent ! TCPHandler.OutgoingPacket(bits)
   }
+
+  override def terminateDelayed(): Unit = {
+    context.system.scheduler.scheduleOnce(terminationDelay)(terminateNow())(context.dispatcher)
+  }
+
+  override def terminateNow(): Unit = {
+    context.parent ! TCPHandler.Disconnect
+    context.stop(self)
+  }
+
+  override def sendPayload[A <: Payload with ServerSide](payload: A)
+    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]): Unit = {
+    log.debug("Sending " + payload)
+    val bits = PacketSerialization.outgoing(payload)(sessionCipher)
+
+    sendRaw(bits)
+  }
+
+  override def sendRaw(payloadbits: BitVector, opCode: OpCodes.Value): Unit = {
+    val bits = PacketSerialization.outgoing(payloadbits, opCode)(sessionCipher)
+
+    sendRaw(bits)
+  }
+
+  override def sendRaw(bits: BitVector): Unit = {
+    context.parent ! TCPHandler.OutgoingPacket(bits)
+  }
+
+  def setAuthenticated(sessionKey: BigInt): Unit = {
+    log.debug(s"Session key set up: $sessionKey")
+    sessionCipher = Some(new SessionCipher(sessionKey))
+  }
 }
 
-object NetworkWorker extends SessionActorCompanion {
-  override def props: Props = Props(classOf[NetworkWorker])
+object NetworkWorker {
 
-  override def PreferredName = "SessionNetworkWorker"
-
-  sealed trait RealmSessionEvent
-
-  sealed class PayloadBearingEvent[A <: Payload with ServerSide](payload: A)
-    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A])
-    extends RealmSessionEvent {
+  sealed class PayloadBearingMessage[A <: Payload with ServerSide](payload: A)
+    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]) {
     def serialize(sessionCipher: Option[SessionCipher]): BitVector = {
       PacketSerialization.outgoing(payload)(sessionCipher)(implicitly, implicitly)
     }
   }
 
-  case class EventOutgoing[A <: Payload with ServerSide](payload: A)
+  case class SendPayload[A <: Payload with ServerSide](payload: A)
     (implicit opCodeProvider: OpCodeProvider[A], codec: Codec[A])
-    extends PayloadBearingEvent[A](payload)
+    extends PayloadBearingMessage[A](payload)
 
-  case class EventOutgoingRaw(bits: BitVector, opCode: OpCodes.Value) extends RealmSessionEvent
+  case class SendRawPayload(payloadBits: BitVector, opCode: OpCodes.Value)
 
-  case class EventOutgoingSplit(headerBits: BitVector, payloadBits: BitVector) extends RealmSessionEvent
+  case class SendRaw(bits: BitVector)
 
-  case class EventHandlerFailure(err: Err) extends RealmSessionEvent
+  case class SendSplit(headerBits: BitVector, payloadBits: BitVector)
 
-  case object EventEmptyHandlerFailure extends RealmSessionEvent
+  case class Terminate(delayed: Boolean)
 
-  case class EventTerminate(delayed: Boolean) extends RealmSessionEvent
+  case class TerminateWithPayload[A <: Payload with ServerSide](payload: A)
+    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]) extends PayloadBearingMessage[A](payload)
 
-  case class EventTerminateWithPayload[A <: Payload with ServerSide](payload: A)
-    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]) extends PayloadBearingEvent[A](payload)
+  case class HandlePacket(header: ClientHeader, payloadBits: BitVector)
 
-  case class EventAuthenticated(sessionKey: BigInt) extends RealmSessionEvent
+}
 
+class NetworkWorkerFactory(implicit realm: RealmContextData) extends SessionActorCompanion {
+  override def props: Props = Props(new NetworkWorker()(realm))
+
+  override def PreferredName = "SessionNetworkWorker"
 }

@@ -27,7 +27,7 @@ object Databases extends Enumeration {
     * Creates a token for a realm server
     * @param id realm server id
     */
-  def addRealmServer(id: Int): Unit = {
+  def registerRealm(id: Int): Unit = {
     require(id > 0)
     Value(id)
   }

@@ -47,14 +47,14 @@ package object codecs {
   }).withToString("fixedCString")
 
   /**
-    * Converts an instance of T to constant codec
+    * Converts an instance of A to constant codec
     *
-    * @param t     expected constant
+    * @param c     expected constant
     * @param codec codec to encode constant
     * @tparam A type of constant
     * @return constant codec
     */
-  def constantE[A](t: A)(implicit codec: Codec[A]): Codec[Unit] = constant(codec.encode(t).require)
+  def constantE[A](c: A)(implicit codec: Codec[A]): Codec[Unit] = constant(codec.encode(c).require)
 
   /**
     * Codec for big integers
@@ -320,7 +320,7 @@ package object codecs {
   /**
     * Treats an Option[A] as if it was required
     *
-    * @param codec codec for T
+    * @param codec codec for A
     * @tparam A type of optional
     * @return Option[A] codec that is not optional
     */
@@ -339,7 +339,7 @@ package object codecs {
     * @param size  bitmask size
     * @param codec codec to filter
     * @tparam A type of codec
-    * @return zero packing codec for type T
+    * @return zero packing codec for type A
     */
   def zeroPacked[A](size: Int, codec: Codec[A]): Codec[A] = filtered(codec, new Codec[BitVector] {
     override def decode(bits: BitVector): Attempt[DecodeResult[BitVector]] = {

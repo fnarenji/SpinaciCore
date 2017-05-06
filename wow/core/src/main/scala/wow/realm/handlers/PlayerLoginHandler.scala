@@ -1,22 +1,27 @@
 package wow.realm.handlers
 
+import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.Timeout
+import wow.realm.protocol._
 import wow.realm.protocol.payloads.ClientPlayerLogin
-import wow.realm.protocol.{PayloadHandler, PayloadHandlerFactory}
-import wow.realm.session.Session
+import wow.realm.session.{NetworkWorker, Session}
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
   * Player login packet handler
   */
-class PlayerLoginHandler extends PayloadHandler[ClientPlayerLogin] {
-  /**
-    * Processes an incoming payload
-    *
-    * @param payload payload to be processed
-    */
-  override protected def process(payload: ClientPlayerLogin): Unit = {
-    val session = context.actorSelection(sender.path.child(Session.PreferredName))
-    session ! Session.PlayerLogin(payload.guid)
+object PlayerLoginHandler extends PayloadHandler[NetworkWorker, ClientPlayerLogin] {
+  override protected def handle(header: ClientHeader, payload: ClientPlayerLogin)(self: NetworkWorker): Unit = {
+    implicit val timeout = Timeout(5 seconds)
+
+    // Create player actor
+    // Since after this handler, we can receive packets that need to be handled by the player,
+    // we must wait to get the player actor reference so that we're certain to have it for next packet received
+    val getSessionActor = (self.session ? Session.CreatePlayer(payload.guid)).mapTo[ActorRef]
+
+    self.player = Await.result(getSessionActor, 5 seconds)
   }
 }
-
-object PlayerLoginHandler extends PayloadHandlerFactory[PlayerLoginHandler, ClientPlayerLogin]

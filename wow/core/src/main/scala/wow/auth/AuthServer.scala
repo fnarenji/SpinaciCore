@@ -1,23 +1,22 @@
 package wow.auth
 
-import javax.security.auth.login.Configuration
-
 import akka.actor.{Actor, ActorLogging, Props}
-import wow.{Application, common}
+import scalikejdbc._
+import scodec.bits.BitVector
+import wow.Application
+import wow.auth.AuthServer.RegisterRealm
 import wow.auth.crypto.Srp6Protocol
 import wow.auth.data.Account
-import wow.auth.handlers.{LogonChallengeHandler, LogonProofHandler, ReconnectChallengeHandler, ReconnectProofHandler}
 import wow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
-import wow.auth.session.{AuthSession, EventRealmlist}
+import wow.auth.session.AuthSession
 import wow.auth.utils.PacketSerializer
 import wow.common.VersionInfo
 import wow.common.database.{DatabaseConfiguration, Databases}
+import wow.common.database._
 import wow.common.network.TCPServer
-import pureconfig._
-import pureconfig.error.ConfigReaderFailures
-import scalikejdbc._
 
-case object GetRealmlist
+import scala.collection.mutable
+
 
 /**
   * AuthServer is the base actor for all services provided by the authentication server.
@@ -32,21 +31,22 @@ class AuthServer extends Actor with ActorLogging {
 
   initializeDatabase()
 
-  // TODO: should handlers be put in a pool so that they scale accordingly to the load ?
-  context.actorOf(LogonChallengeHandler.props, LogonChallengeHandler.PreferredName)
-  context.actorOf(LogonProofHandler.props, LogonProofHandler.PreferredName)
-  context.actorOf(ReconnectChallengeHandler.props, ReconnectChallengeHandler.PreferredName)
-  context.actorOf(ReconnectProofHandler.props, ReconnectProofHandler.PreferredName)
   context.actorOf(TCPServer.props(AuthSession, config.host, config.port), TCPServer.PreferredName)
 
-  // TODO: find a way to retrieve address and port
-  private val realms = Vector(ServerRealmlistEntry(1, 0, 0, "EnsiWoW", "127.0.0.1:8085", 0, 1, 1, 1))
-  private val serverRealmlistPacket: ServerRealmlist = ServerRealmlist(realms)
-  private val serverRealmlistPacketBits = PacketSerializer.serialize(serverRealmlistPacket)
-  private val eventRealmlist: EventRealmlist = EventRealmlist(serverRealmlistPacketBits)
+  private val realms = mutable.HashMap[Int, ServerRealmlistEntry]()
 
-  override def receive: PartialFunction[Any, Unit] = {
-    case GetRealmlist => sender() ! eventRealmlist
+  override def receive: Receive = {
+    case RegisterRealm(id, name, host, port) =>
+      log.debug(s"Realm added to list: $name at $host:$port")
+      realms(id) = ServerRealmlistEntry(1, 0, 0, name, s"$host:$port", 0, 1, 1, id)
+      AuthServer.realmlistPacketBits =
+        PacketSerializer.serialize(ServerRealmlist(realms.values.toStream))
+  }
+
+  override def postStop(): Unit = {
+    ConnectionPool.close(AuthDB)
+
+    super.postStop()
   }
 
   /**
@@ -60,7 +60,7 @@ class AuthServer extends Actor with ActorLogging {
     createSchema()
 
     def createSchema() = {
-      val createDatabase = NamedDB(Databases.AuthServer) readOnly { implicit session =>
+      val createDatabase = AuthDB readOnly { implicit session =>
         val tableCount =
           sql"""
             select count(*) as count
@@ -83,7 +83,7 @@ class AuthServer extends Actor with ActorLogging {
             create table account
             (
               id serial8 primary key,
-              login varchar(64),
+              login varchar(64) unique,
               verifier numeric(100,0),
               salt numeric(100,0),
               session_key numeric(100,0)
@@ -103,10 +103,10 @@ object AuthServer {
 
   val PreferredName = "AuthServer"
   val ActorPath = s"${Application.ActorPath}/$PreferredName"
-  val LogonChallengeHandlerPath = s"$ActorPath/${LogonChallengeHandler.PreferredName}"
-  val LogonProofHandlerPath = s"$ActorPath/${LogonProofHandler.PreferredName}"
-  val ReconnectChallengeHandlerPath = s"$ActorPath/${ReconnectChallengeHandler.PreferredName}"
-  val ReconnectProofHandlerPath = s"$ActorPath/${ReconnectProofHandler.PreferredName}"
+  var realmlistPacketBits: BitVector = _
+
+  case class RegisterRealm(id: Int, name: String, host: String, port: Int)
+
 }
 
 case class AuthServerConfiguration(host: String, port: Int, database: DatabaseConfiguration)

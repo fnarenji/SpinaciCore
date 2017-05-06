@@ -1,31 +1,64 @@
 package wow.realm.handlers
 
-import wow.auth.data.Account
-import wow.realm.protocol.payloads.{ClientAuthSession, ServerAuthResponse, ServerAuthResponseSuccess}
-import wow.realm.protocol._
-import wow.realm.session._
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
-case class AuthSession(packet: ClientAuthSession)
+import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.Timeout
+import scodec.bits.ByteVector
+import scodec.codecs._
+import wow.auth.crypto.Srp6Protocol
+import wow.auth.data.Account
+import wow.realm.RealmServer.CreateSession
+import wow.realm.protocol._
+import wow.realm.protocol.payloads.{ClientAuthSession, ServerAuthResponse, ServerAuthResponseSuccess}
+import wow.realm.session.NetworkWorker
+import wow.utils.BigIntExtensions._
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
   * Handles realm auth session packet
   */
-class AuthSessionHandler extends PayloadHandler[ClientAuthSession] {
-  override def process(payload: ClientAuthSession): Unit = {
+object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSession] {
+  protected override def handle(header: ClientHeader, payload: ClientAuthSession)(self: NetworkWorker): Unit = {
     val login = payload.login
 
     Account.findByLogin(login) match {
       case Some(Account(_, _, _, Some(sessionKey))) =>
-        val response = ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
+        val messageDigest = MessageDigest.getInstance("SHA-1")
 
-        sender ! NetworkWorker.EventAuthenticated(sessionKey)
-        sender ! NetworkWorker.EventOutgoing(response)
+        messageDigest.update(login.getBytes(StandardCharsets.US_ASCII))
+        messageDigest.update(uint32L.encode(0).require.toByteArray)
+        messageDigest.update(uint32L.encode(payload.challenge).require.toByteArray)
+        messageDigest.update(uint32L.encode(self.authSeed).require.toByteArray)
+        messageDigest.update(sessionKey.toUnsignedLBytes())
+        val expectedDigest = messageDigest.digest()
+
+        val response = if (payload.shaDigest === ByteVector.view(expectedDigest)) {
+          // Same as for ClientPlayerLogin, we must wait to have the reference so that we're certain we have it as the
+          // next packets will potentially be forwarded to the session for handling
+          implicit val timeout = Timeout(5 seconds)
+          val createSession = (self.realm.serverRef ? CreateSession(login, self.self)).mapTo[ActorRef]
+
+          self.session = Await.result(createSession, 5 seconds)
+
+          self.setAuthenticated(sessionKey)
+          ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
+        } else {
+          self.terminateDelayed()
+          ServerAuthResponse(AuthResponses.UnknownAccount, None)
+        }
+
+        self.sendPayload(response)
       case _ =>
-        val response = ServerAuthResponse(AuthResponses.Failed, None)
+        val response = ServerAuthResponse(AuthResponses.UnknownAccount, None)
 
-        sender ! NetworkWorker.EventTerminateWithPayload(response)
+        self.sendPayload(response)
+        self.terminateDelayed()
     }
   }
 }
 
-object AuthSessionHandler extends PayloadHandlerFactory[AuthSessionHandler, ClientAuthSession]

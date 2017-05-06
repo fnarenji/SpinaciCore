@@ -11,9 +11,6 @@ import scalikejdbc._
 import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 
-import scala.language.dynamics
-import scala.language.experimental.macros
-
 /**
   * Account information
   */
@@ -98,6 +95,7 @@ object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
 }
 
 object AccountAPI extends API {
+
   case class AccountReq(login: String, password: String)
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._

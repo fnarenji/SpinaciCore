@@ -1,10 +1,8 @@
 package wow.common.database
 
 import scalikejdbc.interpolation.SQLSyntax
-import sun.reflect.annotation.AnnotationParser
 
 import scala.annotation.StaticAnnotation
-import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.reflect.macros._
 

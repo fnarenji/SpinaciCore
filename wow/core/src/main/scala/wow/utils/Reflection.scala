@@ -5,7 +5,6 @@ import io.github.lukehutch.fastclasspathscanner.scanner.ClassInfo
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.reflect.ClassTag
 
 /**
   * Reflections helpers.
@@ -38,17 +37,15 @@ object Reflection {
   def eagerLoadClasses(): Unit = classMap.values.foreach(_.getImplementedInterfaces)
 
   /**
-    * Finds all objects inheriting from type T
+    * Finds all objects inheriting from type A
     *
     * @tparam A type from which objects should inherit
     * @return list of inheriting objects
     */
-  def objectsOf[A: ClassTag : TypeTag]: Iterable[A] = {
+  def objectsOf[A: TypeTag]: Iterable[A] = {
     // Get generic type information
-    val clazz = implicitly[ClassTag[A]].runtimeClass
     val selfType = typeOf[A]
-
-    val name = clazz.getCanonicalName
+    val name = selfType.typeSymbol.asClass.fullName
 
     // Find class info about generic type and get all subclasses/classes implementing
     val classInfo = classMap(name)

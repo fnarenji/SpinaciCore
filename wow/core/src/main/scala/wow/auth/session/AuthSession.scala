@@ -2,13 +2,14 @@ package wow.auth.session
 
 import akka.actor.{FSM, Props}
 import wow.auth._
-import wow.auth.handlers.{LogonChallenge, LogonProof, ReconnectProof}
-import wow.auth.protocol.OpCodes
+import wow.auth.handlers._
+import wow.auth.protocol.{OpCodes, ServerPacket}
 import wow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlist, ClientReconnectProof}
 import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
 import wow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
 import scodec.Attempt.{Failure, Successful}
 import scodec.{Codec, DecodeResult, Err}
+import wow.auth.crypto.Srp6Protocol
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -16,12 +17,12 @@ import scala.language.postfixOps
 /**
   * Handles an auth session
   */
-class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
-  private val logonChallengeHandler = context.actorSelection(AuthServer.LogonChallengeHandlerPath)
-  private val logonProofHandler = context.actorSelection(AuthServer.LogonProofHandlerPath)
-  private val reconnectChallengeHandler = context.actorSelection(AuthServer.ReconnectChallengeHandlerPath)
-  private val reconnectProofHandler = context.actorSelection(AuthServer.ReconnectProofHandlerPath)
-  private val authServer = context.actorSelection(AuthServer.ActorPath)
+class AuthSession extends FSM[AuthSessionState, AuthSessionData]
+                          with LogonChallengeHandler
+                          with LogonProofHandler
+                          with ReconnectChallengeHandler
+                          with ReconnectProofHandler {
+  val srp6: Srp6Protocol = new Srp6Protocol()
 
   // First packet that we expect from client is logon challenge
   startWith(StateNoData, NoData)
@@ -40,102 +41,20 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       goto(state)
   }
 
-  when(StateChallenge) {
-    case Event(EventIncoming(bits), NoData) =>
-      log.debug("Received challenge")
-      val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.logonChallengeCodec)
-      log.debug(packet.toString)
+  when(StateChallenge)(handleChallenge)
 
-      logonChallengeHandler ! LogonChallenge(packet)
-      stay using NoData
-    case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
-      log.debug(s"Sending successful challenge $packet")
-      val bits = PacketSerializer.serialize(packet)
+  when(StateProof)(handleProof)
 
-      context.parent ! TCPHandler.OutgoingPacket(bits)
+  when(StateReconnectChallenge)(handleReconnectChallenge)
 
-      goto(StateProof) using challengeData
-    case Event(EventChallengeFailure(packet), NoData) =>
-      log.debug(s"Sending failed challenge $packet")
-      val bits = PacketSerializer.serialize(packet)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-      goto(StateFailed)
-  }
-
-  when(StateProof) {
-    case Event(EventIncoming(bits), challengeData: ChallengeData) =>
-      log.debug("Received proof")
-      val packet = PacketSerializer.deserialize[ClientLogonProof](bits)
-      log.debug(packet.toString)
-
-      logonProofHandler ! LogonProof(packet, challengeData)
-      stay using challengeData
-    case Event(EventProofSuccess(packet), _: ChallengeData) =>
-      log.debug(s"Sending successful proof $packet")
-      val bits = PacketSerializer.serialize(packet)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-      goto(StateRealmlist) using NoData
-    case Event(EventProofFailure(packet), _: ChallengeData) =>
-      log.debug(s"Sending failed proof $packet")
-      val bits = PacketSerializer.serialize(packet)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-      goto(StateFailed)
-  }
-
-  when(StateReconnectChallenge) {
-    case Event(EventIncoming(bits), NoData) =>
-      log.debug("Received reconnect challenge")
-      val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.reconnectChallengeCodec)
-      log.debug(packet.toString)
-
-      reconnectChallengeHandler ! LogonChallenge(packet)
-      stay using NoData
-    case Event(EventChallengeSuccess(packet, challengeData), NoData) =>
-      log.debug(s"Sending successful reconnect challenge $packet")
-      val bits = PacketSerializer.serialize(packet)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-
-      goto(StateReconnectProof) using challengeData
-    case Event(EventChallengeFailure(packet), NoData) =>
-      log.debug(s"Sending failed reconnect challenge $packet")
-      val bits = PacketSerializer.serialize(packet)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-      goto(StateFailed)
-  }
-
-  when(StateReconnectProof) {
-    case Event(EventIncoming(bits), challengeData: ReconnectChallengeData) =>
-      log.debug("Received reconnect proof")
-      val packet = PacketSerializer.deserialize[ClientReconnectProof](bits)
-      log.debug(packet.toString)
-
-      reconnectProofHandler ! ReconnectProof(packet, challengeData)
-      stay using challengeData
-    case Event(EventReconnectProofSuccess(packet), _: ReconnectChallengeData) =>
-      log.debug(s"Sending successful reconnect proof $packet")
-      val bits = PacketSerializer.serialize(packet)
-
-      context.parent ! TCPHandler.OutgoingPacket(bits)
-      goto(StateRealmlist) using NoData
-    case Event(EventReconnectProofFailure, _: ReconnectChallengeData) =>
-      log.debug(s"Failed reconnect proof, disconnecting")
-      goto(StateFailed)
-  }
+  when(StateReconnectProof)(handleReconnectProof)
 
   when(StateRealmlist) {
     case Event(EventIncoming(bits), NoData) =>
       val packet = PacketSerializer.deserialize[ClientRealmlist](bits)
       log.debug(s"Received realm list request: $packet")
 
-      authServer ! GetRealmlist
-      stay using NoData
-    case Event(EventRealmlist(bits), NoData) =>
-      context.parent ! TCPHandler.OutgoingPacket(bits)
+      context.parent ! TCPHandler.OutgoingPacket(AuthServer.realmlistPacketBits)
       stay using NoData
   }
 
@@ -145,11 +64,18 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData] {
       context.parent ! TCPHandler.Disconnect
       stop
   }
-}
 
+  def sendPacket[A <: ServerPacket](packet: A)(implicit codec: Codec[A]): Unit = {
+    log.debug(s"Sending $packet")
+    val bits = PacketSerializer.serialize(packet)(codec)
+
+    context.parent ! TCPHandler.OutgoingPacket(bits)
+  }
+}
 
 object AuthSession extends SessionActorCompanion {
   override def props: Props = Props(classOf[AuthSession])
 
   override def PreferredName = "AuthSession"
 }
+
