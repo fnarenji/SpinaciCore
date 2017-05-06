@@ -1,41 +1,36 @@
 package wow.auth.handlers
 
-import akka.actor.{Actor, ActorLogging, Props}
-import wow.auth.crypto.Srp6Protocol
 import wow.auth.data.Account
 import wow.auth.protocol.AuthResults
 import wow.auth.protocol.packets._
 import wow.auth.session._
-
-case class ReconnectProof(packet: ClientReconnectProof, reconnectChallengeData: ReconnectChallengeData)
+import wow.auth.utils.PacketSerializer
+import wow.common.network.EventIncoming
 
 /**
   * Handles reconnect logon proofs
   */
-class ReconnectProofHandler extends Actor with ActorLogging {
-  private val srp6 = new Srp6Protocol
+trait ReconnectProofHandler {
+  this: AuthSession =>
 
-  override def receive: PartialFunction[Any, Unit] = {
-    case ReconnectProof(packet, ReconnectChallengeData(login, random)) =>
-      var event: AuthSessionEvent = EventReconnectProofFailure
+  def handleReconnectProof: StateFunction = {
+    case Event(EventIncoming(bits), ReconnectChallengeData(login, random)) =>
+      log.debug("Received reconnect proof")
+      val packet = PacketSerializer.deserialize[ClientReconnectProof](bits)
+      log.debug(packet.toString)
 
-      Account.findByLogin(login) foreach {
-        case Account(_, _, _, Some(sessionKey)) =>
-          val verified = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sessionKey)
+      def reverify(sessionKey: BigInt) = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sessionKey)
 
-          if (verified) {
-            val response = ServerReconnectProof(AuthResults.Success)
-
-            event = EventReconnectProofSuccess(response)
-          }
+      val account = Account.findByLogin(login)
+      val (nextState, authResult) = account match {
+        case Some(Account(_, _, _, Some(sessionKey))) if reverify(sessionKey) =>
+          (StateRealmlist, AuthResults.Success)
+        case _ =>
+          (StateFailed, AuthResults.FailUnknownAccount)
       }
 
-      sender ! event
+      sendPacket(ServerReconnectProof(authResult))
+      goto(nextState) using NoData
   }
 }
 
-object ReconnectProofHandler {
-  val PreferredName = "ReconnectProofHandler"
-
-  def props: Props = Props(classOf[ReconnectProofHandler])
-}

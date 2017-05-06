@@ -1,7 +1,7 @@
 package wow.realm.protocol.payloads
 
 import wow.realm.entities.{Guid, Position}
-import wow.realm.protocol.{ClientSide, Payload, ServerSide}
+import wow.realm.protocol.{ClientSide, OpCodeProvider, Payload, ServerSide}
 import scodec.Codec
 import scodec.bits.ByteVector
 import scodec.codecs._

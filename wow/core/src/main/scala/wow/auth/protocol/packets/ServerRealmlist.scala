@@ -31,13 +31,6 @@ case class ServerRealmlistEntry(realmType: Int,
                                 timezone: Int,
                                 id: Int)
 
-/**
-  * Data structure which describes the response to be sent
-  *
-  * @param realms a vector containing the realms
-  */
-case class ServerRealmlist(realms: immutable.Seq[ServerRealmlistEntry]) extends ServerPacket
-
 object ServerRealmlistEntry {
   implicit val codec: Codec[ServerRealmlistEntry] = {
     ("realmType" | uint8L) ::
@@ -51,6 +44,13 @@ object ServerRealmlistEntry {
       ("id" | uint8L)
   }.as[ServerRealmlistEntry]
 }
+
+/**
+  * Data structure which describes the response to be sent
+  *
+  * @param realms a vector containing the realms
+  */
+case class ServerRealmlist(realms: immutable.Seq[ServerRealmlistEntry]) extends ServerPacket
 
 object ServerRealmlist {
   implicit val codec: Codec[ServerRealmlist] = {

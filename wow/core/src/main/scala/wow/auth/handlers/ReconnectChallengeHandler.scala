@@ -3,8 +3,12 @@ package wow.auth.handlers
 import akka.actor.{Actor, ActorLogging, Props}
 import wow.auth.crypto.Srp6Protocol
 import wow.auth.protocol.AuthResults
+import wow.auth.protocol.AuthResults.AuthResult
 import wow.auth.protocol.packets._
 import wow.auth.session._
+import wow.auth.utils.PacketSerializer
+import wow.common.VersionInfo
+import wow.common.network.EventIncoming
 
 import scala.util.Random
 
@@ -13,45 +17,32 @@ case class ReconnectChallenge(packet: ClientChallenge)
 /**
   * Handles reconnect logon challenges
   */
-class ReconnectChallengeHandler extends Actor with ActorLogging {
-  val srp6 = new Srp6Protocol
+trait ReconnectChallengeHandler {
+  this: AuthSession =>
 
-  override def receive: PartialFunction[Any, Unit] = {
-    case ReconnectChallenge(packet) =>
-      val error = ChallengeHelper.validate(packet)
+  def handleReconnectChallenge: StateFunction = {
+    case Event(EventIncoming(bits), NoData) =>
+      log.debug("Received reconnect challenge")
+      val packet = PacketSerializer.deserialize[ClientChallenge](bits)(ClientChallenge.reconnectChallengeCodec)
+      log.debug(packet.toString)
 
-      val event = error match {
-        case Some(authResult) =>
-          val challenge = ServerReconnectChallenge(authResult, None)
-
-          log.debug(s"Reconnect challenge failure response: $challenge")
-
-          EventReconnectChallengeFailure(challenge)
-        case None =>
-          val userName = packet.login
-
-          val RandomBitCount = 16 * 8
-          val random = BigInt(RandomBitCount, Random)
-          assert(random > 0)
-
-          // Results
-          val challengeData = ReconnectChallengeData(userName, random)
-
-          val success = ServerReconnectChallengeSuccess(random)
-          val response = ServerReconnectChallenge(AuthResults.Success, Some(success))
-
-          log.debug(s"Reconnect challenge success response: $response")
-          log.debug(s"Reconnect challenge values: $challengeData")
-
-          EventReconnectChallengeSuccess(response, challengeData)
+      def fail(authResult: AuthResult) = {
+        sendPacket(ServerReconnectChallenge(authResult, None))
+        goto(StateFailed) using NoData
       }
 
-      sender ! event
+      if (packet.versionInfo != VersionInfo.SupportedVersionInfo) {
+        fail(AuthResults.FailVersionInvalid)
+      } else {
+        val login = packet.login
+
+        val RandomBitCount = 16 * 8
+        val random = BigInt(RandomBitCount, Random)
+        assert(random > 0)
+
+        sendPacket(ServerReconnectChallenge(AuthResults.Success, Some(ServerReconnectChallengeSuccess(random))))
+        goto(StateReconnectProof) using ReconnectChallengeData(login, random)
+      }
   }
 }
 
-object ReconnectChallengeHandler {
-  val PreferredName = "ReconnectChallengeHandler"
-
-  def props: Props = Props(classOf[ReconnectChallengeHandler])
-}

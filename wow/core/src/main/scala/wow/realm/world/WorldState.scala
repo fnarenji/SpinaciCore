@@ -2,6 +2,7 @@ package wow.realm.world
 
 import akka.actor.{Actor, ActorLogging, Props}
 import wow.Application
+import wow.realm.{RealmContext, RealmContextData}
 import wow.realm.entities.{CharacterRef, Guid}
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, Tick, WorldEvent}
 import wow.realm.world.WorldState.{GetState, State}
@@ -12,15 +13,23 @@ import scala.concurrent.duration._
 /**
   * World state manager
   */
-class WorldState extends Actor with ActorLogging {
-  private val eventStream = context.system.eventStream
+class WorldState(override implicit val realm: RealmContextData) extends Actor with ActorLogging with RealmContext {
   private val scheduler = context.system.scheduler
 
   private val tickInterval = 50 milliseconds
 
-  eventStream.subscribe(self, classOf[PlayerJoined])
-  eventStream.subscribe(self, classOf[Tick])
-  eventStream.publish(Tick(0, Application.uptimeMillis(), Tick(0, 0, null)))
+  realm.eventStream.subscribe(self, classOf[PlayerJoined])
+  realm.eventStream.subscribe(self, classOf[Tick])
+
+  var currentTick: Tick = Tick(0, Application.uptimeMillis(), Tick(0, 0, null))
+  scheduler.schedule(tickInterval, tickInterval,
+    () => {
+      val msTime = Application.uptimeMillis()
+      val nextNumber = currentTick.number + 1
+      val nextTick = Tick(nextNumber, msTime, currentTick)
+
+      realm.eventStream.publish(nextTick)
+    })(context.dispatcher)
 
   private var events = mutable.MutableList[WorldEvent]()
   private val characters = mutable.HashMap[Guid.Id, CharacterRef]()
@@ -30,22 +39,11 @@ class WorldState extends Actor with ActorLogging {
       characters(character.guid.id) = character
       events += e
 
-    case currentTick@Tick(number, msTime, previousTick) =>
-      if (events.nonEmpty) {
-        log.debug(s"Received tick $number at $msTime (diff ${msTime - previousTick.msTime})")
-        eventStream.publish(DispatchWorldUpdate(events))
+    case Tick(number, msTime, previousTick) if events.nonEmpty =>
+      log.debug(s"Received tick $number at $msTime (diff ${msTime - previousTick.msTime})")
+      realm.eventStream.publish(DispatchWorldUpdate(events))
 
-        events = mutable.MutableList[WorldEvent]()
-      }
-
-      scheduler.scheduleOnce(tickInterval,
-        () => {
-          val msTime = Application.uptimeMillis()
-          val nextNumber = currentTick.number + 1
-          val nextTick = Tick(nextNumber, msTime, currentTick)
-
-          eventStream.publish(nextTick)
-        })(context.dispatcher)
+      events = mutable.MutableList[WorldEvent]()
 
     case GetState =>
       sender ! State(characters.toMap.values)
@@ -53,7 +51,7 @@ class WorldState extends Actor with ActorLogging {
 }
 
 object WorldState {
-  def props: Props = Props(classOf[WorldState])
+  def props(implicit realm: RealmContextData): Props = Props(new WorldState)
 
   val PreferredName = "WorldState"
 
@@ -62,5 +60,6 @@ object WorldState {
   object GetState extends Event
 
   case class State(characters: Iterable[CharacterRef]) extends Event
+
 }
 

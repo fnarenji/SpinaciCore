@@ -1,19 +1,12 @@
 package wow.common
 
-import scala.language.experimental.macros
-import scala.language.dynamics
 import scalikejdbc._
+import wow.realm.{RealmContext, RealmContextData}
+
+import scala.language.dynamics
 
 package object database {
   case class DatabaseConfiguration(connection: String, username: String, password: String)
-
-  /**
-    * Implements dynamic selection of columns based on analysis of class contents by macro
-    * @tparam A sql syntax target type
-    */
-  final class ColumnSelector[A] extends Dynamic {
-    def selectDynamic(name: String): SQLSyntax = macro wow.common.database.ExtraFieldsSQLInterpolationMacro.selectDynamic[A]
-  }
 
   /**
     * Provides an enriched column selector for classes with SQLSyntaxSupport
@@ -25,4 +18,8 @@ package object database {
       */
     lazy val c: ColumnSelector[A] = new ColumnSelector[A]()
   }
+
+  val AuthDB = NamedDB(Databases.AuthServer)
+
+  def RealmDB(implicit realm: RealmContextData): NamedDB = NamedDB(Databases.RealmServer(realm.id))
 }

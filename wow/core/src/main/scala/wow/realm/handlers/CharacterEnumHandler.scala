@@ -2,16 +2,16 @@ package wow.realm.handlers
 
 import wow.realm.entities.CharacterInfo
 import wow.realm.protocol.payloads._
-import wow.realm.protocol.{OpCodes, PayloadlessPacketHandler, PayloadlessPacketHandlerFactory}
-import wow.realm.session.NetworkWorker
+import wow.realm.protocol._
+import wow.realm.session.Session
 
 /**
   * Handles player's characters list requests
   */
-class CharacterEnumHandler extends PayloadlessPacketHandler {
-
+object CharacterEnumHandler extends IgnorePayloadHandler[Session] {
   /**
     * Completes the description of a character
+    *
     * @param char partial information of a character
     * @return packet chunk containing the full description of a character
     */
@@ -29,12 +29,14 @@ class CharacterEnumHandler extends PayloadlessPacketHandler {
     )
   }
 
-  override protected def process(): Unit = {
-    val charactersEnum = for (char <- CharacterInfo.getCharacters) yield completeDescription(char)
+  override def handle(header: ClientHeader)(self: Session): Unit = {
+    val charactersEnum = for (char <- CharacterInfo.getCharacters) yield {
+      completeDescription(char)
+    }
 
-    sender ! NetworkWorker.EventOutgoing(ServerCharacterEnum(charactersEnum.toVector))
+    self.sendPayload(ServerCharacterEnum(charactersEnum.toVector))
   }
 
+  override val opCodes: OpCodes.ValueSet = OpCodes.ValueSet(OpCodes.CharEnum)
 }
 
-object CharacterEnumHandler extends PayloadlessPacketHandlerFactory[CharacterEnumHandler](OpCodes.CharEnum)

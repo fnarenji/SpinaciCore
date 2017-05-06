@@ -1,44 +1,74 @@
 package wow.realm
 
-import akka.actor.{Actor, ActorLogging, Props}
-import wow.Application
-import wow.common.VersionInfo
-import wow.common.database.{Database, DatabaseConfiguration, Databases}
-import wow.common.network.TCPServer
-import wow.realm.protocol.{OpCodes, PacketHandlerHelper}
-import wow.realm.session.NetworkWorker
-import wow.realm.world.WorldState
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.event.EventStream
 import scalikejdbc.ConnectionPool
+import wow.Application
+import wow.auth.AuthServer
+import wow.common.VersionInfo
+import wow.common.database._
+import wow.common.network.TCPServer
+import wow.realm.RealmServer.CreateSession
+import wow.realm.session.{NetworkWorkerFactory, Session}
+import wow.realm.world.WorldState
+
+case class RealmContextData(id: Int, eventStream: EventStream, serverRef: ActorRef)
+
+trait RealmContext {
+  implicit val realm: RealmContextData
+}
 
 /**
   * RealmServer is the base actor for all services provided by the realm server.
   */
-class RealmServer(id: Int) extends Actor with ActorLogging {
-  val config = Application.configuration.realms(id)
+class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
+  override implicit lazy val realm: RealmContextData = RealmContextData(
+    id,
+    new EventStream(context.system, context.system.settings.DebugEventStream),
+    self
+  )
 
-  log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
+  private val config = Application.configuration.realms(realm.id)
+  private val authServer = context.actorSelection(AuthServer.ActorPath)
 
-  Databases.addRealmServer(id)
+  log.info(s"${config.name} startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
-  private val dbConfig = config.database
-  ConnectionPool.add(Databases.RealmServer(id), dbConfig.connection, dbConfig.username, dbConfig.password)
+  {
+    Databases.registerRealm(realm.id)
+    val dbConfig = config.database
+    ConnectionPool.add(RealmDB, dbConfig.connection, dbConfig.username, dbConfig.password)
+  }
 
-  PacketHandlerHelper.spawnActors(this)
-  context.actorOf(TCPServer.props(NetworkWorker, config.host, config.port), TCPServer.PreferredName)
+  authServer ! AuthServer.RegisterRealm(realm.id, config.name, config.host, config.port)
+  context.actorOf(TCPServer.props(new NetworkWorkerFactory, config.host, config.port), TCPServer.PreferredName)
   context.actorOf(WorldState.props, WorldState.PreferredName)
 
-  override def receive: Receive = PartialFunction.empty
+  override def receive: Receive = {
+    case CreateSession(login, networkWorker) =>
+      log.debug(s"Create session for $login")
+      val ref = context.actorOf(Session.props(login, networkWorker))
+      sender() ! ref
+  }
+
+  override def postStop(): Unit = {
+    ConnectionPool.close(RealmDB)
+
+    super.postStop()
+  }
 }
 
 object RealmServer {
-  def props(id: Int): Props = Props(classOf[RealmServer], id)
+  def props(realmId: Int) = Props(new RealmServer(realmId))
 
-  val PreferredName = "RealmServer"
-  val ActorPath = s"${Application.ActorPath}/$PreferredName"
-  val WorldStatePath = s"$ActorPath/${WorldState.PreferredName}"
+  def PreferredName(id: Int) = s"realm-$id"
 
-  def handlerPath(opCode: OpCodes.Value) = s"$ActorPath/${PacketHandlerHelper.PreferredName(opCode)}"
+  def ActorPath(id: Int) = s"${Application.ActorPath}/${PreferredName(id)}"
+
+  val WorldStatePath = s"${ActorPath(1)}/${WorldState.PreferredName}"
+
+  case class CreateSession(login: String, networkWorker: ActorRef)
+
 }
 
-case class RealmServerConfiguration(host: String, port: Int, database: DatabaseConfiguration)
+case class RealmServerConfiguration(name: String, host: String, port: Int, database: DatabaseConfiguration)
 

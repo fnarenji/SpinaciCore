@@ -1,24 +1,31 @@
 package wow.realm.session
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import wow.realm.RealmServer
 import wow.realm.entities.{CharacterInfo, Guid}
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, PlayerMoved}
-import wow.realm.protocol.ObjectUpdateBlockHelpers
-import wow.realm.protocol.payloads.{ServerLoginVerifyWorld, ServerTimeSyncRequest, ServerUpdateBlock, ServerUpdateObject}
+import wow.realm.protocol._
+import wow.realm.protocol.payloads.{ServerLoginVerifyWorld, ServerTimeSyncRequest, ServerUpdateBlock,
+ServerUpdateObject}
 import wow.realm.world.WorldState
+import wow.realm.{RealmContext, RealmContextData, RealmServer}
 
 import scala.concurrent.duration._
 
 /**
   * Represents a Session's current character
-  * @param guid guid of character
+  *
+  * @param guid          guid of character
   * @param networkWorker network worker associated to session
   */
-class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with ActorLogging {
+class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override implicit val realm: RealmContextData)
+  extends Actor
+          with ActorLogging
+          with RealmContext
+          with PacketHandlerTag
+          with ForwardToNetworkWorker {
+
   import context.dispatcher
 
-  private val eventStream = context.system.eventStream
   private val scheduler = context.system.scheduler
 
   private val worldState = context.actorSelection(RealmServer.WorldStatePath)
@@ -27,14 +34,14 @@ class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with Acto
   private val currentCharacter = CharacterInfo.byGuid(guid)
 
   val loginVerifyWorld = ServerLoginVerifyWorld(currentCharacter.position)
-  networkWorker ! NetworkWorker.EventOutgoing(loginVerifyWorld)
+  sendPayload(loginVerifyWorld)
 
-  eventStream.subscribe(self, classOf[DispatchWorldUpdate])
-  eventStream.subscribe(self, classOf[PlayerMoved])
+  realm.eventStream.subscribe(self, classOf[DispatchWorldUpdate])
+  realm.eventStream.subscribe(self, classOf[PlayerMoved])
 
   private val timeSyncSenderToken = scheduler.schedule(Duration.Zero, 10 seconds, TimeSyncRequestSender)
 
-  eventStream.publish(PlayerJoined(currentCharacter.ref))
+  realm.eventStream.publish(PlayerJoined(currentCharacter.ref))
 
   worldState ! WorldState.GetState
 
@@ -54,7 +61,7 @@ class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with Acto
       }
 
     case DispatchWorldUpdate(events) =>
-      events.foreach {
+      events.collect {
         case PlayerJoined(charView) =>
           val block = ObjectUpdateBlockHelpers.createCharacter(charView, currentCharacter.guid == charView.guid)
 
@@ -62,7 +69,7 @@ class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with Acto
       }
 
       val updateObject = ServerUpdateObject(updateBlocks.result())
-      networkWorker ! NetworkWorker.EventOutgoing(updateObject)
+      networkWorker ! NetworkWorker.SendPayload(updateObject)
 
       updateBlocks = Vector.newBuilder[ServerUpdateBlock]
 
@@ -71,7 +78,7 @@ class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with Acto
         case currentCharacter.guid =>
           currentCharacter.position = payload.position
         case _ =>
-          networkWorker ! NetworkWorker.EventOutgoingSplit(headerBits, payloadBits)
+          networkWorker ! NetworkWorker.SendSplit(headerBits, payloadBits)
       }
   }
 
@@ -82,14 +89,15 @@ class SessionPlayer(guid: Guid, networkWorker: ActorRef) extends Actor with Acto
       val timeSyncRequest = ServerTimeSyncRequest(count)
       count = count + 1
 
-      networkWorker ! NetworkWorker.EventOutgoing(timeSyncRequest)
+      networkWorker ! NetworkWorker.SendPayload(timeSyncRequest)
     }
   }
 
 }
 
 object SessionPlayer {
-  def props(guid: Guid, networkWorker: ActorRef): Props = Props(classOf[SessionPlayer], guid, networkWorker)
+  def props(guid: Guid, networkWorker: ActorRef)(implicit realm: RealmContextData): Props =
+    Props(new SessionPlayer(guid, networkWorker)(realm))
 
-  val PreferredName = "Player"
+  def PreferredName(guid: Guid) = s"Player-${guid.id}"
 }
