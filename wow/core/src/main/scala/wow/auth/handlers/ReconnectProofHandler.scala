@@ -3,9 +3,9 @@ package wow.auth.handlers
 import wow.auth.data.Account
 import wow.auth.protocol.AuthResults
 import wow.auth.protocol.packets._
+import wow.auth.session.AuthSession.EventIncoming
 import wow.auth.session._
 import wow.auth.utils.PacketSerializer
-import wow.common.network.EventIncoming
 
 /**
   * Handles reconnect logon proofs

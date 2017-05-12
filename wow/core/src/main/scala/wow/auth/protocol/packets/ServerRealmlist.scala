@@ -6,7 +6,6 @@ import scodec._
 import scodec.codecs._
 
 import scala.collection.immutable
-import scala.language.postfixOps
 
 /**
   * Data structure which describes a realm

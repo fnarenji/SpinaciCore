@@ -32,7 +32,7 @@ object ServerAuthResponseSuccess {
       constantE(0)(uint8L) ::
       constantE(0L)(uint32L) ::
       constantE(VersionInfo.SupportedExpansion)(enumerated(uint8L, Expansions)) ::
-      ("queue" | notEmpty(Codec[ServerAuthResponseQueue]))
+      ("queue" | optionalRemainder(Codec[ServerAuthResponseQueue]))
   }.as[ServerAuthResponseSuccess]
 }
 

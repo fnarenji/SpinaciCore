@@ -1,10 +1,8 @@
 package wow.realm.protocol.payloads
 
-import wow.realm.protocol._
 import scodec._
 import scodec.codecs._
-
-import scala.language.postfixOps
+import wow.realm.protocol._
 
 /**
   * Created by yanncolina on 17/03/17.
@@ -15,7 +13,7 @@ object ClientPing {
   implicit val opCodeProvider: OpCodeProvider[ClientPing] = OpCodes.Ping
 
   implicit val codec: Codec[ClientPing] = {
-      ("ping" | uint32L) ::
+    ("ping" | uint32L) ::
       ("latency" | uint32L)
   }.as[ClientPing]
 }

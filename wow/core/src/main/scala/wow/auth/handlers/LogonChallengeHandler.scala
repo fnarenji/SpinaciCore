@@ -5,10 +5,10 @@ import wow.auth.data.Account
 import wow.auth.protocol.AuthResults
 import wow.auth.protocol.AuthResults.AuthResult
 import wow.auth.protocol.packets.{ClientChallenge, ServerLogonChallenge, ServerLogonChallengeSuccess}
+import wow.auth.session.AuthSession.EventIncoming
 import wow.auth.session._
 import wow.auth.utils.PacketSerializer
 import wow.common.VersionInfo
-import wow.common.network.EventIncoming
 
 import scala.util.Random
 

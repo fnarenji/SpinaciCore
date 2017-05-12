@@ -2,17 +2,16 @@ package wow.realm.session
 
 import scodec.Codec
 import scodec.bits.BitVector
-import wow.realm.crypto.SessionCipher
 import wow.realm.protocol._
 
+import scala.concurrent.duration._
+
 /**
-  * Created by sknz on 5/12/17.
+  * Sends TCP packets to client
   */
-trait SendPacketsToClient extends CanSendPackets {
+private[session] trait SendPacketsToClient extends CanSendPackets {
   this: NetworkWorker =>
   private val terminationDelay = 1 second
-
-  private var sessionCipher: Option[SessionCipher] = None
 
   override def terminateDelayed(): Unit = {
     context.system.scheduler.scheduleOnce(terminationDelay)(terminateNow())(context.dispatcher)
@@ -44,15 +43,4 @@ trait SendPacketsToClient extends CanSendPackets {
   }
 
   override def sendRaw(bits: BitVector): Unit = outgoing(bits)
-
-  /**
-    * Enables the cipher for all packets onwards
-    *
-    * @param sessionKey session key to use
-    */
-  def enableCipher(sessionKey: BigInt): Unit = {
-    require(sessionCipher.isEmpty)
-    log.debug(s"Session key set up: $sessionKey")
-    sessionCipher = Some(new SessionCipher(sessionKey))
-  }
 }

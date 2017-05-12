@@ -1,6 +1,5 @@
 package wow.realm.handlers
 
-import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
@@ -9,7 +8,6 @@ import akka.pattern.ask
 import akka.util.Timeout
 import scodec.bits.ByteVector
 import scodec.codecs._
-import wow.auth.crypto.Srp6Protocol
 import wow.auth.data.Account
 import wow.realm.RealmServer.CreateSession
 import wow.realm.protocol._
@@ -45,6 +43,8 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
           // Same as for ClientPlayerLogin, we must wait to have the reference so that we're certain we have it as the
           // next packets will potentially be forwarded to the session for handling
           implicit val timeout = Timeout(5 seconds)
+
+          // TODO: check for online
           val createSession = (self.realm.serverRef ? CreateSession(login, self.self)).mapTo[ActorRef]
 
           self.session = Await.result(createSession, 5 seconds)

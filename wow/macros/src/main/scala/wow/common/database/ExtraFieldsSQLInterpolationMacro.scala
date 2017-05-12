@@ -3,7 +3,6 @@ package wow.common.database
 import scalikejdbc.interpolation.SQLSyntax
 
 import scala.annotation.StaticAnnotation
-import scala.language.experimental.macros
 import scala.reflect.macros._
 
 //noinspection SpellCheckingInspection

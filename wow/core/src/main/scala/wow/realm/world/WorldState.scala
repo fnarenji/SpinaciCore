@@ -2,10 +2,10 @@ package wow.realm.world
 
 import akka.actor.{Actor, ActorLogging, Props}
 import wow.Application
-import wow.realm.{RealmContext, RealmContextData}
 import wow.realm.entities.{CharacterRef, Guid}
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, Tick, WorldEvent}
 import wow.realm.world.WorldState.{GetState, State}
+import wow.realm.{RealmContext, RealmContextData}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -53,7 +53,7 @@ class WorldState(override implicit val realm: RealmContextData) extends Actor wi
 object WorldState {
   def props(implicit realm: RealmContextData): Props = Props(new WorldState)
 
-  val PreferredName = "WorldState"
+  val PreferredName = "worldstate"
 
   sealed trait Event
 

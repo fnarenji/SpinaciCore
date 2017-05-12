@@ -1,18 +1,17 @@
 package wow.realm.protocol.payloads
 
-import wow.common.codecs._
-import wow.realm.protocol._
 import scodec.Codec
 import scodec.codecs._
-
-import scala.language.postfixOps
+import wow.common.codecs._
+import wow.realm.protocol._
 
 case class ClientCharacterCreate(character: ClientCharacterCreateEntry) extends Payload with ClientSide
 
 object ClientCharacterCreate {
   implicit val opCodeProvider: OpCodeProvider[ClientCharacterCreate] = OpCodes.CharCreate
 
-  implicit val codec: Codec[ClientCharacterCreate] = ("createInfo" | Codec[ClientCharacterCreateEntry]).as[ClientCharacterCreate]
+  implicit val codec: Codec[ClientCharacterCreate] = ("createInfo" | Codec[ClientCharacterCreateEntry])
+    .as[ClientCharacterCreate]
 }
 
 case class ClientCharacterCreateEntry(charInfo: CharacterDescription)

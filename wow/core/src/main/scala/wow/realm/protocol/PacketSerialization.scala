@@ -1,6 +1,6 @@
 package wow.realm.protocol
 
-import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializationException}
+import wow.auth.utils.{MalformedPacketHeaderException, PacketPartialReadException, PacketSerializationException}
 import wow.realm.crypto.SessionCipher
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
@@ -111,6 +111,8 @@ object PacketSerialization {
         val payloadBits = bits.drop(headerLength)
 
         (header, payloadBits)
+      case Successful(DecodeResult(_, remainder)) =>
+        throw PacketPartialReadException(remainder)
       case Failure(cause) =>
         throw MalformedPacketHeaderException(cause)
     }

@@ -32,12 +32,12 @@ class CharacterRef(private val characterInfo: CharacterInfo) {
 }
 
 object CharacterRef {
-  def unapply(arg: CharacterRef): Option[(Guid, Position, ByteVector, ByteVector)] = Some(
+  def unapply(arg: CharacterRef): Option[(Guid, Position, ByteVector, ByteVector)] = Some((
     arg.guid,
     arg.position,
     arg.selfBytes,
     arg.otherBytes
-  )
+  ))
 }
 
 object CharacterInfo {

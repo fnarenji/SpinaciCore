@@ -4,8 +4,6 @@ import wow.realm.entities.{Classes, Genders, Races}
 import scodec.Codec
 import scodec.codecs._
 
-import scala.language.postfixOps
-
 case class CharacterDescription(name: String,
                                 race: Races.Value,
                                 charClass: Classes.Value,

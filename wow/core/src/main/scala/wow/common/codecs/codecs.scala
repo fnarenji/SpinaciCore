@@ -1,12 +1,12 @@
 package wow.common
 
-import wow.realm.protocol.objectupdates.UpdateFlags
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Decoder, Encoder, Err, SizeBound}
+import wow.realm.protocol.objectupdates.UpdateFlags
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.language.postfixOps
 
 /**
@@ -208,14 +208,14 @@ package object codecs {
     * @tparam A type of value
     * @return codec of optional A
     */
-  def notEmpty[A](codec: Codec[A]): Codec[Option[A]] = new Codec[Option[A]] {
+  def optionalRemainder[A](codec: Codec[A]): Codec[Option[A]] = new Codec[Option[A]] {
     override def sizeBound: SizeBound = SizeBound.atLeast(0) | codec.sizeBound
 
     override def decode(bits: BitVector): Attempt[DecodeResult[Option[A]]] = {
       if (bits.nonEmpty) {
         codec.decode(bits) match {
-          case Successful(DecodeResult(value, BitVector.empty)) =>
-            Attempt.successful(DecodeResult(Some(value), BitVector.empty))
+          case Successful(DecodeResult(value, remainder)) =>
+            Attempt.successful(DecodeResult(Some(value), remainder))
           case f: Failure =>
             f
         }
@@ -280,10 +280,9 @@ package object codecs {
     import numeric._
 
     private type ValueSet = e.ValueSet
-    private type Value = e.Value
     private val ValueSet = e.ValueSet
 
-    require(UpdateFlags.values.max.id <= math.pow(2, codec.sizeBound.exact.get - 1).toInt)
+    require(UpdateFlags.values.max.id <= math.pow(2L, codec.sizeBound.exact.get - 1L).toInt)
 
     override def decode(bits: BitVector): Attempt[DecodeResult[ValueSet]] = {
       codec.decode(bits) match {
@@ -349,16 +348,22 @@ package object codecs {
         var packedBits = bits.drop(size)
         var unpackedBits = BitVector.low(size * 8)
 
-        for (i <- 0 until size) {
-          if (reversedMask(i)) {
-            packedBits.consumeThen(8)(x => Attempt.failure(Err(x)), { case (unpackedByte, rem) =>
-              packedBits = rem
+        val errors = mutable.Buffer[String]()
+        for (i <- 0 until size if reversedMask(i)) {
+          packedBits.acquire(8) match {
+            case Left(error) =>
+              errors.append(error)
+            case Right(unpackedByte) =>
+              packedBits = packedBits.drop(8)
               unpackedBits = unpackedBits.patch(i * 8, unpackedByte)
-            })
           }
         }
 
-        Attempt.Successful(DecodeResult(unpackedBits, packedBits))
+        if (errors.isEmpty) {
+          Attempt.Successful(DecodeResult(unpackedBits, packedBits))
+        } else {
+          Attempt.failure(Err(errors mkString "\n"))
+        }
       })
     }
 

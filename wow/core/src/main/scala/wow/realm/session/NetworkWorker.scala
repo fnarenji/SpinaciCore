@@ -5,48 +5,33 @@ import java.util.concurrent.ThreadLocalRandom
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import scodec.bits.BitVector
 import wow.common.network.{TCPSession, TCPSessionFactory}
+import wow.realm.crypto.SessionCipher
 import wow.realm.protocol.payloads.ServerAuthChallenge
 import wow.realm.protocol.{OpCodes, _}
 import wow.realm.{RealmContext, RealmContextData}
 
-import scala.language.postfixOps
 import scala.util.Random
 
 /**
   * Handles a realm session's networking
   * Most of the features of this actor are actual provided by composing in traits
   */
-class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmContextData)
-  extends TCPSession(connection)
+class NetworkWorker(override val connection: ActorRef)(override implicit val realm: RealmContextData)
+  extends TCPSession
           with HandleIncomingPackets
           with SendForwardedPackets
           with SendPacketsToClient
           with Actor
           with ActorLogging
           with RealmContext {
-  // Send initial challenge packet
-  sendAuthChallenge()
+  private[session] var sessionCipher: Option[SessionCipher] = None
 
   override def receive: Receive = Seq(
-    super[TCPSession].receive,
-    super[HandleIncomingPackets].receive,
-    super[SendForwardedPackets].receive
-  ).reduceLeft(_.andThen(_))
+    tcpSessionReceiver,
+    sendForwardedPacketsReceiver
+  ).reduceLeft(_.orElse(_))
 
-  /**
-    * This must remain lazy or be moved before the call to sendAuthChallenge().
-    * Otherwise, initialization order will make challenge digest validation fail.
-    */
-  lazy val authSeed: Long = {
-    val UInt32MaxValue = 0x7FFFFFFFL
-    ThreadLocalRandom.current().nextLong(UInt32MaxValue)
-  }
-
-  /**
-    * Sends the auth challenge to the client.
-    * This is done at the server's initiative.
-    */
-  private def sendAuthChallenge() = {
+  override def preStart(): Unit = {
     val SeedSizeBits = ServerAuthChallenge.SeedSize * 8
 
     val authChallenge = ServerAuthChallenge(
@@ -56,6 +41,17 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
     )
 
     sendPayload(authChallenge)
+
+    super.preStart()
+  }
+
+  /**
+    * This must remain lazy or be moved before the call to sendAuthChallenge().
+    * Otherwise, initialization order will make challenge digest validation fail.
+    */
+  lazy val authSeed: Long = {
+    val UInt32MaxValue = 0x7FFFFFFFL
+    ThreadLocalRandom.current().nextLong(UInt32MaxValue)
   }
 
   /**
@@ -128,9 +124,21 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
     require(none.isEmpty)
     _player = None
   }
+
+  /**
+    * Enables the cipher for all packets onwards
+    *
+    * @param sessionKey session key to use
+    */
+  def enableCipher(sessionKey: BigInt): Unit = {
+    require(sessionCipher.isEmpty)
+    log.debug(s"Session key set up: $sessionKey")
+    sessionCipher = Some(new SessionCipher(sessionKey))
+  }
 }
 
 object NetworkWorker {
+
   case class SendRawPayload(payloadBits: BitVector, opCode: OpCodes.Value)
 
   case class SendRaw(bits: BitVector)
@@ -140,10 +148,11 @@ object NetworkWorker {
   case class Terminate(delayed: Boolean)
 
   case class HandlePacket(header: ClientHeader, payloadBits: BitVector)
+
 }
 
 class NetworkWorkerFactory(implicit realm: RealmContextData) extends TCPSessionFactory {
   override def props(connection: ActorRef): Props = Props(new NetworkWorker(connection))
 
-  override val PreferredName = "NetworkWorker"
+  override val PreferredName = "networkworker"
 }

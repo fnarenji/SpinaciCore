@@ -3,12 +3,13 @@ package wow.realm.session
 import wow.realm.protocol.PacketSerialization
 
 /**
-  * Created by sknz on 5/12/17.
+  * Sends packets to client that come from other actors (e.g. Session/SessionPlayer)
+  * Applies cipher if applicable.
   */
-trait SendForwardedPackets {
+private[session] trait SendForwardedPackets {
   this: NetworkWorker =>
 
-  override def receive: Receive = {
+  val sendForwardedPacketsReceiver: Receive = {
     case NetworkWorker.SendRawPayload(payloadBits, opCode) =>
       sendRaw(payloadBits, opCode)
 
