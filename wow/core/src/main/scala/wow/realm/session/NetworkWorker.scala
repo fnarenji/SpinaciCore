@@ -20,7 +20,7 @@ import scala.util.Random
 /**
   * Handles a realm session's networking
   */
-class NetworkWorker(override implicit val realm: RealmContextData)
+class NetworkWorker()(override implicit val realm: RealmContextData)
   extends Actor
           with ActorLogging
           with PacketHandlerTag
@@ -125,9 +125,12 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     sendPayload(authChallenge)
   }
 
-  // TODO: This should be replaced by a poison pill to the TCPHandler that would contain the final packet before the
-  // connection is closed
   private val terminationDelay = 5 second
+
+  /**
+    * TODO: This should be replaced by a poison pill to the TCPHandler that would contain the final packet before the
+    * connection is closed
+    */
   override def terminateDelayed(): Unit = {
     context.system.scheduler.scheduleOnce(terminationDelay)(terminateNow())(context.dispatcher)
   }
@@ -155,13 +158,27 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     context.parent ! TCPHandler.OutgoingPacket(bits)
   }
 
-  def setAuthenticated(sessionKey: BigInt): Unit = {
+  /**
+    * Enables the cipher for all packets onwards
+    *
+    * @param sessionKey session key to use
+    */
+  def enableCipher(sessionKey: BigInt): Unit = {
+    require(sessionCipher.isEmpty)
     log.debug(s"Session key set up: $sessionKey")
     sessionCipher = Some(new SessionCipher(sessionKey))
   }
 
+  /**
+    * The session associated to this network worker
+    */
   private var _session: Option[ActorRef] = None
 
+  /**
+    * Getter for session associated with network worker. Will throw if not present.
+    *
+    * @return session associated with network worker
+    */
   def session: ActorRef = {
     if (_session.isEmpty) {
       throw new IllegalStateException("Session actor ref is not set")
@@ -169,6 +186,11 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     _session.get
   }
 
+  /**
+    * Setter for session associated with network worker. Will throw if already present.
+    *
+    * @param sessionRef session associated with network worker
+    */
   def session_=(sessionRef: ActorRef): Unit = _session = {
     if (_session.nonEmpty) {
       throw new IllegalStateException("Session actor ref can only be set once")
@@ -177,8 +199,16 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     Some(sessionRef)
   }
 
+  /**
+    * Current SessionPlayer actor ref
+    */
   private var _player: Option[ActorRef] = None
 
+  /**
+    * Getter for current session player actor. Will throw if not present.
+    *
+    * @return current session player actor ref
+    */
   def player: ActorRef = {
     if (_player.isEmpty) {
       throw new IllegalStateException("Player actor ref is not set")
@@ -187,6 +217,11 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     _player.get
   }
 
+  /**
+    * Setter for current session player actor. Will throw if already present.
+    *
+    * @param playerRef current session player actor ref
+    */
   def player_=(playerRef: ActorRef): Unit = {
     if (_player.nonEmpty) {
       throw new IllegalStateException("Player actor ref is already set and should not be overwritten")
@@ -195,11 +230,15 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     _player = Some(playerRef)
   }
 
+  /**
+    * Removes current session player actor ref.
+    *
+    * @param none None
+    */
   def player_=(none: Option[Nothing]): Unit = {
     require(none.isEmpty)
     _player = None
   }
-
 }
 
 object NetworkWorker {
@@ -231,7 +270,7 @@ object NetworkWorker {
 }
 
 class NetworkWorkerFactory(implicit realm: RealmContextData) extends SessionActorCompanion {
-  override def props: Props = Props(new NetworkWorker()(realm))
+  override def props: Props = Props(new NetworkWorker)
 
   override def PreferredName = "SessionNetworkWorker"
 }

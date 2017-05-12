@@ -49,7 +49,7 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
 
           self.session = Await.result(createSession, 5 seconds)
 
-          self.setAuthenticated(sessionKey)
+          self.enableCipher(sessionKey)
           ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
         } else {
           self.terminateDelayed()

@@ -17,7 +17,6 @@ class Session(val login: String, override val networkWorker: ActorRef)(override 
           with RealmContext
           with PacketHandlerTag
           with ForwardToNetworkWorker {
-
   var player: Option[ActorRef] = _
 
   override def receive: Receive = {

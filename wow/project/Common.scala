@@ -8,7 +8,8 @@ object Common {
     "-feature",
     "-deprecation",
     "-language:postfixOps",
-    "-language:implicitConversions"
+    "-language:implicitConversions",
+    "-Xcheckinit"
   )
   
   val Settings = Seq(

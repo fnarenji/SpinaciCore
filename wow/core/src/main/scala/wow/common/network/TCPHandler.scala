@@ -10,6 +10,7 @@ import scodec.interop.akka._
 
 /**
   * Handles an open TCP connection.
+  * TODO: This should be a trait implemented by AuthSession/NetworkWorker
   */
 class TCPHandler[A <: SessionActorCompanion](companion: A, connection: ActorRef) extends Actor with ActorLogging {
   private val session = context.actorOf(companion.props, companion.PreferredName)
