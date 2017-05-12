@@ -1,15 +1,16 @@
 package wow.auth.session
 
-import akka.actor.{FSM, Props}
-import wow.auth._
-import wow.auth.handlers._
-import wow.auth.protocol.{OpCodes, ServerPacket}
-import wow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ClientRealmlist, ClientReconnectProof}
-import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
-import wow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
+import akka.actor.{ActorRef, FSM, Props}
 import scodec.Attempt.{Failure, Successful}
+import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
+import wow.auth._
 import wow.auth.crypto.Srp6Protocol
+import wow.auth.handlers._
+import wow.auth.protocol.packets.ClientRealmlist
+import wow.auth.protocol.{OpCodes, ServerPacket}
+import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
+import wow.common.network.{EventIncoming, TCPSessionFactory, TCPSession}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -17,7 +18,8 @@ import scala.language.postfixOps
 /**
   * Handles an auth session
   */
-class AuthSession extends FSM[AuthSessionState, AuthSessionData]
+class AuthSession(connection: ActorRef) extends TCPSession(connection)
+                          with FSM[AuthSessionState, AuthSessionData]
                           with LogonChallengeHandler
                           with LogonProofHandler
                           with ReconnectChallengeHandler
@@ -51,31 +53,32 @@ class AuthSession extends FSM[AuthSessionState, AuthSessionData]
 
   when(StateRealmlist) {
     case Event(EventIncoming(bits), NoData) =>
-      val packet = PacketSerializer.deserialize[ClientRealmlist](bits)
-      log.debug(s"Received realm list request: $packet")
+      PacketSerializer.deserialize[ClientRealmlist](bits)
 
-      context.parent ! TCPHandler.OutgoingPacket(AuthServer.realmlistPacketBits)
+      outgoing(AuthServer.realmlistPacketBits)
       stay using NoData
   }
 
   when(StateFailed, stateTimeout = 5 second) {
     case Event(StateTimeout, _) =>
       log.debug("Failed state expired, disconnecting")
-      context.parent ! TCPHandler.Disconnect
+      disconnect()
       stop
   }
+
+  override def receive: Receive = super[TCPSession].receive orElse super[FSM].receive
 
   def sendPacket[A <: ServerPacket](packet: A)(implicit codec: Codec[A]): Unit = {
     log.debug(s"Sending $packet")
     val bits = PacketSerializer.serialize(packet)(codec)
 
-    context.parent ! TCPHandler.OutgoingPacket(bits)
+    outgoing(bits)
   }
 }
 
-object AuthSession extends SessionActorCompanion {
-  override def props: Props = Props(classOf[AuthSession])
+object AuthSession extends TCPSessionFactory {
+  override def props(connection: ActorRef): Props = Props(new AuthSession(connection))
 
-  override def PreferredName = "AuthSession"
+  override val PreferredName: String = "AuthSession"
 }
 

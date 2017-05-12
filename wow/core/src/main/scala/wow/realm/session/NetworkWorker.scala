@@ -5,7 +5,7 @@ import java.util.concurrent.ThreadLocalRandom
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import scodec.Codec
 import scodec.bits.BitVector
-import wow.common.network.{EventIncoming, SessionActorCompanion, TCPHandler}
+import wow.common.network.{EventIncoming, TCPSession, TCPSessionFactory}
 import wow.realm.crypto.SessionCipher
 import wow.realm.handlers.HandledBy
 import wow.realm.protocol.payloads.ServerAuthChallenge
@@ -20,8 +20,9 @@ import scala.util.Random
 /**
   * Handles a realm session's networking
   */
-class NetworkWorker()(override implicit val realm: RealmContextData)
-  extends Actor
+class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmContextData)
+  extends TCPSession(connection)
+          with Actor
           with ActorLogging
           with PacketHandlerTag
           with RealmContext
@@ -35,7 +36,7 @@ class NetworkWorker()(override implicit val realm: RealmContextData)
   // Send initial challenge packet
   sendAuthChallenge()
 
-  override def receive: Receive = {
+  override def receive: Receive = super[TCPSession].receive orElse {
     case EventIncoming(bits) =>
       unprocessedBits = unprocessedBits ++ bits
       processBufferedBits()
@@ -125,18 +126,13 @@ class NetworkWorker()(override implicit val realm: RealmContextData)
     sendPayload(authChallenge)
   }
 
-  private val terminationDelay = 5 second
-
-  /**
-    * TODO: This should be replaced by a poison pill to the TCPHandler that would contain the final packet before the
-    * connection is closed
-    */
+  private val terminationDelay = 1 second
   override def terminateDelayed(): Unit = {
     context.system.scheduler.scheduleOnce(terminationDelay)(terminateNow())(context.dispatcher)
   }
 
   override def terminateNow(): Unit = {
-    context.parent ! TCPHandler.Disconnect
+    disconnect()
     context.stop(self)
   }
 
@@ -154,9 +150,7 @@ class NetworkWorker()(override implicit val realm: RealmContextData)
     sendRaw(bits)
   }
 
-  override def sendRaw(bits: BitVector): Unit = {
-    context.parent ! TCPHandler.OutgoingPacket(bits)
-  }
+  override def sendRaw(bits: BitVector): Unit = outgoing(bits)
 
   /**
     * Enables the cipher for all packets onwards
@@ -269,8 +263,8 @@ object NetworkWorker {
 
 }
 
-class NetworkWorkerFactory(implicit realm: RealmContextData) extends SessionActorCompanion {
-  override def props: Props = Props(new NetworkWorker)
+class NetworkWorkerFactory(implicit realm: RealmContextData) extends TCPSessionFactory {
+  override def props(connection: ActorRef): Props = Props(new NetworkWorker(connection))
 
-  override def PreferredName = "SessionNetworkWorker"
+  override val PreferredName = "NetworkWorker"
 }
