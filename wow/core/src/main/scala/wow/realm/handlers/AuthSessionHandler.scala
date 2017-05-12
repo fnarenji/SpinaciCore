@@ -1,5 +1,6 @@
 package wow.realm.handlers
 
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
@@ -28,16 +29,19 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
 
     Account.findByLogin(login) match {
       case Some(Account(_, _, _, Some(sessionKey))) =>
+        def longLBytes(value: Long) = uint32L.encode(value).require.toByteArray
+
         val messageDigest = MessageDigest.getInstance("SHA-1")
 
         messageDigest.update(login.getBytes(StandardCharsets.US_ASCII))
-        messageDigest.update(uint32L.encode(0).require.toByteArray)
-        messageDigest.update(uint32L.encode(payload.challenge).require.toByteArray)
-        messageDigest.update(uint32L.encode(self.authSeed).require.toByteArray)
+        messageDigest.update(longLBytes(0))
+        messageDigest.update(longLBytes(payload.challenge))
+        messageDigest.update(longLBytes(self.authSeed))
         messageDigest.update(sessionKey.toUnsignedLBytes())
         val expectedDigest = messageDigest.digest()
 
-        val response = if (payload.shaDigest === ByteVector.view(expectedDigest)) {
+        val view = ByteVector.view(expectedDigest)
+        val response = if (payload.shaDigest === view) {
           // Same as for ClientPlayerLogin, we must wait to have the reference so that we're certain we have it as the
           // next packets will potentially be forwarded to the session for handling
           implicit val timeout = Timeout(5 seconds)

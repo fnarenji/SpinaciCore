@@ -26,50 +26,9 @@ class NetworkWorker(override implicit val realm: RealmContextData)
           with PacketHandlerTag
           with RealmContext
           with CanSendPackets {
-
-  var _session: Option[ActorRef] = None
-
-  def session: ActorRef = {
-    if (_session.isEmpty) {
-      throw new IllegalStateException("Session actor ref is not set")
-    }
-    _session.get
-  }
-
-  def session_=(sessionRef: ActorRef): Unit = _session = {
-    if (_session.nonEmpty) {
-      throw new IllegalStateException("Session actor ref can only be set once")
-    }
-
-    Some(sessionRef)
-  }
-
-  var _player: Option[ActorRef] = None
-
-  def player: ActorRef = {
-    if (_player.isEmpty) {
-      throw new IllegalStateException("Player actor ref is not set")
-    }
-
-    _player.get
-  }
-
-  def player_=(playerRef: ActorRef): Unit = {
-    if (_player.nonEmpty) {
-      throw new IllegalStateException("Player actor ref is already set and should not be overwritten")
-    }
-
-    _player = Some(playerRef)
-  }
-
-  def player_=(none: Option[Nothing]): Unit = {
-    require(none.isEmpty)
-    _player = None
-  }
-
-  private val terminationDelay = 5 second
   private var sessionCipher: Option[SessionCipher] = None
 
+  // TODO: This should to be extracted to a trait and use a FSM
   private var unprocessedBits = BitVector.empty
   private var currHeader: Option[ClientHeader] = None
 
@@ -145,7 +104,11 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     }
   }
 
-  val authSeed: Long = {
+  /**
+    * This must remain lazy or be moved before the call to sendAuthChallenge().
+    * Otherwise, initialization order will make challenge digest validation fail.
+    */
+  lazy val authSeed: Long = {
     val UInt32MaxValue = 0x7FFFFFFFL
     ThreadLocalRandom.current().nextLong(UInt32MaxValue)
   }
@@ -156,13 +119,15 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     val authChallenge = ServerAuthChallenge(
       authSeed,
       BigInt(SeedSizeBits, Random),
-      BigInt(SeedSizeBits, Random))
+      BigInt(SeedSizeBits, Random)
+    )
 
-    val bits = PacketSerialization.outgoing(authChallenge)(sessionCipher)
-
-    context.parent ! TCPHandler.OutgoingPacket(bits)
+    sendPayload(authChallenge)
   }
 
+  // TODO: This should be replaced by a poison pill to the TCPHandler that would contain the final packet before the
+  // connection is closed
+  private val terminationDelay = 5 second
   override def terminateDelayed(): Unit = {
     context.system.scheduler.scheduleOnce(terminationDelay)(terminateNow())(context.dispatcher)
   }
@@ -180,8 +145,8 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     sendRaw(bits)
   }
 
-  override def sendRaw(payloadbits: BitVector, opCode: OpCodes.Value): Unit = {
-    val bits = PacketSerialization.outgoing(payloadbits, opCode)(sessionCipher)
+  override def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit = {
+    val bits = PacketSerialization.outgoing(payloadBits, opCode)(sessionCipher)
 
     sendRaw(bits)
   }
@@ -194,6 +159,47 @@ class NetworkWorker(override implicit val realm: RealmContextData)
     log.debug(s"Session key set up: $sessionKey")
     sessionCipher = Some(new SessionCipher(sessionKey))
   }
+
+  private var _session: Option[ActorRef] = None
+
+  def session: ActorRef = {
+    if (_session.isEmpty) {
+      throw new IllegalStateException("Session actor ref is not set")
+    }
+    _session.get
+  }
+
+  def session_=(sessionRef: ActorRef): Unit = _session = {
+    if (_session.nonEmpty) {
+      throw new IllegalStateException("Session actor ref can only be set once")
+    }
+
+    Some(sessionRef)
+  }
+
+  private var _player: Option[ActorRef] = None
+
+  def player: ActorRef = {
+    if (_player.isEmpty) {
+      throw new IllegalStateException("Player actor ref is not set")
+    }
+
+    _player.get
+  }
+
+  def player_=(playerRef: ActorRef): Unit = {
+    if (_player.nonEmpty) {
+      throw new IllegalStateException("Player actor ref is already set and should not be overwritten")
+    }
+
+    _player = Some(playerRef)
+  }
+
+  def player_=(none: Option[Nothing]): Unit = {
+    require(none.isEmpty)
+    _player = None
+  }
+
 }
 
 object NetworkWorker {
