@@ -1,7 +1,5 @@
 package wow.auth.handlers
 
-import akka.actor.{Actor, ActorLogging, Props}
-import wow.auth.crypto.Srp6Protocol
 import wow.auth.protocol.AuthResults
 import wow.auth.protocol.AuthResults.AuthResult
 import wow.auth.protocol.packets._

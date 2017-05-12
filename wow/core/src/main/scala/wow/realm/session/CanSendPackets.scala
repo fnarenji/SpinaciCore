@@ -9,42 +9,68 @@ import wow.realm.protocol.{OpCodeProvider, OpCodes, Payload, ServerSide}
   * Indicates that class can send packets
   */
 trait CanSendPackets {
+  /**
+    * Serializes and sends the payload
+    * @param payload payload
+    * @param codec codec for payload
+    * @param opCodeProvider opcode provider for payload
+    * @tparam A payload type
+    */
   def sendPayload[A <: Payload with ServerSide](payload: A)
     (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]): Unit
 
+  /**
+    * Sends the payload while prepending it with the header corresponding to opCode.
+    * Cipher will be applied to header if applicable.
+    * @param payloadBits payload bits
+    * @param opCode opcode
+    */
   def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit
 
+  /**
+    * Send the bits as passed.
+    * @param bits bits to be sent
+    */
   def sendRaw(bits: BitVector): Unit
 
+  /**
+    * Terminates the connection after a fixed delay.
+    */
   def terminateDelayed(): Unit
 
+  /**
+    * Instantly terminates the connection
+    */
   def terminateNow(): Unit
 }
 
 /**
   * Indicates that class can send packets by forwarding them to a NetworkWorker (e.g. Session/SessionPlayer)
   */
-trait ForwardToNetworkWorker {
+trait ForwardToNetworkWorker extends CanSendPackets {
+  /**
+    * Network worker actor reference
+    */
   val networkWorker: ActorRef
 
-  def sendPayload[A <: Payload with ServerSide](payload: A)
+  override def sendPayload[A <: Payload with ServerSide](payload: A)
     (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]): Unit = {
     networkWorker ! NetworkWorker.SendPayload(payload)
   }
 
-  def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit = {
+  override def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit = {
     networkWorker ! NetworkWorker.SendRawPayload(payloadBits, opCode)
   }
 
-  def sendRaw(bits: BitVector): Unit = {
+  override def sendRaw(bits: BitVector): Unit = {
     networkWorker ! NetworkWorker.SendRaw(bits)
   }
 
-  def terminateDelayed(): Unit = {
+  override def terminateDelayed(): Unit = {
     networkWorker ! NetworkWorker.Terminate(true)
   }
 
-  def terminateNow(): Unit = {
+  override def terminateNow(): Unit = {
     networkWorker ! NetworkWorker.Terminate(false)
   }
 }

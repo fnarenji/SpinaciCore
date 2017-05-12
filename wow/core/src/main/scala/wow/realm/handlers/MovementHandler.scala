@@ -12,7 +12,40 @@ import wow.realm.session.NetworkWorker
   * Uses OpCodeProvider.None as OpCodes are overloaded below
   */
 object MovementHandler
-  extends PayloadHandler[NetworkWorker, ClientMovement](MovementHandlerCompanion.SupportedOpCodes) {
+  extends PayloadHandler[NetworkWorker, ClientMovement]({
+    import OpCodes._
+
+    OpCodes.ValueSet(
+      MsgMoveStartForward,
+      MsgMoveStartBackward,
+      MsgMoveStop,
+      MsgMoveStartStrafeLeft,
+      MsgMoveStartStrafeRight,
+      MsgMoveStopStrafe,
+      MsgMoveJump,
+      MsgMoveStartTurnLeft,
+      MsgMoveStartTurnRight,
+      MsgMoveStopTurn,
+      MsgMoveStartPitchUp,
+      MsgMoveStartPitchDown,
+      MsgMoveStopPitch,
+      MsgMoveSetRunMode,
+      MsgMoveSetWalkMode,
+      MsgMoveFallLand,
+      MsgMoveStartSwim,
+      MsgMoveStopSwim,
+      MsgMoveSetFacing,
+      MsgMoveSetPitch,
+      MsgMoveHeartbeat,
+      MoveFallReset,
+      MoveSetFly,
+      MsgMoveStartAscend,
+      MsgMoveStopAscend,
+      MoveChangeTransport,
+      MsgMoveStartDescend
+    )
+  }) {
+
   /**
     * Processes an incoming payload
     *
@@ -31,37 +64,5 @@ object MovementHandler
 
     log.debug(s"Player ${payload.guid.id} moved to ${payload.position} with ${header.opCode}")
   }
-}
-
-object MovementHandlerCompanion {
-  val SupportedOpCodes: OpCodes.ValueSet = OpCodes.ValueSet(
-    OpCodes.MsgMoveStartForward,
-    OpCodes.MsgMoveStartBackward,
-    OpCodes.MsgMoveStop,
-    OpCodes.MsgMoveStartStrafeLeft,
-    OpCodes.MsgMoveStartStrafeRight,
-    OpCodes.MsgMoveStopStrafe,
-    OpCodes.MsgMoveJump,
-    OpCodes.MsgMoveStartTurnLeft,
-    OpCodes.MsgMoveStartTurnRight,
-    OpCodes.MsgMoveStopTurn,
-    OpCodes.MsgMoveStartPitchUp,
-    OpCodes.MsgMoveStartPitchDown,
-    OpCodes.MsgMoveStopPitch,
-    OpCodes.MsgMoveSetRunMode,
-    OpCodes.MsgMoveSetWalkMode,
-    OpCodes.MsgMoveFallLand,
-    OpCodes.MsgMoveStartSwim,
-    OpCodes.MsgMoveStopSwim,
-    OpCodes.MsgMoveSetFacing,
-    OpCodes.MsgMoveSetPitch,
-    OpCodes.MsgMoveHeartbeat,
-    OpCodes.MoveFallReset,
-    OpCodes.MoveSetFly,
-    OpCodes.MsgMoveStartAscend,
-    OpCodes.MsgMoveStopAscend,
-    OpCodes.MoveChangeTransport,
-    OpCodes.MsgMoveStartDescend
-  )
 }
 
