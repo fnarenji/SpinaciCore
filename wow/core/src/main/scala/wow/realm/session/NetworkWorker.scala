@@ -22,35 +22,25 @@ import scala.util.Random
   */
 class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmContextData)
   extends TCPSession(connection)
+          with BufferIncomingPackets
           with Actor
           with ActorLogging
           with PacketHandlerTag
           with RealmContext
           with CanSendPackets {
-  private var sessionCipher: Option[SessionCipher] = None
-
-  // TODO: This should to be extracted to a trait and use a FSM
-  private var unprocessedBits = BitVector.empty
-  private var currHeader: Option[ClientHeader] = None
+  private[session] var sessionCipher: Option[SessionCipher] = None
 
   // Send initial challenge packet
   sendAuthChallenge()
 
-  override def receive: Receive = super[TCPSession].receive orElse {
-    case EventIncoming(bits) =>
-      unprocessedBits = unprocessedBits ++ bits
-      processBufferedBits()
-
-    case ev: NetworkWorker.SendPayload[_] =>
-      sendRaw(ev.serialize(sessionCipher))
-
+  override def receive: Receive = super[TCPSession].receive orElse super[BufferIncomingPackets].receive orElse {
     case NetworkWorker.SendRawPayload(payloadBits, opCode) =>
       sendRaw(payloadBits, opCode)
 
     case NetworkWorker.SendRaw(bits) =>
       sendRaw(bits)
 
-    case NetworkWorker.SendSplit(headerBits, payloadBits) =>
+    case NetworkWorker.SendRawSplit(headerBits, payloadBits) =>
       val bits = PacketSerialization.outgoing(headerBits, payloadBits)(sessionCipher)
 
       sendRaw(bits)
@@ -61,48 +51,6 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
       } else {
         terminateNow()
       }
-
-    case ev: NetworkWorker.TerminateWithPayload[_] =>
-      sendRaw(ev.serialize(sessionCipher))
-      terminateDelayed()
-  }
-
-  private def processBufferedBits(): Unit = {
-    //    log.debug(s"Have ${unprocessedBits.bytes.size} bytes waiting to be processed")
-    if (currHeader.isEmpty && unprocessedBits.sizeGreaterThanOrEqual(Codec[ClientHeader].sizeBound.exact.get)) {
-      //      log.debug("No header, parsing next one")
-      val (header, remaining) = PacketSerialization.incomingHeader(unprocessedBits)(sessionCipher)
-      currHeader = Some(header)
-      unprocessedBits = remaining
-    }
-
-    currHeader match {
-      case Some(header) =>
-        if (unprocessedBits.bytes.size >= header.payloadSize) {
-          // log.debug("Has header and payload, parsing payload")
-
-          val payloadBits = unprocessedBits.take(header.payloadSize * 8L)
-          unprocessedBits = unprocessedBits.drop(header.payloadSize * 8L)
-          currHeader = None
-
-          PacketHandler(header) match {
-            case HandledBy.NetworkWorker =>
-              PacketHandler(header, payloadBits)(this)
-            case HandledBy.Session =>
-              session ! HandlePacket(header, payloadBits)
-            case HandledBy.Player =>
-              player ! HandlePacket(header, payloadBits)
-            case HandledBy.Unhandled =>
-              log.info(s"Unhandled packet ${header.opCode}")
-          }
-
-          processBufferedBits()
-        } else {
-          //          log.debug("Has header, no payload, not enough data")
-        }
-      case None =>
-      //        log.debug("No header, not enough data for next one")
-    }
   }
 
   /**
@@ -114,6 +62,10 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
     ThreadLocalRandom.current().nextLong(UInt32MaxValue)
   }
 
+  /**
+    * Sends the auth challenge to the client.
+    * This is done at the server's initiative.
+    */
   private def sendAuthChallenge() = {
     val SeedSizeBits = ServerAuthChallenge.SeedSize * 8
 
@@ -127,6 +79,7 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
   }
 
   private val terminationDelay = 1 second
+
   override def terminateDelayed(): Unit = {
     context.system.scheduler.scheduleOnce(terminationDelay)(terminateNow())(context.dispatcher)
   }
@@ -146,6 +99,12 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
 
   override def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit = {
     val bits = PacketSerialization.outgoing(payloadBits, opCode)(sessionCipher)
+
+    sendRaw(bits)
+  }
+
+  override def sendRaw(headerBits: BitVector, payloadBits: BitVector): Unit = {
+    val bits = PacketSerialization.outgoing(headerBits, payloadBits)(sessionCipher)
 
     sendRaw(bits)
   }
@@ -236,28 +195,13 @@ class NetworkWorker(connection: ActorRef)(override implicit val realm: RealmCont
 }
 
 object NetworkWorker {
-
-  sealed class PayloadBearingMessage[A <: Payload with ServerSide](payload: A)
-    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]) {
-    def serialize(sessionCipher: Option[SessionCipher]): BitVector = {
-      PacketSerialization.outgoing(payload)(sessionCipher)(implicitly, implicitly)
-    }
-  }
-
-  case class SendPayload[A <: Payload with ServerSide](payload: A)
-    (implicit opCodeProvider: OpCodeProvider[A], codec: Codec[A])
-    extends PayloadBearingMessage[A](payload)
-
   case class SendRawPayload(payloadBits: BitVector, opCode: OpCodes.Value)
 
   case class SendRaw(bits: BitVector)
 
-  case class SendSplit(headerBits: BitVector, payloadBits: BitVector)
+  case class SendRawSplit(headerBits: BitVector, payloadBits: BitVector)
 
   case class Terminate(delayed: Boolean)
-
-  case class TerminateWithPayload[A <: Payload with ServerSide](payload: A)
-    (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]) extends PayloadBearingMessage[A](payload)
 
   case class HandlePacket(header: ClientHeader, payloadBits: BitVector)
 

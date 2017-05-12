@@ -69,7 +69,7 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
       }
 
       val updateObject = ServerUpdateObject(updateBlocks.result())
-      networkWorker ! NetworkWorker.SendPayload(updateObject)
+      sendPayload(updateObject)
 
       updateBlocks = Vector.newBuilder[ServerUpdateBlock]
 
@@ -78,7 +78,7 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
         case currentCharacter.guid =>
           currentCharacter.position = payload.position
         case _ =>
-          networkWorker ! NetworkWorker.SendSplit(headerBits, payloadBits)
+          sendRaw(payloadBits, headerBits)
       }
   }
 
@@ -89,7 +89,7 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
       val timeSyncRequest = ServerTimeSyncRequest(count)
       count = count + 1
 
-      networkWorker ! NetworkWorker.SendPayload(timeSyncRequest)
+      sendPayload(timeSyncRequest)
     }
   }
 

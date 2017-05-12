@@ -3,7 +3,7 @@ package wow.realm.session
 import akka.actor.ActorRef
 import scodec.Codec
 import scodec.bits.BitVector
-import wow.realm.protocol.{OpCodeProvider, OpCodes, Payload, ServerSide}
+import wow.realm.protocol._
 
 /**
   * Indicates that class can send packets
@@ -26,6 +26,14 @@ trait CanSendPackets {
     * @param opCode opcode
     */
   def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit
+
+  /**
+    * Sends the payload while prepending it with the header bits
+    * Cipher will be applied to header if applicable.
+    * @param payloadBits payload bits
+    * @param headerBits header bits
+    */
+  def sendRaw(headerBits: BitVector, payloadBits: BitVector): Unit
 
   /**
     * Send the bits as passed.
@@ -55,11 +63,17 @@ trait ForwardToNetworkWorker extends CanSendPackets {
 
   override def sendPayload[A <: Payload with ServerSide](payload: A)
     (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]): Unit = {
-    networkWorker ! NetworkWorker.SendPayload(payload)
+    val (headerBits, payloadBits) = PacketSerialization.outgoingSplit(payload, opCodeProvider.opCode)
+
+    sendRaw(headerBits, payloadBits)
   }
 
   override def sendRaw(payloadBits: BitVector, opCode: OpCodes.Value): Unit = {
     networkWorker ! NetworkWorker.SendRawPayload(payloadBits, opCode)
+  }
+
+  override def sendRaw(headerBits: BitVector, payloadBits: BitVector): Unit = {
+    networkWorker ! NetworkWorker.SendRawSplit(headerBits, payloadBits)
   }
 
   override def sendRaw(bits: BitVector): Unit = {
