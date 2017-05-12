@@ -1,10 +1,8 @@
 package wow.realm.session
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import scodec.Codec
-import scodec.bits.BitVector
 import wow.realm.entities.Guid
-import wow.realm.protocol.{OpCodes, _}
+import wow.realm.protocol._
 import wow.realm.session.Session.CreatePlayer
 import wow.realm.{RealmContext, RealmContextData}
 
@@ -37,5 +35,6 @@ object Session {
   def PreferredName(login: String) = s"session-$login"
 
   case class CreatePlayer(guid: Guid)
+
 }
 

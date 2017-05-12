@@ -1,9 +1,8 @@
 package wow.realm.protocol
 
-import wow.common.codecs.CodecTestUtils
 import org.scalatest.{FlatSpec, Matchers}
-import scodec.Codec
 import scodec.bits._
+import wow.common.codecs.CodecTestUtils
 
 /**
   * Test for Packet Header parsing

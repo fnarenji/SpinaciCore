@@ -3,7 +3,7 @@ package wow.realm.protocol
 import akka.actor.{Actor, ActorLogging}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
-import wow.auth.utils.PacketSerializationException
+import wow.auth.utils.{MalformedPacketException, PacketPartialReadException}
 import wow.realm.RealmContext
 import wow.realm.handlers.HandledBy
 import wow.utils.Reflection
@@ -47,7 +47,7 @@ abstract class PacketHandler[A <: PacketHandlerTag] {
     *
     * @param e scodec error
     */
-  def fail(e: Err): Unit = fail(PacketSerializationException(e))
+  def fail(e: Err): Unit = fail(MalformedPacketException(e))
 }
 
 /**
@@ -127,7 +127,8 @@ object PacketHandler {
   *
   * @tparam B payload type
   */
-abstract class PayloadHandler[A <: PacketHandlerTag, B <: Payload with ClientSide](override val opCodes: OpCodes.ValueSet)
+abstract class PayloadHandler[A <: PacketHandlerTag, B <: Payload with ClientSide](override val opCodes: OpCodes
+.ValueSet)
   (implicit codec: Codec[B])
   extends PacketHandler[A] {
 
@@ -147,7 +148,10 @@ abstract class PayloadHandler[A <: PacketHandlerTag, B <: Payload with ClientSid
   override def handle(header: ClientHeader, payloadBits: BitVector)(ps: A): Unit = {
     codec
       .decode(payloadBits)
-      .fold(fail, { case DecodeResult(payload, BitVector.empty) => handle(header, payload)(ps) })
+      .fold(fail, {
+        case DecodeResult(payload, BitVector.empty) => handle(header, payload)(ps)
+        case DecodeResult(_, remainder) => throw PacketPartialReadException(remainder)
+      })
   }
 }
 

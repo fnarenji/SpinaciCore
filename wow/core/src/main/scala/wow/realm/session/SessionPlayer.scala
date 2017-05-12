@@ -99,5 +99,5 @@ object SessionPlayer {
   def props(guid: Guid, networkWorker: ActorRef)(implicit realm: RealmContextData): Props =
     Props(new SessionPlayer(guid, networkWorker)(realm))
 
-  def PreferredName(guid: Guid) = s"Player-${guid.id}"
+  def PreferredName(guid: Guid) = s"player-${guid.id}"
 }

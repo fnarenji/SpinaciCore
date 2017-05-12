@@ -6,8 +6,6 @@ import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
 
-import scala.language.postfixOps
-
 case object GetAddress
 
 /**
@@ -41,7 +39,7 @@ object TCPServer {
     address,
     port)
 
-  val PreferredName = "TCP"
+  val PreferredName = "tcp"
 }
 
 

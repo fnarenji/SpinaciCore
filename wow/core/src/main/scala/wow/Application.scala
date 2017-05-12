@@ -2,14 +2,14 @@ package wow
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.settings.ServerSettings
-import wow.utils.Reflection
+import pureconfig._
 import scalikejdbc.ConnectionPool
 import wow.api.WebServer
 import wow.auth.AuthServer
-import wow.common.database.Database
-import wow.realm.{RealmContextData, RealmServer}
-import pureconfig._
 import wow.common.config.deriveIntMap
+import wow.common.database.Database
+import wow.realm.RealmServer
+import wow.utils.Reflection
 
 /**
   * Created by sknz on 1/31/17.

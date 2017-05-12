@@ -1,25 +1,24 @@
 package wow.auth.protocol.packets
 
+import scodec._
+import scodec.codecs._
 import wow.auth.protocol.{ClientPacket, OpCodes}
 import wow.common.VersionInfo
 import wow.common.codecs._
-import scodec._
-import scodec.codecs._
-
-import scala.language.postfixOps
 
 /**
   * Client logon challenge packet. First packet sent by client.
   **/
-case class ClientChallenge(error: Int,
-                           size: Int,
-                           versionInfo: VersionInfo,
-                           platform: String,
-                           os: String,
-                           country: String,
-                           timezoneBias: Long,
-                           ip: Vector[Int],
-                           login: String) extends ClientPacket {
+case class ClientChallenge(
+  error: Int,
+  size: Int,
+  versionInfo: VersionInfo,
+  platform: String,
+  os: String,
+  country: String,
+  timezoneBias: Long,
+  ip: Vector[Int],
+  login: String) extends ClientPacket {
   require(ip.length == 4)
   require(!login.isEmpty)
 }

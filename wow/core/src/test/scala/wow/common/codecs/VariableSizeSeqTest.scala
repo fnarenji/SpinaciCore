@@ -1,11 +1,8 @@
 package wow.common.codecs
 
 import org.scalatest.{FlatSpec, Matchers}
-import scodec.Codec
 import scodec.bits.{BitVector, _}
 import scodec.codecs._
-
-import scala.collection.immutable
 
 /**
   * Variable size vector codec test

@@ -1,14 +1,13 @@
 package wow.realm.protocol.payloads
 
-import wow.common.codecs._
-import wow.realm.entities.{Guid, Position}
-import wow.realm.protocol._
 import scodec.bits.ByteVector
 import scodec.codecs._
 import scodec.{Codec, _}
+import wow.common.codecs._
+import wow.realm.entities.{Guid, Position}
+import wow.realm.protocol._
 
 import scala.collection.immutable
-import scala.language.postfixOps
 
 /**
   * Packet storing all the characters to be sent to the client
@@ -25,17 +24,18 @@ object ServerCharacterEnum {
   }.as[ServerCharacterEnum]
 }
 
-case class ServerCharacterEnumEntry(guid: Guid,
-                                    characterDescription: CharacterDescription,
-                                    level: Int,
-                                    zone: Long,
-                                    position: Position,
-                                    guildId: Long,
-                                    charFlag: Long,
-                                    charCustomFlag: Long,
-                                    atLogin: Int,
-                                    pet: Pet
-                                    // Inventory bag supposed always empty
+case class ServerCharacterEnumEntry(
+  guid: Guid,
+  characterDescription: CharacterDescription,
+  level: Int,
+  zone: Long,
+  position: Position,
+  guildId: Long,
+  charFlag: Long,
+  charCustomFlag: Long,
+  atLogin: Int,
+  pet: Pet
+  // Inventory bag supposed always empty
 )
 
 object ServerCharacterEnumEntry {

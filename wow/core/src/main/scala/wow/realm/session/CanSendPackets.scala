@@ -8,7 +8,7 @@ import wow.realm.protocol._
 /**
   * Indicates that class can send packets
   */
-trait CanSendPackets {
+private[session] trait CanSendPackets {
   /**
     * Serializes and sends the payload
     * @param payload payload
@@ -55,7 +55,7 @@ trait CanSendPackets {
 /**
   * Indicates that class can send packets by forwarding them to a NetworkWorker (e.g. Session/SessionPlayer)
   */
-trait ForwardToNetworkWorker extends CanSendPackets {
+private[session] trait ForwardToNetworkWorker extends CanSendPackets {
   /**
     * Network worker actor reference
     */

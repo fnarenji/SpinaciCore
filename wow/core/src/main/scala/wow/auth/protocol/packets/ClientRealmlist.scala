@@ -5,8 +5,6 @@ import wow.auth.protocol.{ClientPacket, OpCodes}
 import scodec._
 import scodec.codecs._
 
-import scala.language.postfixOps
-
 /**
   * A client realmlist request contains only four null bytes.
   */

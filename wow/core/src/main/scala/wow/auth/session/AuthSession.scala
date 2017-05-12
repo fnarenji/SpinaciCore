@@ -9,8 +9,9 @@ import wow.auth.crypto.Srp6Protocol
 import wow.auth.handlers._
 import wow.auth.protocol.packets.ClientRealmlist
 import wow.auth.protocol.{OpCodes, ServerPacket}
+import wow.auth.session.AuthSession.EventIncoming
 import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
-import wow.common.network.{EventIncoming, TCPSessionFactory, TCPSession}
+import wow.common.network.{TCPSession, TCPSessionFactory}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -18,12 +19,12 @@ import scala.language.postfixOps
 /**
   * Handles an auth session
   */
-class AuthSession(connection: ActorRef) extends TCPSession(connection)
-                          with FSM[AuthSessionState, AuthSessionData]
-                          with LogonChallengeHandler
-                          with LogonProofHandler
-                          with ReconnectChallengeHandler
-                          with ReconnectProofHandler {
+class AuthSession(override val connection: ActorRef) extends TCPSession
+                                                             with FSM[AuthSessionState, AuthSessionData]
+                                                             with LogonChallengeHandler
+                                                             with LogonProofHandler
+                                                             with ReconnectChallengeHandler
+                                                             with ReconnectProofHandler {
   val srp6: Srp6Protocol = new Srp6Protocol()
 
   // First packet that we expect from client is logon challenge
@@ -66,7 +67,7 @@ class AuthSession(connection: ActorRef) extends TCPSession(connection)
       stop
   }
 
-  override def receive: Receive = super[TCPSession].receive orElse super[FSM].receive
+  override def receive: Receive = tcpSessionReceiver orElse super[FSM].receive
 
   def sendPacket[A <: ServerPacket](packet: A)(implicit codec: Codec[A]): Unit = {
     log.debug(s"Sending $packet")
@@ -74,11 +75,22 @@ class AuthSession(connection: ActorRef) extends TCPSession(connection)
 
     outgoing(bits)
   }
+
+  // Make it look like this is an event that came normally, for the FSM
+  override def incoming(data: BitVector): Unit = receive.apply(EventIncoming(data))
 }
 
 object AuthSession extends TCPSessionFactory {
   override def props(connection: ActorRef): Props = Props(new AuthSession(connection))
 
-  override val PreferredName: String = "AuthSession"
+  override val PreferredName: String = "authsession"
+
+  /**
+    * Incoming packet read from the network
+    *
+    * @param bits bits read
+    */
+  case class EventIncoming(bits: BitVector)
+
 }
 

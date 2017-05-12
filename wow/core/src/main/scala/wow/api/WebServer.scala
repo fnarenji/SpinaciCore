@@ -3,8 +3,6 @@ package wow.api
 import akka.http.scaladsl.server.{HttpApp, Route}
 import wow.utils.Reflection
 
-import scala.language.postfixOps
-
 /**
   * This object implements a web server which interacts with the database.
   */

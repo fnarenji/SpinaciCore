@@ -101,7 +101,7 @@ class AuthServer extends Actor with ActorLogging {
 object AuthServer {
   def props: Props = Props(classOf[AuthServer])
 
-  val PreferredName = "AuthServer"
+  val PreferredName = "authserver"
   val ActorPath = s"${Application.ActorPath}/$PreferredName"
   var realmlistPacketBits: BitVector = _
 

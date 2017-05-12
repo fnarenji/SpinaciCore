@@ -3,10 +3,10 @@ package wow.auth.handlers
 import wow.auth.protocol.AuthResults
 import wow.auth.protocol.AuthResults.AuthResult
 import wow.auth.protocol.packets._
+import wow.auth.session.AuthSession.EventIncoming
 import wow.auth.session._
 import wow.auth.utils.PacketSerializer
 import wow.common.VersionInfo
-import wow.common.network.EventIncoming
 
 import scala.util.Random
 
