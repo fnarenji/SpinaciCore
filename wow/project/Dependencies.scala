@@ -32,6 +32,9 @@ object Dependencies {
     "org.postgresql" % "postgresql" % "42.0.0",
     "org.scalikejdbc" %% "scalikejdbc-syntax-support-macro" % "2.5.2",
 
+    // Database migration
+    "org.flywaydb" % "flyway-core" % "4.2.0",
+
     // Configuration loading
     "com.github.pureconfig" %% "pureconfig" % "0.7.0"
   )
