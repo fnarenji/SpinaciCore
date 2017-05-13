@@ -60,7 +60,7 @@ object MovementHandler
 
     val (headerBits, payloadBits) = PacketSerialization.outgoingSplit(adjustedPayload, header.opCode)
 
-    realm.eventStream.publish(PlayerMoved(payload, headerBits, payloadBits))
+    realm.eventStream.publishVisualize(PlayerMoved(payload, headerBits, payloadBits))(context.self)
 
     log.debug(s"Player ${payload.guid.id} moved to ${payload.position} with ${header.opCode}")
   }

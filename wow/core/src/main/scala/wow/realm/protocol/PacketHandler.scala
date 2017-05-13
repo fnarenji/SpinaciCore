@@ -20,7 +20,7 @@ trait PacketHandlerTag extends Actor with ActorLogging with RealmContext
   *
   * @tparam A packet handler tagged class
   */
-abstract class PacketHandler[A <: PacketHandlerTag] {
+abstract class PacketHandler[A <: PacketHandlerTag] extends Actor with ActorLogging {
   /**
     * List of OpCodes support by packet handler
     */

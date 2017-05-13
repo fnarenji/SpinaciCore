@@ -36,7 +36,10 @@ object Dependencies {
     "org.flywaydb" % "flyway-core" % "4.2.0",
 
     // Configuration loading
-    "com.github.pureconfig" %% "pureconfig" % "0.7.0"
+    "com.github.pureconfig" %% "pureconfig" % "0.7.0",
+
+    // "de.aktey.akka.visualmailbox" %% "collector" % "1.1.0",
+    "ch.megard" %% "akka-http-cors" % "0.2.1"
   )
 }
 

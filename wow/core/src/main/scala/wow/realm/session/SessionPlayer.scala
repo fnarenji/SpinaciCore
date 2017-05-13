@@ -39,9 +39,9 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
   realm.eventStream.subscribe(self, classOf[DispatchWorldUpdate])
   realm.eventStream.subscribe(self, classOf[PlayerMoved])
 
-  private val timeSyncSenderToken = scheduler.schedule(Duration.Zero, 10 seconds, TimeSyncRequestSender)
+  private val timeSyncSenderToken = scheduler.schedule(1 second, 10 seconds, TimeSyncRequestSender)
 
-  realm.eventStream.publish(PlayerJoined(currentCharacter.ref))
+  realm.eventStream.publishVisualize(PlayerJoined(currentCharacter.ref))(self)
 
   worldState ! WorldState.GetState
 

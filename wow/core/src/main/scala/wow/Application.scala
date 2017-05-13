@@ -17,14 +17,14 @@ import wow.utils.Reflection
 object Application {
   private var startTime: Long = _
 
+  val system = ActorSystem("wow")
+
   val configuration: ApplicationConfiguration = loadConfigOrThrow[ApplicationConfiguration]("wow")
 
   def main(args: Array[String]): Unit = {
     Reflection.eagerLoadClasses()
 
     Database.configure()
-
-    val system = ActorSystem("wow")
 
     startTime = System.currentTimeMillis()
 

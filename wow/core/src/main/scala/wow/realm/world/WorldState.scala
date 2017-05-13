@@ -21,6 +21,9 @@ class WorldState(override implicit val realm: RealmContextData) extends Actor wi
   realm.eventStream.subscribe(self, classOf[PlayerJoined])
   realm.eventStream.subscribe(self, classOf[Tick])
 
+  private var events = mutable.MutableList[WorldEvent]()
+  private val characters = mutable.HashMap[Guid.Id, CharacterRef]()
+
   var currentTick: Tick = Tick(0, Application.uptimeMillis(), Tick(0, 0, null))
   scheduler.schedule(tickInterval, tickInterval,
     () => {
@@ -28,11 +31,10 @@ class WorldState(override implicit val realm: RealmContextData) extends Actor wi
       val nextNumber = currentTick.number + 1
       val nextTick = Tick(nextNumber, msTime, currentTick)
 
-      realm.eventStream.publish(nextTick)
+      if (events.nonEmpty) {
+        realm.eventStream.publishVisualize(nextTick)(self)
+      }
     })(context.dispatcher)
-
-  private var events = mutable.MutableList[WorldEvent]()
-  private val characters = mutable.HashMap[Guid.Id, CharacterRef]()
 
   override def receive: Receive = {
     case e@PlayerJoined(character) =>
@@ -41,7 +43,7 @@ class WorldState(override implicit val realm: RealmContextData) extends Actor wi
 
     case Tick(number, msTime, previousTick) if events.nonEmpty =>
       log.debug(s"Received tick $number at $msTime (diff ${msTime - previousTick.msTime})")
-      realm.eventStream.publish(DispatchWorldUpdate(events))
+      realm.eventStream.publishVisualize(DispatchWorldUpdate(events))(self)
 
       events = mutable.MutableList[WorldEvent]()
 

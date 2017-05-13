@@ -1,7 +1,6 @@
 package wow.realm
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.event.EventStream
 import org.flywaydb.core.Flyway
 import scalikejdbc.ConnectionPool
 import wow.Application
@@ -12,8 +11,9 @@ import wow.common.network.TCPServer
 import wow.realm.RealmServer.CreateSession
 import wow.realm.session.{NetworkWorkerFactory, Session}
 import wow.realm.world.WorldState
+import wow.visualizer.FloFloStream
 
-case class RealmContextData(id: Int, eventStream: EventStream, serverRef: ActorRef)
+case class RealmContextData(id: Int, eventStream: FloFloStream, serverRef: ActorRef)
 
 trait RealmContext {
   implicit val realm: RealmContextData
@@ -25,7 +25,7 @@ trait RealmContext {
 class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
   override implicit lazy val realm: RealmContextData = RealmContextData(
     id,
-    new EventStream(context.system, context.system.settings.DebugEventStream),
+    new FloFloStream(context.system, context.system.settings.DebugEventStream),
     self
   )
 
