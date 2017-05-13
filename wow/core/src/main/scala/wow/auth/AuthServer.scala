@@ -1,18 +1,16 @@
 package wow.auth
 
 import akka.actor.{Actor, ActorLogging, Props}
+import org.flywaydb.core.Flyway
 import scalikejdbc._
 import scodec.bits.BitVector
 import wow.Application
 import wow.auth.AuthServer.RegisterRealm
-import wow.auth.crypto.Srp6Protocol
-import wow.auth.data.Account
 import wow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
 import wow.auth.session.AuthSession
 import wow.auth.utils.PacketSerializer
 import wow.common.VersionInfo
-import wow.common.database.{DatabaseConfiguration, Databases}
-import wow.common.database._
+import wow.common.database.{DatabaseConfiguration, Databases, _}
 import wow.common.network.TCPServer
 
 import scala.collection.mutable
@@ -55,44 +53,18 @@ class AuthServer extends Actor with ActorLogging {
   private def initializeDatabase(): Unit = {
     val dbConfig = config.database
 
+    migrateDatabase()
+
     ConnectionPool.add(Databases.AuthServer, dbConfig.connection, dbConfig.username, dbConfig.password)
 
-    createSchema()
+    def migrateDatabase() = {
+      val migration = new Flyway()
 
-    def createSchema() = {
-      val createDatabase = AuthDB readOnly { implicit session =>
-        val tableCount =
-          sql"""
-            select count(*) as count
-            from information_schema.tables
-            where table_name = 'account'
-          """
-            .map(_.int("count"))
-            .single()
-            .apply()
-            .get
-
-        tableCount == 0
-      }
-
-      // TODO: replace this with migration management
-      if (createDatabase) {
-        NamedDB(Databases.AuthServer) autoCommit { implicit session =>
-          sql"drop table if exists account".execute().apply()
-          sql"""
-            create table account
-            (
-              id serial8 primary key,
-              login varchar(64) unique,
-              verifier numeric(100,0),
-              salt numeric(100,0),
-              session_key numeric(100,0)
-            )
-          """.execute().apply()
-
-          Account.create("T", new Srp6Protocol().computeSaltAndVerifier("T", "T"))(session)
-        }
-      }
+      migration.setDataSource(dbConfig.connection, dbConfig.username, dbConfig.password)
+      migration.setLocations("classpath:db/auth")
+      migration.baseline()
+      migration.migrate()
+      migration.validate()
     }
   }
 

@@ -87,7 +87,7 @@ object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
   def create(login: String, identity: Srp6Identity)(implicit session: DBSession = autoSession): Long = withSQL {
     insert.into(Account)
       .namedValues(
-        c.login -> login,
+        c.login -> login.toUpperCase(),
         c.salt -> identity.salt,
         c.verifier -> identity.verifier
       )

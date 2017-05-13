@@ -2,6 +2,7 @@ package wow.realm
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.EventStream
+import org.flywaydb.core.Flyway
 import scalikejdbc.ConnectionPool
 import wow.Application
 import wow.auth.AuthServer
@@ -33,11 +34,7 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
 
   log.info(s"${config.name} startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
-  {
-    Databases.registerRealm(realm.id)
-    val dbConfig = config.database
-    ConnectionPool.add(RealmDB, dbConfig.connection, dbConfig.username, dbConfig.password)
-  }
+  initializeDatabase()
 
   authServer ! AuthServer.RegisterRealm(realm.id, config.name, config.host, config.port)
   context.actorOf(TCPServer.props(new NetworkWorkerFactory, config.host, config.port), TCPServer.PreferredName)
@@ -54,6 +51,28 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
     ConnectionPool.close(RealmDB)
 
     super.postStop()
+  }
+
+  /**
+    * Creates connection to database and sets it up if necessary
+    */
+  private def initializeDatabase(): Unit = {
+    val dbConfig = config.database
+
+    migrateDatabase()
+
+    Databases.registerRealm(realm.id)
+    ConnectionPool.add(RealmDB, dbConfig.connection, dbConfig.username, dbConfig.password)
+
+    def migrateDatabase() = {
+      val migration = new Flyway()
+
+      migration.setDataSource(dbConfig.connection, dbConfig.username, dbConfig.password)
+      migration.setLocations("classpath:db/realm")
+      migration.baseline()
+      migration.migrate()
+      migration.validate()
+    }
   }
 }
 
