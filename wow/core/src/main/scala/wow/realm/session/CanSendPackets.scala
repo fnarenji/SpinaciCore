@@ -1,6 +1,6 @@
 package wow.realm.session
 
-import akka.actor.ActorRef
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import scodec.Codec
 import scodec.bits.BitVector
 import wow.realm.protocol._
@@ -8,7 +8,7 @@ import wow.realm.protocol._
 /**
   * Indicates that class can send packets
   */
-private[session] trait CanSendPackets {
+private[session] trait CanSendPackets extends Actor with ActorLogging {
   /**
     * Serializes and sends the payload
     * @param payload payload
