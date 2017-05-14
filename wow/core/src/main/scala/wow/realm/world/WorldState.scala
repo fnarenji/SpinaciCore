@@ -59,7 +59,7 @@ object WorldState {
 
   sealed trait Event
 
-  object GetState extends Event
+  case object GetState extends Event
 
   case class State(characters: Iterable[CharacterRef]) extends Event
 

@@ -14,6 +14,7 @@ import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ClientAuthSession, ServerAuthResponse, ServerAuthResponseSuccess}
 import wow.realm.session.NetworkWorker
 import wow.utils.BigIntExtensions._
+import wow.visualizer.{VisualMailboxMetric, VisualizerAPI}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -23,6 +24,8 @@ import scala.concurrent.duration._
   */
 object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSession] {
   protected override def handle(header: ClientHeader, payload: ClientAuthSession)(self: NetworkWorker): Unit = {
+    import self._
+
     val login = payload.login
 
     Account.findByLogin(login) match {
@@ -34,7 +37,7 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
         messageDigest.update(login.getBytes(StandardCharsets.US_ASCII))
         messageDigest.update(longLBytes(0))
         messageDigest.update(longLBytes(payload.challenge))
-        messageDigest.update(longLBytes(self.authSeed))
+        messageDigest.update(longLBytes(authSeed))
         messageDigest.update(sessionKey.toUnsignedLBytes())
         val expectedDigest = messageDigest.digest()
 
@@ -45,23 +48,25 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
           implicit val timeout = Timeout(5 seconds)
 
           // TODO: check for online
-          val createSession = (self.realm.serverRef ? CreateSession(login, self.self)).mapTo[ActorRef]
+          val msg = CreateSession(login, context.self)
+          VisualizerAPI.msg += VisualMailboxMetric(context.self.path.toStringWithoutAddress, realm.serverRef.path.toStringWithoutAddress, msg.hashCode(), msg.toString)
+          val createSession = (realm.serverRef ? msg).mapTo[ActorRef]
 
-          self.session = Await.result(createSession, 5 seconds)
+          session = Await.result(createSession, 5 seconds)
 
-          self.enableCipher(sessionKey)
+          enableCipher(sessionKey)
           ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
         } else {
-          self.terminateDelayed()
+          terminateDelayed()
           ServerAuthResponse(AuthResponses.UnknownAccount, None)
         }
 
-        self.sendPayload(response)
+        sendPayload(response)
       case _ =>
         val response = ServerAuthResponse(AuthResponses.UnknownAccount, None)
 
-        self.sendPayload(response)
-        self.terminateDelayed()
+        sendPayload(response)
+        terminateDelayed()
     }
   }
 }

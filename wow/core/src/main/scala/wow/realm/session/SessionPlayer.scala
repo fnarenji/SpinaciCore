@@ -78,7 +78,7 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
         case currentCharacter.guid =>
           currentCharacter.position = payload.position
         case _ =>
-          sendRaw(payloadBits, headerBits)
+          sendRaw(headerBits, payloadBits)
       }
   }
 

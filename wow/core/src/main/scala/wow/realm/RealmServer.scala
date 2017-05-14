@@ -43,7 +43,7 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
   override def receive: Receive = {
     case CreateSession(login, networkWorker) =>
       log.debug(s"Create session for $login")
-      val ref = context.actorOf(Session.props(login, networkWorker))
+      val ref = context.actorOf(Session.props(login, networkWorker), Session.PreferredName(login))
       sender() ! ref
   }
 

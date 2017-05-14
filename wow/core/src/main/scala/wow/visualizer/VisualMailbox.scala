@@ -50,12 +50,13 @@ object VisualizerAPI extends API {
           val groupByMessage = v.groupBy(m => m.hash).values.toStream
           val orderByTime = groupByMessage.sortBy(m => m.min(order).measureTimeMs)
           val exchs = orderByTime.map { m =>
-            val sender = m.map(_.sender).collectFirst { case x if !x.contentEquals("/deadLetters") => x }
-              .getOrElse("Network")
-            val receivers = m.map(_.receiver).filterNot(_.contentEquals("/deadLetters"))
+            val sender = m.map(_.sender).collectFirst { case x if !x.contentEquals("/deadLetters") && !x.startsWith("/temp") => x }
+              .getOrElse("/Broken/This does not work")
+            val receivers = m.map(_.receiver).filterNot(x => x.contentEquals("/deadLetters") || x.startsWith("/temp"))
             val bus = !m
-              .forall(x => !x.receiver.contentEquals("/deadLetters") && !x.sender.contentEquals("/deadLetters"))
+              .forall(x => !x.receiver.contentEquals("/deadLetters") && !x.sender.contentEquals("/temp"))
 
+            assert(m.forall(_.message.contentEquals(m(0).message)))
             Exch(sender, receivers, bus, m(0).message, m(0).measureTimeMs)
           }
 
@@ -87,7 +88,8 @@ class VisualMailbox(val backend: MessageQueue, owner: Option[ActorRef], system: 
   extends MessageQueue {
 
   override def enqueue(receiver: ActorRef, handle: Envelope): Unit = {
-    if (handle.message.getClass.getName.startsWith("wow.")) {
+    val name = handle.message.getClass.getName
+    if (name.startsWith("wow.")) {
       val address = handle.sender.path.toStringWithoutAddress
       val metric = VisualMailboxMetric(
         address,
@@ -96,6 +98,8 @@ class VisualMailbox(val backend: MessageQueue, owner: Option[ActorRef], system: 
         handle.message.toString
       )
       VisualizerAPI.msg += metric
+    } else {
+      system.get.log.debug(s"SKIPPPPP $name")
     }
 
     backend.enqueue(receiver, handle)

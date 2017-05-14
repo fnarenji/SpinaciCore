@@ -19,7 +19,7 @@ class Session(val login: String, override val networkWorker: ActorRef)(override 
 
   override def receive: Receive = {
     case CreatePlayer(guid: Guid) =>
-      val ref = context.actorOf(SessionPlayer.props(guid, networkWorker))
+      val ref = context.actorOf(SessionPlayer.props(guid, networkWorker), SessionPlayer.PreferredName(guid))
       player = Some(ref)
       sender() ! ref
 

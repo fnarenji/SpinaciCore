@@ -95,7 +95,6 @@ object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
 }
 
 object AccountAPI extends API {
-
   case class AccountReq(login: String, password: String)
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._

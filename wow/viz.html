@@ -11,8 +11,8 @@
 
     <style type="text/css">
         #mynetwork {
-            width: 600px;
-            height: 400px;
+            width: 1024px;
+            height: 768px;
             border: 1px solid lightgray;
         }
     </style>
@@ -21,38 +21,48 @@
 
 <p>
     There are a lot of options with arrows! They can also be combined with dashed lines.
+
+    <button onclick="draw(data.exchs.slice(n, ++n));">NEXT MESSAGE</button>
+    <button onclick="draw(data.exchs.slice(n, data.exchs.size));">ALL MESSAGES</button>
+    <button onclick="network.stopSimulation();">FREEZE</button>
 </p>
 
 <div id="mynetwork">
     <div class="vis-network" tabindex="900"
          style="position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;">
-        <canvas width="600" height="400"
+        <canvas width="1024" height="768"
                 style="position: relative; touch-action: none; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;"></canvas>
     </div>
 </div>
 
 <script type="text/javascript">
-    $.getJSON("http://localhost:8080/visualizer/get", function (data) {
-        console.log(data)
-        var actorIdMap = new Map();
+    var nodes = new vis.DataSet();
+    var edges = new vis.DataSet();
+    var actorIdMap = new Map();
 
-        var nodes = new vis.DataSet();
-        var edges = new vis.DataSet();
+    actorIdMap.set("EventStream", 1);
+    nodes.add({id: 1, label: "Bus"})
 
-        var i = 1;
-        data.exchs.forEach(function (exch) {
+    function draw(exchs) {
+        exchs.forEach(function (exch) {
             console.log(exch);
             if (!actorIdMap.has(exch.sender)) {
-                actorIdMap.set(exch.sender, i);
-                nodes.add({id: i, label: exch.sender});
-                i++;
+                var t = exch.sender.split("/").reverse()[0];
+                if (t.indexOf("-") !== -1) {
+                    t = t.split("-")[0];
+                }
+                nodes.add({id: actorIdMap.size + 1, label: t});
+                actorIdMap.set(exch.sender, actorIdMap.size + 1);
             }
 
             exch.receiver.forEach(function (receiver) {
                 if (!actorIdMap.has(receiver)) {
-                    actorIdMap.set(receiver, i);
-                    nodes.add({id: i, label: receiver/*.split("/").reverse()[0]*/});
-                    i++;
+                    var t = receiver.split("/").reverse()[0];
+                    if (t.indexOf("-") !== -1) {
+                        t = t.split("-")[0];
+                    }
+                    nodes.add({id: actorIdMap.size + 1, label: t});
+                    actorIdMap.set(receiver, actorIdMap.size + 1);
                 }
             });
         });
@@ -60,26 +70,93 @@
         console.log(nodes);
         console.log(actorIdMap);
 
-        data.exchs.forEach(function (exch) {
+        exchs.forEach(function (exch) {
             var senderId = actorIdMap.get(exch.sender);
             var name = exch.message.split("(")[0];
 
+            if (exch.bus) {
+                var anyMatch = false
+                edges.forEach(function (edge) {
+                    if (edge.from === senderId && edge.to === 1 && edge.label === name) {
+                        edge.value += 1;
+                        anyMatch = true;
+                        edges.update(edge)
+                    }
+                });
+
+                if (!anyMatch) {
+                    edges.add({from: senderId, to: 1, value: 0, arrows: 'to', label: name});
+                }
+
+                senderId = 1
+            }
+
             exch.receiver.forEach(function (receiver) {
                 var receiverId = actorIdMap.get(receiver);
-                edges.add({from: senderId, to: receiverId, arrows: 'to', label: name});
+                var anyMatch = false
+                edges.forEach(function (edge) {
+                    if (edge.from === senderId && edge.to === receiverId && edge.label === name) {
+                        edge.value += 1;
+                        anyMatch = true;
+                        edges.update(edge)
+                    }
+                });
+
+                if (!anyMatch) {
+                    edges.add({from: senderId, to: receiverId, value: 0, arrows: 'to', label: name});
+                }
+
             });
         });
+    }
 
-//        edges.add({from: 2, to: 2, label: "DEINE NAME"});
+    // create a network
+    var container = document.getElementById('mynetwork');
+    var data2 = {
+        nodes: nodes,
+        edges: edges
+    };
+    var options = {
+//        layout: {
+//            hierarchical: {
+//                direction: 'UD'
+//            }
+//        }
+//        physics:false
+        configure: {
+            enabled: true,
+            showButton: true
+        },
+        "physics": {
+            "forceAtlas2Based": {
+                "avoidOverlap": 0.8
+            },
+            "solver": "forceAtlas2Based"
+        },
+        nodes: {
+            shape: 'box',
+            scaling:{
+                label: {
+                    min:8,
+                    max:20
+                }
+            }
+        },
+        "edges": {
+            "smooth": {
+                "roundness": 1
+            }
+        }
+    };
 
-        // create a network
-        var container = document.getElementById('mynetwork');
-        var data2 = {
-            nodes: nodes,
-            edges: edges
-        };
-        var options = {};
-        var network = new vis.Network(container, data2, options);
+    var network = new vis.Network(container, data2, options);
+    var data;
+    var n = 1;
+
+    $.getJSON("http://localhost:8080/visualizer/get", function (d) {
+        data = d;
+        console.log(data)
+        draw(data.exchs.slice(0, 1));
     })
 </script>
 

@@ -2,8 +2,8 @@ import json
 import urllib.request
 
 data = {
-    'login': 't',
-    'password': 't'
+    'login': 't2',
+    'password': 't2'
 }
 
 params = json.dumps(data).encode('utf8')
