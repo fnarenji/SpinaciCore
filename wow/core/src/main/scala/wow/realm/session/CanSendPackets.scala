@@ -63,6 +63,8 @@ private[session] trait ForwardToNetworkWorker extends CanSendPackets {
 
   override def sendPayload[A <: Payload with ServerSide](payload: A)
     (implicit codec: Codec[A], opCodeProvider: OpCodeProvider[A]): Unit = {
+    log.debug(s"Sending payload $payload")
+
     val (headerBits, payloadBits) = PacketSerialization.outgoingSplit(payload, opCodeProvider.opCode)
 
     sendRaw(headerBits, payloadBits)

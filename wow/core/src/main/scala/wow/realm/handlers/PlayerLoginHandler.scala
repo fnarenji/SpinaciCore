@@ -15,13 +15,15 @@ import scala.concurrent.duration._
   */
 object PlayerLoginHandler extends PayloadHandler[NetworkWorker, ClientPlayerLogin] {
   override protected def handle(header: ClientHeader, payload: ClientPlayerLogin)(self: NetworkWorker): Unit = {
+    import self._
+
     implicit val timeout = Timeout(5 seconds)
 
     // Create player actor
     // Since after this handler, we can receive packets that need to be handled by the player,
     // we must wait to get the player actor reference so that we're certain to have it for next packet received
-    val getSessionActor = (self.session ? Session.CreatePlayer(payload.guid)).mapTo[ActorRef]
+    val getSessionActor = (session ? Session.CreatePlayer(payload.guid)).mapTo[ActorRef]
 
-    self.player = Await.result(getSessionActor, 5 seconds)
+    player = Await.result(getSessionActor, 5 seconds)
   }
 }

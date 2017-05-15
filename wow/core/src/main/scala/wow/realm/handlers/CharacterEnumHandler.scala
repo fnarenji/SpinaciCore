@@ -30,11 +30,13 @@ object CharacterEnumHandler extends IgnorePayloadHandler[Session] {
   }
 
   override def handle(header: ClientHeader)(self: Session): Unit = {
+    import self._
+
     val charactersEnum = for (char <- CharacterInfo.getCharacters) yield {
       completeDescription(char)
     }
 
-    self.sendPayload(ServerCharacterEnum(charactersEnum.toVector))
+    sendPayload(ServerCharacterEnum(charactersEnum.toVector))
   }
 
   override val opCodes: OpCodes.ValueSet = OpCodes.ValueSet(OpCodes.CharEnum)

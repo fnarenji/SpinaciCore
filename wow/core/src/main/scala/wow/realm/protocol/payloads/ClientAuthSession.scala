@@ -49,7 +49,7 @@ object ClientAuthSession {
   implicit val codec: Codec[ClientAuthSession] = {
     ("build" | uint32L) ::
       ("loginServerId" | uint32L) ::
-      ("login" | reverse(cstring)) ::
+      ("login" | cstring) ::
       ("loginServerType" | uint32L) ::
       ("challenge" | uint32L) ::
       ("regionId" | uint32L) ::
