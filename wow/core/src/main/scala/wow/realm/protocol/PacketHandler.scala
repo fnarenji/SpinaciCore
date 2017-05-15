@@ -5,7 +5,6 @@ import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
 import wow.auth.utils.{MalformedPacketException, PacketPartialReadException}
 import wow.realm.RealmContext
-import wow.realm.handlers.HandledBy
 import wow.utils.Reflection
 
 import scala.collection.mutable
@@ -20,7 +19,7 @@ trait PacketHandlerTag extends Actor with ActorLogging with RealmContext
   *
   * @tparam A packet handler tagged class
   */
-abstract class PacketHandler[A <: PacketHandlerTag] extends Actor with ActorLogging {
+abstract class PacketHandler[A <: PacketHandlerTag] {
   /**
     * List of OpCodes support by packet handler
     */
@@ -127,8 +126,8 @@ object PacketHandler {
   *
   * @tparam B payload type
   */
-abstract class PayloadHandler[A <: PacketHandlerTag, B <: Payload with ClientSide](override val opCodes: OpCodes
-.ValueSet)
+abstract class PayloadHandler[A <: PacketHandlerTag, B <: Payload with ClientSide]
+(override val opCodes: OpCodes.ValueSet)
   (implicit codec: Codec[B])
   extends PacketHandler[A] {
 

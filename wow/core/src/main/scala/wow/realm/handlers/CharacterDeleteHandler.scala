@@ -15,7 +15,9 @@ object CharacterDeleteHandler extends PayloadHandler[Session, ClientCharacterDel
     *
     * @param payload it contains the identification of the targeted character
     */
-  override protected def handle(header: ClientHeader, payload: ClientCharacterDelete)(ps: Session): Unit = {
+  override protected def handle(header: ClientHeader, payload: ClientCharacterDelete)(self: Session): Unit = {
+    import self._
+
     val response = if (CharacterInfo.exists(payload.guid)) {
       CharacterInfo.deleteCharacter(payload.guid)
       CharacterDeletionResults.Success
@@ -23,7 +25,7 @@ object CharacterDeleteHandler extends PayloadHandler[Session, ClientCharacterDel
       CharacterDeletionResults.Failure
     }
 
-    ps.sendPayload(ServerCharacterDelete(response))
+    sendPayload(ServerCharacterDelete(response))
   }
 }
 

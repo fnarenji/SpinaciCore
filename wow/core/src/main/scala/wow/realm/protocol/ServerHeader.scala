@@ -16,6 +16,9 @@ case class ServerHeader(payloadSize: Int, opCode: OpCodes.Value) extends PacketH
 
 object ServerHeader {
   val OpCodeSize: Int = 16
+  val MinSize: Int = 32
+  val MaxSize: Int = 40
+
 
   implicit val codec: Codec[ServerHeader] = {
     // Note: this one is stored as big endian on the wire

@@ -23,6 +23,8 @@ import scala.concurrent.duration._
   */
 object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSession] {
   protected override def handle(header: ClientHeader, payload: ClientAuthSession)(self: NetworkWorker): Unit = {
+    import self._
+
     val login = payload.login
 
     Account.findByLogin(login) match {
@@ -34,7 +36,7 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
         messageDigest.update(login.getBytes(StandardCharsets.US_ASCII))
         messageDigest.update(longLBytes(0))
         messageDigest.update(longLBytes(payload.challenge))
-        messageDigest.update(longLBytes(self.authSeed))
+        messageDigest.update(longLBytes(authSeed))
         messageDigest.update(sessionKey.toUnsignedLBytes())
         val expectedDigest = messageDigest.digest()
 
@@ -45,23 +47,23 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
           implicit val timeout = Timeout(5 seconds)
 
           // TODO: check for online
-          val createSession = (self.realm.serverRef ? CreateSession(login, self.self)).mapTo[ActorRef]
+          val createSession = (realm.serverRef ? CreateSession(login, context.self)).mapTo[ActorRef]
 
-          self.session = Await.result(createSession, 5 seconds)
+          session = Await.result(createSession, 5 seconds)
 
-          self.enableCipher(sessionKey)
+          enableCipher(sessionKey)
           ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
         } else {
-          self.terminateDelayed()
+          terminateDelayed()
           ServerAuthResponse(AuthResponses.UnknownAccount, None)
         }
 
-        self.sendPayload(response)
+        sendPayload(response)
       case _ =>
         val response = ServerAuthResponse(AuthResponses.UnknownAccount, None)
 
-        self.sendPayload(response)
-        self.terminateDelayed()
+        sendPayload(response)
+        terminateDelayed()
     }
   }
 }

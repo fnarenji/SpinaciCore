@@ -30,6 +30,8 @@ object CharacterCreateHandler extends PayloadHandler[Session, ClientCharacterCre
     * @param payload the client's packet containing the information on the desired character
     */
   protected override def handle(header: ClientHeader, payload: ClientCharacterCreate)(self: Session): Unit = {
+    import self._
+
     val response = checkNameValidity(payload.character.charInfo.name)
 
     if (response == CharacterCreationResults.Success) {
@@ -40,7 +42,7 @@ object CharacterCreateHandler extends PayloadHandler[Session, ClientCharacterCre
       )
     }
 
-    self.sendPayload(ServerCharacterCreate(response))
+    sendPayload(ServerCharacterCreate(response))
   }
 }
 

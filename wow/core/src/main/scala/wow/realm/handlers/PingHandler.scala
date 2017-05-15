@@ -9,7 +9,9 @@ import wow.realm.session.NetworkWorker
   */
 object PingHandler extends PayloadHandler[NetworkWorker, ClientPing] {
   protected override def handle(header: ClientHeader, payload: ClientPing)(self: NetworkWorker): Unit = {
-    self.sendPayload(ServerPong(payload.ping))
+    import self._
+
+    sendPayload(ServerPong(payload.ping))
   }
 }
 

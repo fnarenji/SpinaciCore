@@ -44,6 +44,8 @@ object PacketSerialization {
     * @return packet bits
     */
   def outgoing(headerBits: BitVector, payloadBits: BitVector)(cipher: Option[SessionCipher]): BitVector = {
+    assert(headerBits.size == ServerHeader.MinSize || headerBits.size == ServerHeader.MaxSize)
+
     val encryptedHeader = headerBits.toByteArray
 
     cipher foreach { cipher => cipher.encrypt(encryptedHeader) }

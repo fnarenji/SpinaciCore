@@ -3,8 +3,7 @@ package wow.realm.session
 import akka.actor.{Actor, ActorLogging}
 import scodec.Codec
 import scodec.bits.BitVector
-import wow.realm.handlers.HandledBy
-import wow.realm.protocol.{ClientHeader, PacketHandler, PacketHandlerTag, PacketSerialization}
+import wow.realm.protocol._
 import wow.realm.session.NetworkWorker.HandlePacket
 
 /**

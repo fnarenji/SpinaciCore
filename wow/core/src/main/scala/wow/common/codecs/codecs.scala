@@ -118,7 +118,6 @@ package object codecs {
     } else {
       SmallSize
     })
-
     bool(1).consume[Int](codecProvider)(_ >= Boundary)
   }
 

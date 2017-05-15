@@ -1,6 +1,5 @@
-package wow.realm.handlers
+package wow.realm.protocol
 
-import wow.realm.protocol.{PacketHandler, PacketHandlerTag}
 import wow.realm.session.{NetworkWorker, Session, SessionPlayer}
 
 /**
