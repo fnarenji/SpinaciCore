@@ -5,7 +5,7 @@ import wow.auth.AuthServerConfiguration
 import wow.realm.RealmServerConfiguration
 
 /**
-  * Created by sknz on 5/6/17.
+  * Application's configuration
   */
 case class ApplicationConfiguration(
   webServer: WebServerConfiguration,

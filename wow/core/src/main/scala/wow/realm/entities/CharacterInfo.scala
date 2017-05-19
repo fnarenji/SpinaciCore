@@ -3,6 +3,7 @@ package wow.realm.entities
 import wow.realm.protocol.payloads.CharacterDescription
 import scodec.bits._
 import scodec.codecs._
+import wow.realm.RealmContextData
 
 import scala.collection.parallel.mutable
 import scala.collection.{GenIterable, parallel}
@@ -41,6 +42,9 @@ object CharacterRef {
 }
 
 object CharacterInfo {
+  def countByRealm(implicit realm: RealmContextData): Int = charactersByGuid.size
+
+  def countByAccountPerRealm(login: String): Map[Int, Int] = Map(1 -> charactersByGuid.size)
 
   def apply(guid: Guid,
             position: Position,

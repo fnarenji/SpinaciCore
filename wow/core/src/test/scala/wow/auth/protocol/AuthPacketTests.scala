@@ -109,14 +109,14 @@ class ServerRealmlistTest extends AuthPacketTest[ServerRealmlist](
   hex"1029000000000001000100025472696E697479003132372E302E302E313A3830383500000000000101011000",
   ServerRealmlist(realms = Vector(
         ServerRealmlistEntry(
-          realmType = 1,
-          lock = 0,
-          flags = 0x2,
+          realmType = RealmTypes.Pvp,
+          lock = false,
+          flags = RealmFlags.ValueSet(RealmFlags.Offline),
           name = "Trinity",
-          ip = "127.0.0.1:8085",
+          address = "127.0.0.1:8085",
           populationLevel = 0.0f,
           characterCount = 1,
-          timezone = 1,
+          timeZone = RealmTimeZones.Development,
           id = 1
         )
       ))

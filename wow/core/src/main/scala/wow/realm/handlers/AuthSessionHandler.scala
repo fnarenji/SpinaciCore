@@ -8,6 +8,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import scodec.bits.ByteVector
 import scodec.codecs._
+import wow.auth.AccountsState
+import wow.auth.AccountsState.IsOnline
 import wow.auth.data.Account
 import wow.realm.RealmServer.CreateSession
 import wow.realm.protocol._
@@ -42,17 +44,26 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
 
         val view = ByteVector.view(expectedDigest)
         val response = if (payload.shaDigest === view) {
-          // Same as for ClientPlayerLogin, we must wait to have the reference so that we're certain we have it as the
-          // next packets will potentially be forwarded to the session for handling
           implicit val timeout = Timeout(5 seconds)
 
-          // TODO: check for online
-          val createSession = (realm.serverRef ? CreateSession(login, context.self)).mapTo[ActorRef]
+          val accountState = context.actorSelection(AccountsState.ActorPath)
+          val askIsOnline = (accountState ? IsOnline(login)).mapTo[Boolean]
+          val isOnline = Await.result(askIsOnline, timeout.duration)
 
-          session = Await.result(createSession, 5 seconds)
+          if (isOnline) {
+            terminateDelayed()
+            ServerAuthResponse(AuthResponses.AlreadyOnline, None)
+          } else {
+            // Same as for ClientPlayerLogin, we must wait to have the reference so that we're certain we have it as the
+            // next packets will potentially be forwarded to the session for handling
+            val createSession = (realm.serverRef ? CreateSession(login, context.self)).mapTo[ActorRef]
 
-          enableCipher(sessionKey)
-          ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
+            session = Await.result(createSession, timeout.duration)
+            context.watch(session)
+
+            enableCipher(sessionKey)
+            ServerAuthResponse(AuthResponses.Ok, Some(ServerAuthResponseSuccess(None)))
+          }
         } else {
           terminateDelayed()
           ServerAuthResponse(AuthResponses.UnknownAccount, None)

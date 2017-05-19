@@ -4,7 +4,6 @@ import akka.actor.{ActorRef, FSM, Props}
 import scodec.Attempt.{Failure, Successful}
 import scodec.bits.BitVector
 import scodec.{Codec, DecodeResult, Err}
-import wow.auth._
 import wow.auth.crypto.Srp6Protocol
 import wow.auth.handlers._
 import wow.auth.protocol.packets.ClientRealmlist
@@ -12,7 +11,9 @@ import wow.auth.protocol.{OpCodes, ServerPacket}
 import wow.auth.session.AuthSession.EventIncoming
 import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
 import wow.common.network.{TCPSession, TCPSessionFactory}
+import wow.realm.entities.CharacterInfo
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -52,12 +53,18 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
 
   when(StateReconnectProof)(handleReconnectProof)
 
+  case class SetCharactersPerRealm(charactersPerRealm: Map[Int, Int])
+
   when(StateRealmlist) {
-    case Event(EventIncoming(bits), NoData) =>
+    case Event(EventIncoming(bits), data@RealmsListData(_, outgoingBits)) =>
       PacketSerializer.deserialize[ClientRealmlist](bits)
 
-      outgoing(AuthServer.realmlistPacketBits)
-      stay using NoData
+      outgoing(outgoingBits)
+
+      stay using data
+
+    case Event(SetCharactersPerRealm(charactersPerRealm), RealmsListData(login, _)) =>
+      stay using RealmsListData(login, charactersPerRealm)
   }
 
   when(StateFailed, stateTimeout = 5 second) {
@@ -65,6 +72,21 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
       log.debug("Failed state expired, disconnecting")
       disconnect()
       stop
+  }
+
+  onTransition {
+    case _ -> StateRealmlist =>
+      val login = nextStateData.asInstanceOf[RealmsListData].login
+
+      Future {
+        import scala.concurrent.blocking
+
+        blocking {
+          val characterPerRealm = CharacterInfo.countByAccountPerRealm(login)
+
+          self ! SetCharactersPerRealm(characterPerRealm)
+        }
+      }
   }
 
   override def receive: Receive = tcpSessionReceiver orElse super[FSM].receive

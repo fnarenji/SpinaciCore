@@ -1,29 +1,27 @@
 package wow.auth
 
-import akka.actor.{Actor, ActorLogging, Props}
-import org.flywaydb.core.Flyway
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import scalikejdbc._
-import scodec.bits.BitVector
 import wow.Application
-import wow.auth.AuthServer.RegisterRealm
-import wow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
+import wow.auth.AuthServer.{NotifyRealmOnline, UpdatePopulation}
+import wow.auth.protocol.RealmFlags
 import wow.auth.session.AuthSession
-import wow.auth.utils.PacketSerializer
 import wow.common.VersionInfo
 import wow.common.database.{DatabaseConfiguration, Databases, _}
 import wow.common.network.TCPServer
+import wow.realm.RealmServer.SendPopulation
+import wow.utils.AutoRestartSupervisor
 
 import scala.collection.mutable
-
+import scala.concurrent.duration._
 
 /**
   * AuthServer is the base actor for all services provided by the authentication server.
   *
   * This actor is unique (e.g. singleton) per ActorSystem.
-  * It holds ownership of the stateless packet handlers.
   */
 class AuthServer extends Actor with ActorLogging {
-  val config = Application.configuration.auth
+  private val config = Application.configuration.auth
 
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
@@ -31,14 +29,33 @@ class AuthServer extends Actor with ActorLogging {
 
   context.actorOf(TCPServer.props(AuthSession, config.host, config.port), TCPServer.PreferredName)
 
-  private val realms = mutable.HashMap[Int, ServerRealmlistEntry]()
+  private case object RequestPopulationUpdate
+
+  context.system.scheduler.schedule(Duration.Zero, 5 seconds, self, RequestPopulationUpdate)(context.dispatcher)
+
+  private val realmsByActor = mutable.HashMap[ActorRef, Int]()
+
+  import AuthServer.realms
 
   override def receive: Receive = {
-    case RegisterRealm(id, name, host, port) =>
-      log.debug(s"Realm added to list: $name at $host:$port")
-      realms(id) = ServerRealmlistEntry(1, 0, 0, name, s"$host:$port", 0, 1, 1, id)
-      AuthServer.realmlistPacketBits =
-        PacketSerializer.serialize(ServerRealmlist(realms.values.toStream))
+    case NotifyRealmOnline(id) =>
+      realms(id).flags = realms(id).flags - RealmFlags.Offline
+
+      realmsByActor(sender) = id
+      context.watch(sender)
+
+    case Terminated(sender) =>
+      val id = realmsByActor(sender)
+      realms(id).flags = realms(id).flags + RealmFlags.Offline
+
+    case RequestPopulationUpdate =>
+      realmsByActor.keys.foreach(realm => realm ! SendPopulation)
+
+    case UpdatePopulation(population) =>
+      val id = realmsByActor(sender)
+      val realm = realms(id)
+
+      realm.population = population
   }
 
   override def postStop(): Unit = {
@@ -53,32 +70,28 @@ class AuthServer extends Actor with ActorLogging {
   private def initializeDatabase(): Unit = {
     val dbConfig = config.database
 
-    migrateDatabase()
-
-    ConnectionPool.add(Databases.AuthServer, dbConfig.connection, dbConfig.username, dbConfig.password)
-
-    def migrateDatabase() = {
-      val migration = new Flyway()
-
-      migration.setDataSource(dbConfig.connection, dbConfig.username, dbConfig.password)
-      migration.setLocations("classpath:db/auth")
-      migration.baseline()
-      migration.migrate()
-      migration.validate()
-    }
+    DatabaseHelpers.migrate("auth", dbConfig)
+    DatabaseHelpers.connect(Databases.AuthServer, dbConfig)
   }
-
 }
 
 object AuthServer {
-  def props: Props = Props(classOf[AuthServer])
+  private val PreferredNameChild = "authserver"
 
-  val PreferredName = "authserver"
-  val ActorPath = s"${Application.ActorPath}/$PreferredName"
-  var realmlistPacketBits: BitVector = _
+  def props: Props = Props(new AutoRestartSupervisor(Props(classOf[AuthServer]), PreferredNameChild))
 
-  case class RegisterRealm(id: Int, name: String, host: String, port: Int)
+  val PreferredName = "authsuperv"
+  val ActorPath = s"${Application.ActorPath}/$PreferredName/$PreferredNameChild"
 
+  case class NotifyRealmOnline(id: Int)
+
+  case class UpdatePopulation(population: Float)
+
+  val realms: Map[Int, RealmInfo] = {
+    for ((id, realmConfig) <- Application.configuration.realms) yield {
+      (id, RealmInfo(id, realmConfig))
+    }
+  }
 }
 
 case class AuthServerConfiguration(host: String, port: Int, database: DatabaseConfiguration)

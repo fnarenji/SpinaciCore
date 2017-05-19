@@ -2,14 +2,15 @@ package wow.realm
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.EventStream
-import org.flywaydb.core.Flyway
 import scalikejdbc.ConnectionPool
 import wow.Application
 import wow.auth.AuthServer
+import wow.auth.protocol.{RealmFlags, RealmTimeZones, RealmTypes}
 import wow.common.VersionInfo
 import wow.common.database._
 import wow.common.network.TCPServer
-import wow.realm.RealmServer.CreateSession
+import wow.realm.RealmServer.{CreateSession, SendPopulation}
+import wow.realm.entities.CharacterInfo
 import wow.realm.session.{NetworkWorkerFactory, Session}
 import wow.realm.world.WorldState
 
@@ -36,7 +37,7 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
 
   initializeDatabase()
 
-  authServer ! AuthServer.RegisterRealm(realm.id, config.name, config.host, config.port)
+  authServer ! AuthServer.NotifyRealmOnline(realm.id)
   context.actorOf(TCPServer.props(new NetworkWorkerFactory, config.host, config.port), TCPServer.PreferredName)
   context.actorOf(WorldState.props, WorldState.PreferredName)
 
@@ -44,7 +45,12 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
     case CreateSession(login, networkWorker) =>
       log.debug(s"Create session for $login")
       val ref = context.actorOf(Session.props(login, networkWorker), Session.PreferredName(login))
-      sender() ! ref
+      sender ! ref
+
+    case SendPopulation =>
+      val population = CharacterInfo.countByRealm.toFloat / config.capacity
+
+      sender ! AuthServer.UpdatePopulation(population)
   }
 
   override def postStop(): Unit = {
@@ -59,20 +65,10 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
   private def initializeDatabase(): Unit = {
     val dbConfig = config.database
 
-    migrateDatabase()
+    DatabaseHelpers.migrate("realm", dbConfig)
 
     Databases.registerRealm(realm.id)
-    ConnectionPool.add(RealmDB, dbConfig.connection, dbConfig.username, dbConfig.password)
-
-    def migrateDatabase() = {
-      val migration = new Flyway()
-
-      migration.setDataSource(dbConfig.connection, dbConfig.username, dbConfig.password)
-      migration.setLocations("classpath:db/realm")
-      migration.baseline()
-      migration.migrate()
-      migration.validate()
-    }
+    DatabaseHelpers.connect(Databases.RealmServer(id), dbConfig)
   }
 }
 
@@ -87,7 +83,19 @@ object RealmServer {
 
   case class CreateSession(login: String, networkWorker: ActorRef)
 
+  case object SendPopulation
 }
 
-case class RealmServerConfiguration(name: String, host: String, port: Int, database: DatabaseConfiguration)
+
+case class RealmServerConfiguration(
+  name: String,
+  host: String,
+  port: Int,
+  database: DatabaseConfiguration,
+  capacity: Int,
+  timeZone: RealmTimeZones.Value,
+  tpe: RealmTypes.Value,
+  flags: RealmFlags.ValueSet,
+  lock: Boolean
+)
 
