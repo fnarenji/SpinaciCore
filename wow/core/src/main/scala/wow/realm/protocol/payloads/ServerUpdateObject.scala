@@ -82,7 +82,7 @@ case class MovementInfo(
 
 object MovementInfo {
   implicit val codec: Codec[MovementInfo] = {
-    ("updateFlags" | fixedBitmask(UpdateFlags, uint16L)) ::
+    ("updateFlags" | fixedBitmask(uint16L, UpdateFlags)) ::
       ("movementFlags" | uint32L) ::
       ("extraMovementFlags" | uint16L) ::
       ("msTime" | uint32L) ::

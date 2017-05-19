@@ -24,13 +24,13 @@ trait ReconnectProofHandler {
       val account = Account.findByLogin(login)
       val (nextState, authResult) = account match {
         case Some(Account(_, _, _, Some(sessionKey))) if reverify(sessionKey) =>
-          (StateRealmlist, AuthResults.Success)
+          (goto(StateRealmlist) using RealmsListData(), AuthResults.Success)
         case _ =>
-          (StateFailed, AuthResults.FailUnknownAccount)
+          (goto(StateFailed) using NoData, AuthResults.FailUnknownAccount)
       }
 
       sendPacket(ServerReconnectProof(authResult))
-      goto(nextState) using NoData
+      nextState
   }
 }
 

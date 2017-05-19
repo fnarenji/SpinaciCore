@@ -2,7 +2,7 @@ package wow.common.network
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, Props, SupervisorStrategy}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
 
@@ -18,7 +18,9 @@ class TCPServer[A <: TCPSessionFactory](val factory: A, val address: String, val
   log.debug("Binding server with socket")
   IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(address, port))
 
-  override def postStop(): Unit = log.debug("Stopped")
+  override def supervisorStrategy: SupervisorStrategy = SupervisorStrategy.stoppingStrategy
+
+  override def postStop(): Unit = log.debug(s"Stopped TCP server for $address:$port")
 
   def receive: PartialFunction[Any, Unit] = {
     case Bound(localAddress) =>

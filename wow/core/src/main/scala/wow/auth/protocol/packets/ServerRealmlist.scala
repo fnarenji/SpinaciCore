@@ -1,9 +1,9 @@
 package wow.auth.protocol.packets
 
-import wow.auth.protocol.{OpCodes, ServerPacket}
-import wow.common.codecs._
 import scodec._
 import scodec.codecs._
+import wow.auth.protocol._
+import wow.common.codecs._
 
 import scala.collection.immutable
 
@@ -14,32 +14,34 @@ import scala.collection.immutable
   * @param lock            1 if it is locked otherwise 0
   * @param flags           the flags associated to the realm
   * @param name            the realm's name
-  * @param ip              the ip address to which the response will be sent
+  * @param address         the ip address of the realm
   * @param populationLevel the population level represented by a float
   * @param characterCount  number of characters on the realm
-  * @param timezone        the time zone
+  * @param timeZone        the time zone
   * @param id              the identifier
   */
-case class ServerRealmlistEntry(realmType: Int,
-                                lock: Int,
-                                flags: Int,
-                                name: String,
-                                ip: String,
-                                populationLevel: Float,
-                                characterCount: Int,
-                                timezone: Int,
-                                id: Int)
+case class ServerRealmlistEntry(
+  realmType: RealmTypes.Value,
+  lock: Boolean,
+  flags: RealmFlags.ValueSet,
+  name: String,
+  address: String,
+  populationLevel: Float,
+  characterCount: Int,
+  timeZone: RealmTimeZones.Value,
+  id: Int) {
+}
 
 object ServerRealmlistEntry {
   implicit val codec: Codec[ServerRealmlistEntry] = {
-    ("realmType" | uint8L) ::
-      ("lock" | uint8L) ::
-      ("flag" | uint8L) ::
+    ("realmType" | enumerated(uint8L, RealmTypes)) ::
+      ("lock" | bool(8)) ::
+      ("flag" | fixedBitmask(uint8L, RealmFlags)) ::
       ("name" | cstring) ::
-      ("ip" | cstring) ::
+      ("address" | cstring) ::
       ("populationLevel" | floatL) ::
       ("characterCount" | uint8L) ::
-      ("timezone" | uint8L) ::
+      ("timezone" | enumerated(uint8L, RealmTimeZones)) ::
       ("id" | uint8L)
   }.as[ServerRealmlistEntry]
 }

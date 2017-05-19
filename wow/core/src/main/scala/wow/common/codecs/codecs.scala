@@ -4,7 +4,6 @@ import scodec.Attempt.{Failure, Successful}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Decoder, Encoder, Err, SizeBound}
-import wow.realm.protocol.objectupdates.UpdateFlags
 
 import scala.collection.{immutable, mutable}
 import scala.language.postfixOps
@@ -118,6 +117,7 @@ package object codecs {
     } else {
       SmallSize
     })
+
     bool(1).consume[Int](codecProvider)(_ >= Boundary)
   }
 
@@ -273,7 +273,7 @@ package object codecs {
     * @tparam I integer type for bitmask
     * @return bitmask codec
     */
-  def fixedBitmask[A <: Enumeration, I](e: A, codec: Codec[I])
+  def fixedBitmask[A <: Enumeration, I](codec: Codec[I], e: A)
     (implicit numeric: Integral[I]): Codec[e.ValueSet] = new Codec[e.ValueSet] {
 
     import numeric._
@@ -281,7 +281,7 @@ package object codecs {
     private type ValueSet = e.ValueSet
     private val ValueSet = e.ValueSet
 
-    require(UpdateFlags.values.max.id <= math.pow(2L, codec.sizeBound.exact.get - 1L).toInt)
+    require(e.values.max.id <= math.pow(2L, codec.sizeBound.exact.get - 1L).toInt)
 
     override def decode(bits: BitVector): Attempt[DecodeResult[ValueSet]] = {
       codec.decode(bits) match {

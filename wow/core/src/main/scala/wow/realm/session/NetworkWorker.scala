@@ -2,7 +2,7 @@ package wow.realm.session
 
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import scodec.bits.BitVector
 import wow.common.network.{TCPSession, TCPSessionFactory}
 import wow.realm.crypto.SessionCipher
@@ -26,9 +26,13 @@ class NetworkWorker(override val connection: ActorRef)(override implicit val rea
           with RealmContext {
   private[session] var sessionCipher: Option[SessionCipher] = None
 
-  override def receive: Receive = Seq(
+  override def receive: Receive = Seq[Receive](
     tcpSessionReceiver,
-    sendForwardedPacketsReceiver
+    sendForwardedPacketsReceiver,
+    {
+      case Terminated(subject) if subject == session =>
+        context.stop(self)
+    }
   ).reduceLeft(_.orElse(_))
 
   override def preStart(): Unit = {
@@ -43,6 +47,12 @@ class NetworkWorker(override val connection: ActorRef)(override implicit val rea
     sendPayload(authChallenge)
 
     super.preStart()
+  }
+
+  override def postStop(): Unit = {
+    _session.foreach(context.stop)
+
+    super.postStop()
   }
 
   /**
