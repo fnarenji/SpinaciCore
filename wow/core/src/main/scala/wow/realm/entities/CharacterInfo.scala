@@ -42,7 +42,9 @@ object CharacterRef {
 }
 
 object CharacterInfo {
-  def countByRealm(implicit realm: RealmContextData): Int = charactersByGuid.size
+  def countByRealm(implicit realm : RealmContextData): Int = {
+    charactersByGuid.size + realm.id - realm.id
+  }
 
   def countByAccountPerRealm(login: String): Map[Int, Int] = Map(1 -> charactersByGuid.size)
 

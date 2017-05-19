@@ -1,5 +1,6 @@
 package wow.auth.handlers
 
+import akka.actor.FSM
 import wow.auth.data.Account
 import wow.auth.protocol.AuthResults
 import wow.auth.protocol.packets._
@@ -24,9 +25,11 @@ trait ReconnectProofHandler {
       val account = Account.findByLogin(login)
       val (nextState, authResult) = account match {
         case Some(Account(_, _, _, Some(sessionKey))) if reverify(sessionKey) =>
-          (goto(StateRealmlist) using RealmsListData(), AuthResults.Success)
+          val state: FSM.State[AuthSessionState, AuthSessionData] = goto(StateRealmlist) using RealmsListData(login)
+          (state, AuthResults.Success)
         case _ =>
-          (goto(StateFailed) using NoData, AuthResults.FailUnknownAccount)
+          val state: FSM.State[AuthSessionState, AuthSessionData] = goto(StateFailed) using NoData
+          (state, AuthResults.FailUnknownAccount)
       }
 
       sendPacket(ServerReconnectProof(authResult))
