@@ -78,6 +78,8 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
     case _ -> StateRealmlist =>
       val login = nextStateData.asInstanceOf[RealmsListData].login
 
+      import context.dispatcher
+
       Future {
         import scala.concurrent.blocking
 
