@@ -1,12 +1,14 @@
 package wow
 
+import java.net.InetSocketAddress
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.settings.ServerSettings
 import pureconfig._
 import scalikejdbc.ConnectionPool
 import wow.api.WebServer
 import wow.auth.AuthServer
-import wow.common.config.deriveIntMap
+import wow.client.Client
 import wow.common.database.Database
 import wow.realm.RealmServer
 import wow.utils.Reflection
@@ -32,6 +34,8 @@ object Application {
     for (id <- configuration.realms.keys) {
       system.actorOf(RealmServer.props(id), RealmServer.PreferredName(id))
     }
+
+    system.actorOf(Client.props(new InetSocketAddress("", 0)), Client.PreferredName)
 
     WebServer.startServer(configuration.webServer.host, configuration.webServer.port, ServerSettings(system), system)
 
