@@ -5,10 +5,7 @@ import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.{IO, Tcp}
-import akka.util.ByteString
-import scodec.Codec
 import wow.Application
-import wow.auth.protocol.ClientPacket
 import wow.client.auth._
 import scodec.interop.akka._
 
@@ -21,11 +18,6 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
 
   IO(Tcp) ! Connect(remote)
 
-  def writePacket[A <: ClientPacket](packet: A)(implicit codec: Codec[A]): Write = {
-    val bits: ByteString = PacketSerializer.serialize(packet)(codec).bytes.toByteString
-    Write(bits)
-  }
-
   def receive: PartialFunction[Any, Unit] = {
     case CommandFailed(_: Connect) =>
       context stop self
@@ -34,12 +26,12 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
       val connection = sender()
       connection ! Register(self)
       AuthMachine.transition(authMachine, EventAuthenticate())
-      authMachine.outgoingData foreach (connection ! writePacket(_))
+      authMachine.outgoingData foreach (connection ! _)
 
       context become {
         case Received(data) =>
           AuthMachine.transition(authMachine, EventIncoming(data.toByteVector.bits))
-          authMachine.outgoingData foreach (connection ! writePacket(_))
+          authMachine.outgoingData foreach (connection ! _)
         case _: ConnectionClosed =>
           context stop self
       }
