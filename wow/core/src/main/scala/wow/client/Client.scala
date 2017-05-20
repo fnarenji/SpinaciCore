@@ -9,6 +9,11 @@ import wow.Application
 import wow.client.auth._
 import scodec.interop.akka._
 
+/**
+  * A client that should behave like a real one
+  * @param remote a client is defined by the port and the hostname through which it communicates
+  *               with the server
+  */
 class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
 
   import akka.io.Tcp._

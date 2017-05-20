@@ -8,14 +8,25 @@ import scodec.interop.akka._
 import wow.auth.protocol.packets._
 import wow.auth.protocol.ClientPacket
 
-
+/**
+  * Every state of the authentication machine is defined by its state and a resulting generated
+  * packet to be sent through the socket
+  * @param state a state of the automaton
+  * @param data an object to be sent through the socket
+  */
 abstract class FsmState(val state: AuthState.Value, val data: Option[Write])
 
+/**
+  * An enumeration that defines the state of the authentication automaton
+  */
 object AuthState extends Enumeration {
   type State = Value
   val Authenticated, Challenge, Proof, NoState = Value
 }
 
+/**
+  * The common trait of the events that will trigger the automaton transitions
+  */
 trait Event
 
 case class EventAuthenticate() extends Event
@@ -25,16 +36,32 @@ case class EventIncoming(bits: BitVector) extends Event
 case class AuthMachine(authState: AuthState.State, outgoingData: Option[Write])
   extends FsmState(state = authState, data = outgoingData)
 
+/**
+  * The companion object that defines the behaviour of the automaton
+  */
 object AuthMachine {
 
-  def writePacket[A <: ClientPacket](packet: A)(implicit codec: Codec[A]): Write = {
+  private def writePacket[A <: ClientPacket](packet: A)(implicit codec: Codec[A]): Write = {
     val bits: ByteString = PacketSerializer.serialize(packet)(codec).bytes.toByteString
     Write(bits)
   }
 
+  /**
+    * Clones the machine with new attributes
+    * @param a the automaton to be cloned
+    * @param s the new state
+    * @param p eventually, define an attribute to be sent through the socket
+    * @return an automaton with these new attributes
+    */
   private def cloneNewState(a: AuthMachine, s: AuthState.State, p: Option[Write]) =
     a.copy(authState = s, outgoingData = p)
 
+  /**
+    * This method defines how the machine must react to an event
+    * @param a the authentication machine
+    * @param e an event
+    * @return a copy of the machine
+    */
   def transition(a: AuthMachine, e: Event): AuthMachine = {
     a.authState match {
       case AuthState.NoState =>

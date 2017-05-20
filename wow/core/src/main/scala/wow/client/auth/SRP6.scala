@@ -8,10 +8,13 @@ import wow.utils.BigIntExtensions._
 
 
 /**
-  * Created by yanncolina on 18/05/17.
+  * This utility object implements the client side of the SRP6 authentication protocol
   */
 object SRP6 {
 
+  /**
+    * A standard logon challenge request
+    */
   val challengeRequest = ClientChallenge(
     error = 8,
     size = 31,
@@ -29,6 +32,11 @@ object SRP6 {
 
   var sharedKey: Array[Byte] = _
 
+  /**
+    * Computes a proof from the challenge sent by the server
+    * @param challengeResponse the server's response to the challenge request
+    * @return the proof
+    */
   def computeProof(challengeResponse: ServerLogonChallengeSuccess): ClientLogonProof = {
 
     // Client's public key
@@ -64,7 +72,12 @@ object SRP6 {
     ClientLogonProof(A, clientProof, BigInt(0))
   }
 
-  def computeSharedKey(sessionKey: BigInt): Array[Byte] = {
+  /**
+    * Generates the shared key from the session key
+    * @param sessionKey the session key
+    * @return the shared key
+    */
+  private def computeSharedKey(sessionKey: BigInt): Array[Byte] = {
     val messageDigest = MessageDigest.getInstance("SHA-1")
     val sessionKeyBytes = sessionKey.toUnsignedLBytes()
     val evenBytes = sessionKeyBytes.sliding(1, 2).flatten.toArray
@@ -83,6 +96,11 @@ object SRP6 {
     sharedKeyBytes
   }
 
+  /**
+    * Generates a SHA-1 hash from the arguments
+    * @param bytes the data to be hashed
+    * @return the hash
+    */
   def hash(bytes: BigInt*): BigInt = {
     val messageDigest = MessageDigest.getInstance("SHA-1")
     for (b <- bytes) {
