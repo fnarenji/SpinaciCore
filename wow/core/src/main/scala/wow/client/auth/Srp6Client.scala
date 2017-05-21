@@ -43,33 +43,36 @@ object Srp6Client {
     */
   def computeProof(challenge: ServerLogonChallengeSuccess): ClientLogonProof = {
 
-    val clientPrivateKey: BigInt = randomBigInt.next(ClientPrivateKeyBitCount)
-    val clientKey: BigInt = Srp6Constants.g.modPow(clientPrivateKey, Srp6Constants.N)
+    val messageDigest = MessageDigest.getInstance("SHA-1")
 
-    val loginDigest: Array[Byte] = {
-      val messageDigest = MessageDigest.getInstance("SHA-1")
-      messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
-    }
+    val authString = s"${login.toUpperCase}:${password.toUpperCase}"
+    val authBytes = authString.getBytes(StandardCharsets.US_ASCII)
+    val authDigest = messageDigest.digest(authBytes)
 
-    val passwordHash: BigInt = {
-      val messageDigest = MessageDigest.getInstance("SHA-1")
-      messageDigest.update(challenge.salt.toUnsignedLBytes())
-      messageDigest.update(password.getBytes(StandardCharsets.US_ASCII))
-      BigInt.fromUnsignedLBytes(messageDigest.digest())
-    }
+    messageDigest.update(challenge.salt.toUnsignedLBytes())
+    messageDigest.update(authDigest)
+    val saltedPasswordHash = messageDigest.digest()
+    val saltedPassword = BigInt.fromUnsignedLBytes(saltedPasswordHash)
 
-    val sessionKey: BigInt = computeSessionKey(passwordHash, clientPrivateKey, clientKey, challenge.serverKey)
+    val clientPrivateKey = randomBigInt.next(ClientPrivateKeyBitCount)
+    val clientKey = Srp6Constants.g.modPow(clientPrivateKey, Srp6Constants.N)
+
+    val sessionKey = computeSessionKey(saltedPassword,
+      clientPrivateKey,
+      clientKey,
+      challenge.serverKey)
     println(s"Client - Session key: $sessionKey")
 
-    val sharedKey: Array[Byte] = computeSharedKey(sessionKey)
+    val sharedKeyBytes: Array[Byte] = computeSharedKey(sessionKey)
+    val sharedKey = BigInt.fromUnsignedLBytes(sharedKeyBytes)
     println(s"Client - Shared key: $sharedKey")
 
     val clientProof: Array[Byte] = computeProof(
       challenge.salt.toUnsignedLBytes(),
       clientKey.toUnsignedLBytes(),
       challenge.serverKey.toUnsignedLBytes(),
-      sharedKey,
-      loginDigest
+      sharedKeyBytes,
+      messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
     )
 
     ClientLogonProof(clientKey, BigInt.fromUnsignedLBytes(clientProof), BigInt(0))
@@ -77,18 +80,20 @@ object Srp6Client {
 
   /**
     * Computes the challenge's proof
-    * @param saltBytes the salt
+    *
+    * @param saltBytes      the salt
     * @param clientKeyBytes client's key
     * @param serverKeyBytes server's key
     * @param sharedKeyBytes shared key
-    * @param loginDigest login's hash
+    * @param loginDigest    login's hash
     * @return the proof
     */
-  private def computeProof(saltBytes: Array[Byte],
-                           clientKeyBytes: Array[Byte],
-                           serverKeyBytes: Array[Byte],
-                           sharedKeyBytes: Array[Byte],
-                           loginDigest: Array[Byte]): Array[Byte] = {
+  private def computeProof(
+    saltBytes: Array[Byte],
+    clientKeyBytes: Array[Byte],
+    serverKeyBytes: Array[Byte],
+    sharedKeyBytes: Array[Byte],
+    loginDigest: Array[Byte]): Array[Byte] = {
     val messageDigest = MessageDigest.getInstance("SHA-1")
     messageDigest.update(Srp6Constants.gDigestXorNDigest)
     messageDigest.update(loginDigest)
@@ -128,24 +133,25 @@ object Srp6Client {
   /**
     * Computes the session key
     *
-    * @param passwordHash     a hash of the salt with the password
+    * @param authDigest       a hash of the salt with the password
     * @param clientPrivateKey client's private key
     * @param clientKey        client's key
     * @param serverKey        server's key
     * @return a session key
     */
-  private def computeSessionKey(passwordHash: BigInt,
-                                clientPrivateKey: BigInt,
-                                clientKey: BigInt,
-                                serverKey: BigInt): BigInt = {
+  private def computeSessionKey(
+    authDigest: BigInt,
+    clientPrivateKey: BigInt,
+    clientKey: BigInt,
+    serverKey: BigInt): BigInt = {
     val messageDigest = MessageDigest.getInstance("SHA-1")
     messageDigest.update(clientKey.toUnsignedLBytes())
     messageDigest.update(serverKey.toUnsignedLBytes())
     val shaDigest = messageDigest.digest
     val u = BigInt.fromUnsignedLBytes(shaDigest)
 
-    (serverKey - Srp6Constants.legacyMultiplier * Srp6Constants.g.modPow(passwordHash, Srp6Constants.N))
-      .modPow(clientPrivateKey + u * passwordHash, Srp6Constants.N)
+    (serverKey - Srp6Constants.legacyMultiplier * Srp6Constants.g.modPow(authDigest, Srp6Constants.N))
+      .modPow(clientPrivateKey + u * authDigest, Srp6Constants.N)
   }
 
 }
