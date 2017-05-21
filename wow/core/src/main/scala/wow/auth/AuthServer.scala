@@ -29,7 +29,8 @@ class AuthServer extends Actor with ActorLogging {
 
   private case object RequestPopulationUpdate
 
-  context.system.scheduler.schedule(Duration.Zero, 5 minutes, self, RequestPopulationUpdate)(context.dispatcher)
+  private val populationUpdateToken =
+    context.system.scheduler.schedule(Duration.Zero, 5 minutes, self, RequestPopulationUpdate)(context.dispatcher)
 
   private val realmsByActor = mutable.HashMap[ActorRef, Int]()
 
@@ -58,6 +59,7 @@ class AuthServer extends Actor with ActorLogging {
 
   override def postStop(): Unit = {
     ConnectionPool.close(AuthDB)
+    populationUpdateToken.cancel()
 
     super.postStop()
   }
