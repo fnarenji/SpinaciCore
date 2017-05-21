@@ -147,6 +147,9 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     val sharedKeyBytes = computeSharedKey(sessionKey)
     val sharedKey = BigInt.fromUnsignedLBytes(sharedKeyBytes)
 
+    println(s"Server - Session key: $sessionKey")
+    println(s"Server - Shared key: $sharedKey")
+
     val loginDigest = messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
 
     val expectedProofBytes = computeExpectedProof(identity.salt,

@@ -53,7 +53,7 @@ object AuthMachine {
     * @param p eventually, define an attribute to be sent through the socket
     * @return an automaton with these new attributes
     */
-  private def cloneNewState(a: AuthMachine, s: AuthState.State, p: Option[Write]) =
+  private def cloneNewState(a: AuthMachine, s: AuthState.State, p: Option[Write]): AuthMachine =
     a.copy(authState = s, outgoingData = p)
 
   /**
@@ -67,7 +67,7 @@ object AuthMachine {
       case AuthState.NoState =>
         e match {
           case EventAuthenticate() =>
-            cloneNewState(a, AuthState.Challenge, Some(writePacket(SRP6.challengeRequest)(ClientChallenge.logonChallengeCodec)))
+            cloneNewState(a, AuthState.Challenge, Some(writePacket(Srp6Client.challengeRequest)(ClientChallenge.logonChallengeCodec)))
         }
       case AuthState.Challenge =>
         e match {
@@ -75,15 +75,24 @@ object AuthMachine {
             val packet: ServerLogonChallenge =
               PacketSerializer.deserialize[ServerLogonChallenge](bits)(ServerLogonChallenge.codec)
             packet.success match {
-              case Some(challenge) => cloneNewState(a, AuthState.Proof, Some(writePacket(SRP6.computeProof(challenge))))
+              case Some(challenge) =>
+                cloneNewState(a, AuthState.Proof, Some(writePacket(Srp6Client.computeProof(challenge))))
+              case None =>
+                println("Challenge generation seems to have failed")
+                a
             }
         }
       case AuthState.Proof =>
         e match {
           case EventIncoming(bits) =>
-            val packet: ServerLogonProof = PacketSerializer.deserialize[ServerLogonProof](bits)(ServerLogonProof.codec)
-            println(s"Got server's proof: $packet")
-            cloneNewState(a, AuthState.Authenticated, Some(writePacket(ClientRealmlist())))
+            PacketSerializer.deserialize[ServerLogonProof](bits)(ServerLogonProof.codec) match {
+              case ServerLogonProof(_, Some(_), _) =>
+                println("Authentication success")
+                cloneNewState(a, AuthState.Authenticated, Some(writePacket(ClientRealmlist())))
+              case ServerLogonProof(_, None, _) =>
+                println("Authentication failed")
+                a
+            }
         }
       case AuthState.Authenticated =>
         e match {

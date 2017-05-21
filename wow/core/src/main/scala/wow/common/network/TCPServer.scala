@@ -5,6 +5,8 @@ import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
+import wow.Application
+import wow.client.StartAuthentication
 
 case object GetAddress
 
@@ -28,6 +30,7 @@ class TCPServer[A <: TCPSessionFactory](val factory: A, val address: String, val
       log.debug(s"Remote connection set from $remote to $local")
       val handlerRef = context.actorOf(factory.props(sender), factory.PreferredName + TCPSession.PreferredName(remote))
       sender ! Register(handlerRef)
+      context.actorSelection(Application.ClientPath) ! StartAuthentication
 
     case CommandFailed(_: Bind) => context stop self
   }

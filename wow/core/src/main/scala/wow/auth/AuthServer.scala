@@ -1,6 +1,8 @@
 package wow.auth
 
-import akka.actor.{Actor, ActorLogging, Props}
+import java.net.InetSocketAddress
+
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import org.flywaydb.core.Flyway
 import scalikejdbc._
 import scodec.bits.BitVector
@@ -9,6 +11,7 @@ import wow.auth.AuthServer.RegisterRealm
 import wow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
 import wow.auth.session.AuthSession
 import wow.auth.utils.PacketSerializer
+import wow.client.Client
 import wow.common.VersionInfo
 import wow.common.database.{DatabaseConfiguration, Databases, _}
 import wow.common.network.TCPServer
@@ -30,6 +33,7 @@ class AuthServer extends Actor with ActorLogging {
   initializeDatabase()
 
   context.actorOf(TCPServer.props(AuthSession, config.host, config.port), TCPServer.PreferredName)
+  val client: ActorRef = context.actorOf(Client.props(new InetSocketAddress(config.host, config.port)), Client.PreferredName)
 
   private val realms = mutable.HashMap[Int, ServerRealmlistEntry]()
 
