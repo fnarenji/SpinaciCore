@@ -30,7 +30,7 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
     val login = payload.login
 
     Account.findByLogin(login) match {
-      case Some(Account(_, _, _, Some(sessionKey))) =>
+      case Some(account@Account(_, _, _, Some(sessionKey))) =>
         def longLBytes(value: Long) = uint32L.encode(value).require.toByteArray
 
         val messageDigest = MessageDigest.getInstance("SHA-1")
@@ -56,7 +56,7 @@ object AuthSessionHandler extends PayloadHandler[NetworkWorker, ClientAuthSessio
           } else {
             // Same as for ClientPlayerLogin, we must wait to have the reference so that we're certain we have it as the
             // next packets will potentially be forwarded to the session for handling
-            val createSession = (realm.serverRef ? CreateSession(login, context.self)).mapTo[ActorRef]
+            val createSession = (realm.serverRef ? CreateSession(account, context.self)).mapTo[ActorRef]
 
             session = Await.result(createSession, timeout.duration)
             context.watch(session)

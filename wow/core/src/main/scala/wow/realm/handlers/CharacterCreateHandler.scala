@@ -1,6 +1,6 @@
 package wow.realm.handlers
 
-import wow.realm.entities.{CharacterInfo, Position}
+import wow.realm.entities.{CharacterDAO, Position}
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{CharacterDescription, ClientCharacterCreate, ServerCharacterCreate}
 import wow.realm.session.Session
@@ -35,11 +35,8 @@ object CharacterCreateHandler extends PayloadHandler[Session, ClientCharacterCre
     val response = checkNameValidity(payload.character.charInfo.name)
 
     if (response == CharacterCreationResults.Success) {
-      CharacterInfo.addCharacter(
-        CharacterInfo(CharacterInfo.getNextGuid,
-          Position.mxyzo(0, -8937.25488f, -125.310707f, 82.8524399f, 0.662107527f),
-          payload.character.charInfo)
-      )
+      val position = Position.mxyzo(0, -8937.25488f, -125.310707f, 82.8524399f, 0.662107527f)
+      CharacterDAO.create(account.id, payload.character.charInfo, position)
     }
 
     sendPayload(ServerCharacterCreate(response))

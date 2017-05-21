@@ -10,7 +10,7 @@ import wow.realm.RealmServerConfiguration
 case class RealmInfo(
   id: Int,
   realmConfig: RealmServerConfiguration,
-  var flags: RealmFlags.ValueSet = RealmFlags.ValueSet(),
+  var flags: RealmFlags.ValueSet = RealmFlags.ValueSet(RealmFlags.Offline),
   private var _population : Float = 0.0f
 ) {
   require(id > 0)

@@ -81,7 +81,9 @@ private[session] trait HandleIncomingPackets extends Actor with ActorLogging wit
           case HandledBy.Session =>
             session ! HandlePacket(header, payloadBits)
           case HandledBy.Player =>
-            player ! HandlePacket(header, payloadBits)
+            player.fold
+            { log.info("Got packet for player actor but no actor, ignoring") }
+            { player => player ! HandlePacket(header, payloadBits) }
           case HandledBy.Unhandled =>
             log.info(s"Unhandled packet ${header.opCode}")
         }

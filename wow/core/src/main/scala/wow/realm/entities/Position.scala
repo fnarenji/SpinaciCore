@@ -1,13 +1,20 @@
 package wow.realm.entities
 
-import wow.common.codecs._
 import scodec.Codec
 import scodec.codecs._
+import wow.common.codecs._
+import wow.common.database.databasecomponent
 
 /**
   * Position of an entity (immutable)
   */
-case class Position(mapId: Option[Long], x: Float, y: Float, z: Float, orientation: Option[Float]) {
+@databasecomponent
+case class Position(
+  mapId: Option[Long],
+  x: Float,
+  y: Float,
+  z: Float,
+  orientation: Option[Float]) {
   /**
     * Merges another position with the current one.
     * Values from current position are preferred.

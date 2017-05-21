@@ -6,7 +6,7 @@ import wow.common.config._
 /**
   * Time zones enumeration for realms
   */
-object RealmTimeZones extends Enumeration with ConfigConvertible {
+object RealmTimeZones extends Enumeration with ConfigurationSerializableEnumeration {
   implicit val ec: ConfigConvert[RealmTimeZones.Value] = deriveEnumValue(this)
 
   val Development = Value(1)

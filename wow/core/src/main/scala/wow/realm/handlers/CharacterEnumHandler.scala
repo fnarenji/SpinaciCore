@@ -1,8 +1,8 @@
 package wow.realm.handlers
 
-import wow.realm.entities.CharacterInfo
-import wow.realm.protocol.payloads._
+import wow.realm.entities.{CharacterDAO, CharacterInfo}
 import wow.realm.protocol._
+import wow.realm.protocol.payloads._
 import wow.realm.session.Session
 
 /**
@@ -32,7 +32,7 @@ object CharacterEnumHandler extends IgnorePayloadHandler[Session] {
   override def handle(header: ClientHeader)(self: Session): Unit = {
     import self._
 
-    val charactersEnum = for (char <- CharacterInfo.getCharacters) yield {
+    val charactersEnum = for (char <- CharacterDAO.findByAccount(account.id)) yield {
       completeDescription(char)
     }
 

@@ -1,6 +1,6 @@
 package wow
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props, SupervisorStrategy}
 import akka.http.scaladsl.settings.ServerSettings
 import pureconfig._
 import scalikejdbc.ConnectionPool
@@ -16,11 +16,17 @@ class Application extends Actor with ActorLogging {
 
   Database.configure()
 
+  // This database access is required by both authserver and realmserver
+  // Can't rely on AuthServer actor existing for it to be initialized
+  AuthServer.initializeDatabase()
+
   context.actorOf(AccountsState.props, AccountsState.PreferredName)
   context.actorOf(AuthServer.props, AuthServer.PreferredName)
   for (id <- Application.configuration.realms.keys) {
     context.actorOf(RealmServer.props(id), RealmServer.PreferredName(id))
   }
+
+  override def supervisorStrategy: SupervisorStrategy = SupervisorStrategy.stoppingStrategy
 
   override def postStop(): Unit = {
     // In case any latent connections remain, close them

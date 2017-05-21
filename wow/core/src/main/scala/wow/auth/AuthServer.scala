@@ -9,7 +9,7 @@ import wow.auth.session.AuthSession
 import wow.common.VersionInfo
 import wow.common.database.{DatabaseConfiguration, Databases, _}
 import wow.common.network.TCPServer
-import wow.realm.RealmServer.SendPopulation
+import wow.realm.RealmServer.GetPopulation
 import wow.utils.AutoRestartSupervisor
 
 import scala.collection.mutable
@@ -25,13 +25,11 @@ class AuthServer extends Actor with ActorLogging {
 
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
-  initializeDatabase()
-
   context.actorOf(TCPServer.props(AuthSession, config.host, config.port), TCPServer.PreferredName)
 
   private case object RequestPopulationUpdate
 
-  context.system.scheduler.schedule(Duration.Zero, 5 seconds, self, RequestPopulationUpdate)(context.dispatcher)
+  context.system.scheduler.schedule(Duration.Zero, 5 minutes, self, RequestPopulationUpdate)(context.dispatcher)
 
   private val realmsByActor = mutable.HashMap[ActorRef, Int]()
 
@@ -49,7 +47,7 @@ class AuthServer extends Actor with ActorLogging {
       realms(id).flags = realms(id).flags + RealmFlags.Offline
 
     case RequestPopulationUpdate =>
-      realmsByActor.keys.foreach(realm => realm ! SendPopulation)
+      realmsByActor.keys.foreach(realm => realm ! GetPopulation)
 
     case UpdatePopulation(population) =>
       val id = realmsByActor(sender)
@@ -63,19 +61,19 @@ class AuthServer extends Actor with ActorLogging {
 
     super.postStop()
   }
+}
 
+object AuthServer {
   /**
     * Creates connection to database and sets it up if necessary
     */
-  private def initializeDatabase(): Unit = {
-    val dbConfig = config.database
+  def initializeDatabase(): Unit = {
+    val dbConfig = Application.configuration.auth.database
 
     DatabaseHelpers.migrate("auth", dbConfig)
     DatabaseHelpers.connect(Databases.AuthServer, dbConfig)
   }
-}
 
-object AuthServer {
   private val PreferredNameChild = "authserver"
 
   def props: Props = Props(new AutoRestartSupervisor(Props(classOf[AuthServer]), PreferredNameChild))

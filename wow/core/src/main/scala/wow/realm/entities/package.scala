@@ -2,12 +2,20 @@ package wow.realm
 
 import scodec.Codec
 import scodec.codecs._
+import wow.common.database.DatabaseSerializableEnumeration
 
 /**
   * Created by sknz on 4/28/17.
   */
 package object entities {
-  object Genders extends Enumeration {
+  /**
+    * Get character DAO
+    * @param realm current realm
+    * @return character DAO
+    */
+  def CharacterDAO(implicit realm: RealmContextData): CharacterInfoDAO = realm.characterDAO
+
+  object Genders extends Enumeration with DatabaseSerializableEnumeration {
     implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
     val Male = Value(0)
@@ -15,22 +23,22 @@ package object entities {
     val None = Value(2)
   }
 
-  object Races extends Enumeration {
+  object Races extends Enumeration with DatabaseSerializableEnumeration {
     implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
     val Human = Value(1)
     val Orc = Value(2)
     val Dwarf = Value(3)
-    val Nightelf = Value(4)
-    val UndeadPlayer = Value(5)
+    val NightElf = Value(4)
+    val Undead = Value(5)
     val Tauren = Value(6)
     val Gnome = Value(7)
     val Troll = Value(8)
-    val Bloodelf = Value(10)
+    val BloodElf = Value(10)
     val Draenei = Value(11)
   }
 
-  object Classes extends Enumeration {
+  object Classes extends Enumeration with DatabaseSerializableEnumeration {
     implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
     val Warrior = Value(1)

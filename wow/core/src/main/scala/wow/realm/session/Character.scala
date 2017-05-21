@@ -1,7 +1,8 @@
 package wow.realm.session
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import wow.realm.entities.{CharacterInfo, Guid}
+import wow.common.database.AsyncDB
+import wow.realm.entities.{CharacterDAO, Guid}
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, PlayerMoved}
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ServerLoginVerifyWorld, ServerTimeSyncRequest, ServerUpdateBlock,
@@ -17,7 +18,7 @@ import scala.concurrent.duration._
   * @param guid          guid of character
   * @param networkWorker network worker associated to session
   */
-class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override implicit val realm: RealmContextData)
+class Character(guid: Guid, override val networkWorker: ActorRef)(override implicit val realm: RealmContextData)
   extends Actor
           with ActorLogging
           with RealmContext
@@ -31,7 +32,8 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
   private val worldState = context.actorSelection(RealmServer.WorldStatePath)
   private var updateBlocks = Vector.newBuilder[ServerUpdateBlock]
 
-  private val currentCharacter = CharacterInfo.byGuid(guid)
+  private val currentCharacter = CharacterDAO.findByGuid(guid).getOrElse(
+    throw new IllegalStateException(s"Character $guid not found in database, but player still selected it"))
 
   val loginVerifyWorld = ServerLoginVerifyWorld(currentCharacter.position)
   sendPayload(loginVerifyWorld)
@@ -39,7 +41,10 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
   realm.eventStream.subscribe(self, classOf[DispatchWorldUpdate])
   realm.eventStream.subscribe(self, classOf[PlayerMoved])
 
+  case object SaveCharacterToDatabase
+
   private val timeSyncSenderToken = scheduler.schedule(1 second, 10 seconds, TimeSyncRequestSender)
+  private val databaseSaveToken = scheduler.schedule(60 seconds, 60 seconds, self, SaveCharacterToDatabase)
 
   realm.eventStream.publish(PlayerJoined(currentCharacter.ref))
 
@@ -47,6 +52,10 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
 
   override def postStop(): Unit = {
     timeSyncSenderToken.cancel()
+    databaseSaveToken.cancel()
+
+    CharacterDAO.save(currentCharacter)
+
     super.postStop()
   }
 
@@ -80,6 +89,12 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
         case _ =>
           sendRaw(headerBits, payloadBits)
       }
+
+    case SaveCharacterToDatabase =>
+      val copy = currentCharacter.copy()
+      AsyncDB {
+        CharacterDAO.save(copy)
+      }
   }
 
   private object TimeSyncRequestSender extends Runnable {
@@ -92,12 +107,12 @@ class SessionPlayer(guid: Guid, override val networkWorker: ActorRef)(override i
       sendPayload(timeSyncRequest)
     }
   }
-
 }
 
-object SessionPlayer {
+object Character {
   def props(guid: Guid, networkWorker: ActorRef)(implicit realm: RealmContextData): Props =
-    Props(new SessionPlayer(guid, networkWorker)(realm))
+    Props(new Character(guid, networkWorker)(realm))
 
-  def PreferredName(guid: Guid) = s"player-${guid.id}"
+  def PreferredName(guid: Guid) = s"character-${guid.id}"
 }
+
