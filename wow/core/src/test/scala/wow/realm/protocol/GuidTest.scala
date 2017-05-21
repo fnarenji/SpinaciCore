@@ -11,7 +11,7 @@ class GuidTest extends FlatSpec with Matchers {
 
   behavior of "Guid"
 
-  private val guid = Guid(1, GuidType.Player)
+  private val guid = Guid(1, GuidType.Character)
   private val bits = hex"0101".bits
 
   it must "serialize as expected" in CodecTestUtils.encode(bits, guid)

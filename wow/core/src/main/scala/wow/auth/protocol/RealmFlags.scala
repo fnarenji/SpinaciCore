@@ -1,11 +1,11 @@
 package wow.auth.protocol
 
-import wow.common.config.ConfigConvertible
+import wow.common.config.ConfigurationSerializableEnumeration
 
 /**
   * Realm flags
   */
-object RealmFlags extends Enumeration with ConfigConvertible {
+object RealmFlags extends Enumeration with ConfigurationSerializableEnumeration {
   val None = Value(0x00)
   val VersionMismatch = Value(0x01)
   val Offline = Value(0x02)

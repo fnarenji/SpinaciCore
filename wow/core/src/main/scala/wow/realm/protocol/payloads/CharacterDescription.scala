@@ -1,18 +1,25 @@
 package wow.realm.protocol.payloads
 
-import wow.realm.entities.{Classes, Genders, Races}
 import scodec.Codec
 import scodec.codecs._
+import wow.common.database.databasecomponent
+import wow.realm.entities.{Classes, Genders, Races}
 
-case class CharacterDescription(name: String,
-                                race: Races.Value,
-                                charClass: Classes.Value,
-                                gender: Genders.Value,
-                                skin: Int,
-                                face: Int,
-                                hairStyle: Int,
-                                hairColor: Int,
-                                facialHair: Int) {
+/**
+  * Physical aspects of a character
+  */
+@databasecomponent
+case class CharacterDescription(
+  name: String,
+  race: Races.Value,
+  clazz: Classes.Value,
+  gender: Genders.Value,
+  skin: Int,
+  face: Int,
+  hairStyle: Int,
+  hairColor: Int,
+  facialHair: Int) {
+  // TODO: add requirements on skin/face etc to check value validity ?
 }
 
 object CharacterDescription {
@@ -30,5 +37,4 @@ object CharacterDescription {
       ("facialHair" | uint8L)
   }.as[CharacterDescription]
 }
-
 

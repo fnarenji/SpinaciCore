@@ -21,15 +21,23 @@ class WorldState(override implicit val realm: RealmContextData) extends Actor wi
   realm.eventStream.subscribe(self, classOf[PlayerJoined])
   realm.eventStream.subscribe(self, classOf[Tick])
 
-  var currentTick: Tick = Tick(0, Application.uptimeMillis(), Tick(0, 0, null))
-  scheduler.schedule(tickInterval, tickInterval,
+  private var currentTick: Tick = Tick(0, Application.uptimeMillis(), Tick(0, 0, null))
+  private val tickToken = scheduler.schedule(tickInterval, tickInterval,
     () => {
       val msTime = Application.uptimeMillis()
       val nextNumber = currentTick.number + 1
       val nextTick = Tick(nextNumber, msTime, currentTick)
+      currentTick = nextTick
 
       realm.eventStream.publish(nextTick)
     })(context.dispatcher)
+
+
+  override def postStop(): Unit = {
+    tickToken.cancel()
+
+    super.postStop()
+  }
 
   private var events = mutable.MutableList[WorldEvent]()
   private val characters = mutable.HashMap[Guid.Id, CharacterRef]()

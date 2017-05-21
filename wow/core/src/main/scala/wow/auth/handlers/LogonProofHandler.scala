@@ -22,6 +22,12 @@ trait LogonProofHandler {
 
   def handleProof: StateFunction = {
     case Event(EventIncoming(bits), ChallengeData(login, srp6Identity, srp6Challenge)) =>
+      def fail(reason: AuthResults.AuthResult) = {
+        sendPacket(ServerLogonProof(reason, None, Some(ServerLogonProofFailure())))
+
+        goto(StateFailed) using NoData
+      }
+
       log.debug("Received proof")
       val packet = PacketSerializer.deserialize[ClientLogonProof](bits)
       log.debug(packet.toString)
@@ -35,21 +41,24 @@ trait LogonProofHandler {
           val isOnline = Await.result(askIsOnline, timeout.duration)
 
           if (isOnline) {
-            sendPacket(ServerLogonProof(AuthResults.FailAlreadyOnline, None, Some(ServerLogonProofFailure())))
-
-            goto(StateFailed) using NoData
+            fail(AuthResults.FailAlreadyOnline)
           } else {
-            Account.saveSessionKey(login, srp6Validation.sharedKey)
+           Account.findByLogin(login) match {
+             case Some(account) =>
+               Account.save(account.copy(sessionKey = Some(srp6Validation.sharedKey)))
 
-            sendPacket(ServerLogonProof(AuthResults.Success,
-              Some(ServerLogonProofSuccess(srp6Validation.serverProof)),
-              None))
+               sendPacket(ServerLogonProof(AuthResults.Success,
+                 Some(ServerLogonProofSuccess(srp6Validation.serverProof)),
+                 None))
 
-            goto(StateRealmlist) using NoData
+               goto(StateRealmlist) using RealmsListData(account)
+
+             case None =>
+               fail(AuthResults.FailUnknownAccount)
+           }
           }
         case None =>
-          sendPacket(ServerLogonProof(AuthResults.FailUnknownAccount, None, Some(ServerLogonProofFailure())))
-          goto(StateFailed) using NoData
+          fail(AuthResults.FailUnknownAccount)
       }
   }
 }

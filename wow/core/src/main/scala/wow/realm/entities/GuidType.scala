@@ -11,7 +11,7 @@ object GuidType extends Enumeration {
 
   val Item = Value(0x4000)
   val Container = Item
-  val Player = Value(0x0000)
+  val Character = Value(0x0000)
   val GameObject = Value(0xF110)
   val Transport = Value(0xF120)
   val Unit = Value(0xF130)

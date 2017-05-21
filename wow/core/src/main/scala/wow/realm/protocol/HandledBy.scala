@@ -1,6 +1,6 @@
 package wow.realm.protocol
 
-import wow.realm.session.{NetworkWorker, Session, SessionPlayer}
+import wow.realm.session.{NetworkWorker, Session, Character}
 
 /**
   * Enumeration of packet handler type
@@ -26,7 +26,7 @@ object HandledBy extends Enumeration {
     Map(
       handlerTag[NetworkWorker] -> NetworkWorker,
       handlerTag[Session] -> Session,
-      handlerTag[SessionPlayer] -> Player
+      handlerTag[Character] -> Player
     )
   }
 }

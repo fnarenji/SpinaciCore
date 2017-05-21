@@ -1,5 +1,8 @@
 package wow.realm.entities
 
+import java.sql.{PreparedStatement, ResultSet}
+
+import scalikejdbc._
 import wow.common.codecs._
 import scodec.Codec
 import scodec.codecs._
@@ -23,4 +26,25 @@ object Guid {
     ).as[Guid]
 
   val packedCodec: Codec[Guid] = zeroPacked(8, codec)
+
+  /**
+    * Constructs a type binder for Guid
+    * @param guidType guid type
+    * @return guid type binder
+    */
+  def typeBinder(guidType: GuidType.Value): TypeBinder[Guid] = new TypeBinder[Guid] {
+    override def apply(rs: ResultSet, columnIndex: Int): Guid = Guid(rs.getInt(columnIndex), guidType)
+
+    override def apply(rs: ResultSet, columnLabel: String): Guid = Guid(rs.getInt(columnLabel), guidType)
+  }
+
+  implicit val parameterBinder = new ParameterBinderFactory[Guid] {
+    override def apply(guid: Guid): ParameterBinderWithValue = {
+      new ParameterBinderWithValue  {
+        override def value: Any = guid
+
+        override def apply(stmt: PreparedStatement, idx: Int): Unit = stmt.setInt(idx, guid.id)
+      }
+    }
+  }
 }

@@ -31,7 +31,10 @@ class NetworkWorker(override val connection: ActorRef)(override implicit val rea
     sendForwardedPacketsReceiver,
     {
       case Terminated(subject) if subject == session =>
+        log.debug(s"$subject died, stopping self ($self)")
         context.stop(self)
+      case Terminated(subject) if subject == player =>
+        player = None
     }
   ).reduceLeft(_.orElse(_))
 
@@ -104,12 +107,8 @@ class NetworkWorker(override val connection: ActorRef)(override implicit val rea
     *
     * @return current session player actor ref
     */
-  def player: ActorRef = {
-    if (_player.isEmpty) {
-      throw new IllegalStateException("Player actor ref is not set")
-    }
-
-    _player.get
+  def player: Option[ActorRef] = {
+    _player
   }
 
   /**

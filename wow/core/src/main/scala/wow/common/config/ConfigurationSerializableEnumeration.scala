@@ -3,7 +3,7 @@ package wow.common.config
 /**
   * Makes an enumeration config convertible
   */
-trait ConfigConvertible {
+trait ConfigurationSerializableEnumeration {
   this: Enumeration =>
 
   /**
@@ -16,4 +16,6 @@ trait ConfigConvertible {
     */
   implicit val valueSetConfigConverter = wow.common.config.deriveEnumValueSet(this)
 }
+
+
 

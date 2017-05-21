@@ -6,7 +6,7 @@ import wow.common.config._
 /**
   * Realm types
   */
-object RealmTypes extends Enumeration with ConfigConvertible {
+object RealmTypes extends Enumeration with ConfigurationSerializableEnumeration {
   implicit val ec: ConfigConvert[RealmTypes.Value] = deriveEnumValue(this)
 
   val Normal       = Value(0)

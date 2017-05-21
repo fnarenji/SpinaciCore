@@ -22,10 +22,9 @@ trait ReconnectProofHandler {
 
       def reverify(sessionKey: BigInt) = srp6.reverify(login, random, packet.clientKey, packet.clientProof, sessionKey)
 
-      val account = Account.findByLogin(login)
-      val (nextState, authResult) = account match {
-        case Some(Account(_, _, _, Some(sessionKey))) if reverify(sessionKey) =>
-          val state: FSM.State[AuthSessionState, AuthSessionData] = goto(StateRealmlist) using RealmsListData(login)
+      val (nextState, authResult) = Account.findByLogin(login) match {
+        case Some(account@Account(_, _, _, Some(sessionKey))) if reverify(sessionKey) =>
+          val state: FSM.State[AuthSessionState, AuthSessionData] = goto(StateRealmlist) using RealmsListData(account)
           (state, AuthResults.Success)
         case _ =>
           val state: FSM.State[AuthSessionState, AuthSessionData] = goto(StateFailed) using NoData

@@ -24,6 +24,8 @@ object PlayerLoginHandler extends PayloadHandler[NetworkWorker, ClientPlayerLogi
     // we must wait to get the player actor reference so that we're certain to have it for next packet received
     val getSessionActor = (session ? Session.CreatePlayer(payload.guid)).mapTo[ActorRef]
 
-    player = Await.result(getSessionActor, 5 seconds)
+    val ref = Await.result(getSessionActor, 5 seconds)
+    context.watch(ref)
+    player = ref
   }
 }

@@ -102,7 +102,7 @@ class ServerUpdateObjectTest extends PacketTest(
     Vector(
       ServerUpdateBlock(
         UpdateType.CreateObject2,
-        Guid(1, GuidType.Player),
+        Guid(1, GuidType.Character),
         EntityType.Player,
         MovementInfo(
           UpdateFlags.Living + UpdateFlags.Self + UpdateFlags.StationaryPosition,
@@ -126,11 +126,11 @@ class ServerCharacterEnumTest extends PacketTest(
   ServerCharacterEnum(
     Vector(
       ServerCharacterEnumEntry(
-        Guid(8, GuidType.Player),
+        Guid(8, GuidType.Character),
         CharacterDescription(
           "Garl",
           race = Races.Human,
-          charClass = Classes.Rogue,
+          clazz = Classes.Rogue,
           gender = Genders.Male,
           skin = 8,
           face = 8,
@@ -148,11 +148,11 @@ class ServerCharacterEnumTest extends PacketTest(
         Pet.None
       ),
       ServerCharacterEnumEntry(
-        Guid(9, GuidType.Player),
+        Guid(9, GuidType.Character),
         CharacterDescription(
           "Garm",
           race = Races.Human,
-          charClass = Classes.Rogue,
+          clazz = Classes.Rogue,
           gender = Genders.Male,
           skin = 0,
           face = 6,

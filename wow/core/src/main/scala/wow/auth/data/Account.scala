@@ -3,21 +3,21 @@ package wow.auth.data
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import wow.auth.crypto.{Srp6Identity, Srp6Protocol}
-import wow.api.API
-import wow.common.database.{Databases, RichColumn, databasefields}
-import wow.utils.BigIntExtensions._
 import scalikejdbc._
 import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
+import wow.api.API
+import wow.auth.crypto.{Srp6Identity, Srp6Protocol}
+import wow.common.database.{Databases, RichColumn, databasecomponent}
+import wow.utils.BigIntExtensions._
 
 /**
   * Account information
   */
 final case class Account(
-  id: Long,
+  id: Int,
   login: String,
-  @databasefields("salt", "verifier")
+  @databasecomponent
   var identity: Srp6Identity,
   var sessionKey: Option[BigInt] = None)
 
@@ -27,7 +27,7 @@ object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
   def apply(s: SyntaxProvider[Account])(rs: WrappedResultSet): Account = apply(s.resultName)(rs)
 
   def apply(rn: ResultName[Account])(rs: WrappedResultSet): Account = {
-    val id = rs.long(c.id)
+    val id = rs.int(c.id)
     val login = rs.string(c.login)
 
     val salt = rs.bigInt(c.salt)
@@ -39,18 +39,14 @@ object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
     Account(id, login, identity, sessionKey)
   }
 
-  def find(condition: SQLSyntax)(implicit session: DBSession = autoSession): Option[Account] = withSQL {
-    select(column.*)
-      .from(Account as syntax)
-      .where
-      .append(condition)
-  }.map(Account(syntax)).single.apply()
-
-  def findByLogin(login: String)(implicit session: DBSession = autoSession): Option[Account] =
-    find(sqls.eq(c.login, login))
-
-  def findById(id: Long)(implicit session: DBSession = autoSession): Option[Account] =
-    find(sqls.eq(c.id, id))
+  def create(login: String, identity: Srp6Identity)(implicit session: DBSession = autoSession): Int = withSQL {
+    insert.into(Account)
+      .namedValues(
+        c.login -> login.toUpperCase(),
+        c.salt -> identity.salt,
+        c.verifier -> identity.verifier
+      )
+  }.updateAndReturnGeneratedKey.apply().toInt
 
   def save(account: Account)(implicit session: DBSession = autoSession): Int = withSQL {
     update(Account)
@@ -63,35 +59,18 @@ object Account extends SQLSyntaxSupport[Account] with RichColumn[Account] {
       .eq(c.id, account.id)
   }.update.apply()
 
-  def saveIdentity(login: String, identity: Srp6Identity)(implicit session: DBSession = autoSession): Unit = assert(
-    withSQL {
-      update(Account)
-        .set(
-          c.salt -> identity.salt,
-          c.verifier -> identity.verifier
-        )
-        .where
-        .eq(c.login, login)
-    }.update.apply() > 0)
+  def find(condition: SQLSyntax)(implicit session: DBSession = autoSession): Option[Account] = withSQL {
+    select(column.*)
+      .from(Account as syntax)
+      .where
+      .append(condition)
+  }.map(Account(syntax)).single.apply()
 
-  def saveSessionKey(login: String, sessionKey: BigInt)(implicit session: DBSession = autoSession): Unit = assert(
-    withSQL {
-      update(Account)
-        .set(
-          c.sessionKey -> sessionKey
-        )
-        .where
-        .eq(c.login, login)
-    }.update.apply() > 0)
+  def findByLogin(login: String)(implicit session: DBSession = autoSession): Option[Account] =
+    find(sqls.eq(c.login, login))
 
-  def create(login: String, identity: Srp6Identity)(implicit session: DBSession = autoSession): Long = withSQL {
-    insert.into(Account)
-      .namedValues(
-        c.login -> login.toUpperCase(),
-        c.salt -> identity.salt,
-        c.verifier -> identity.verifier
-      )
-  }.updateAndReturnGeneratedKey.apply()
+  def findById(id: Int)(implicit session: DBSession = autoSession): Option[Account] =
+    find(sqls.eq(c.id, id))
 }
 
 object AccountAPI extends API {

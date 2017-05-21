@@ -8,12 +8,12 @@ import wow.auth.crypto.Srp6Protocol
 import wow.auth.handlers._
 import wow.auth.protocol.packets.ClientRealmlist
 import wow.auth.protocol.{OpCodes, ServerPacket}
-import wow.auth.session.AuthSession.EventIncoming
+import wow.auth.session.AuthSession.{EventIncoming, SetCharacterCount}
 import wow.auth.utils.{MalformedPacketHeaderException, PacketSerializer}
 import wow.common.network.{TCPSession, TCPSessionFactory}
-import wow.realm.entities.CharacterInfo
+import wow.realm.RealmServer
+import wow.realm.RealmServer.GetCharacterCount
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -53,18 +53,16 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
 
   when(StateReconnectProof)(handleReconnectProof)
 
-  case class SetCharactersPerRealm(charactersPerRealm: Map[Int, Int])
-
   when(StateRealmlist) {
-    case Event(EventIncoming(bits), data@RealmsListData(_, outgoingBits)) =>
+    case Event(EventIncoming(bits), data@RealmsListData(_, _, outgoingBits)) =>
       PacketSerializer.deserialize[ClientRealmlist](bits)
 
       outgoing(outgoingBits)
 
       stay using data
 
-    case Event(SetCharactersPerRealm(charactersPerRealm), RealmsListData(login, _)) =>
-      stay using RealmsListData(login, charactersPerRealm)
+    case Event(SetCharacterCount(realmId, count), RealmsListData(account, charactersPerRealm, _)) =>
+      stay using RealmsListData(account, charactersPerRealm.updated(realmId, count))
   }
 
   when(StateFailed, stateTimeout = 5 second) {
@@ -75,20 +73,10 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
   }
 
   onTransition {
-    case _ -> StateRealmlist =>
-      val login = nextStateData.asInstanceOf[RealmsListData].login
+    case p -> StateRealmlist if p != StateRealmlist =>
+      val id = nextStateData.asInstanceOf[RealmsListData].account.id
 
-      import context.dispatcher
-
-      Future {
-        import scala.concurrent.blocking
-
-        blocking {
-          val characterPerRealm = CharacterInfo.countByAccountPerRealm(login)
-
-          self ! SetCharactersPerRealm(characterPerRealm)
-        }
-      }
+      context.actorSelection(RealmServer.ActorPathAll) ! GetCharacterCount(id)
   }
 
   override def receive: Receive = tcpSessionReceiver orElse super[FSM].receive
@@ -105,9 +93,9 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
 }
 
 object AuthSession extends TCPSessionFactory {
-  override def props(connection: ActorRef): Props = Props(new AuthSession(connection))
+  def props(connection: ActorRef): Props = Props(new AuthSession(connection))
 
-  override val PreferredName: String = "authsession"
+  val PreferredName: String = "authsession"
 
   /**
     * Incoming packet read from the network
@@ -115,6 +103,14 @@ object AuthSession extends TCPSessionFactory {
     * @param bits bits read
     */
   case class EventIncoming(bits: BitVector)
+
+  /**
+    * Sets the number of character of a player in an account
+    *
+    * @param realmId realm id
+    * @param count   character count
+    */
+  case class SetCharacterCount(realmId: Int, count: Int)
 
 }
 
