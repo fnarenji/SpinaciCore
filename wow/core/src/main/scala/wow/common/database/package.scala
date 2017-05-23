@@ -48,5 +48,5 @@ package object database {
 
     def byteVector(columnLabel: String): ByteVector = ByteVector.view(self.bytes(columnLabel))
   }
-
 }
+
