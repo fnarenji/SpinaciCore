@@ -45,11 +45,11 @@ case class CharacterInfo(
 }
 
 /**
-  * DAO object of CharacterInfo. Access using shortcut [[wow.realm.entities.CharacterDAO]], as it per-realm.
+  * DAO of CharacterInfo. Access using shortcut [[wow.realm.entities.CharacterDAO]], as it per-realm.
   *
   * @param realmId realm id
   */
-case class CharacterInfoDAO(realmId: Int) extends SQLSyntaxSupport[CharacterInfo] with RichColumn[CharacterInfo] {
+case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo] with RichColumn[CharacterInfo] {
   override def tableName: String = "character_info"
 
   override def connectionPoolName: Any = Databases.RealmServer(realmId)
@@ -180,6 +180,7 @@ case class CharacterInfoDAO(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
   def findByGuid(guid: Guid)(implicit session: DBSession = autoSession): Option[CharacterInfo] =
     find(sqls.eq(c.guid, guid)).single().apply()
 
+
   /**
     * Finds characters by account.
     * Deleted characters are excluded.
@@ -188,8 +189,8 @@ case class CharacterInfoDAO(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
     * @param session   database session
     * @return collection of characters
     */
-  def findByAccount(accountId: Int)(implicit session: DBSession = autoSession): Traversable[CharacterInfo] =
-    find(sqls.eq(c.accountId, accountId)).toTraversable().apply()
+  def findByAccount(accountId: Int)(implicit session: DBSession = autoSession): Seq[CharacterInfo] =
+    find(sqls.eq(c.accountId, accountId)).collection.apply()
 
   /**
     * Counts the number of characters satisfying a condition.

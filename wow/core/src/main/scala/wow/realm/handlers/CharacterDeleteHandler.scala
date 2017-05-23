@@ -1,7 +1,7 @@
 package wow.realm.handlers
 
 import org.joda.time.DateTime
-import wow.realm.entities.CharacterDAO
+import wow.realm.entities.CharacterDao
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ClientCharacterDelete, ServerCharacterDelete}
 import wow.realm.session.Session
@@ -19,9 +19,9 @@ object CharacterDeleteHandler extends PayloadHandler[Session, ClientCharacterDel
   override protected def handle(header: ClientHeader, payload: ClientCharacterDelete)(self: Session): Unit = {
     import self._
 
-    val response = CharacterDAO.findByGuid(payload.guid) match {
+    val response = CharacterDao.findByGuid(payload.guid) match {
       case Some(character) =>
-        CharacterDAO.save(character.copy(deletedAt = Some(DateTime.now)))
+        CharacterDao.save(character.copy(deletedAt = Some(DateTime.now)))
         CharacterDeletionResults.Success
       case None =>
         CharacterDeletionResults.Failure

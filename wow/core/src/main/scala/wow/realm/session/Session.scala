@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import wow.auth.AccountsState
 import wow.auth.AccountsState.NotifyAccountOnline
 import wow.auth.data.Account
-import wow.realm.entities.{CharacterDAO, Guid}
+import wow.realm.entities.{CharacterDao, Guid}
 import wow.realm.protocol._
 import wow.realm.session.Session.CreatePlayer
 import wow.realm.{RealmContext, RealmContextData}
@@ -24,7 +24,7 @@ class Session(val account: Account, override val networkWorker: ActorRef)(overri
 
   override def receive: Receive = {
     case CreatePlayer(guid: Guid) =>
-      assert(CharacterDAO.isOwner(account.id, guid))
+      assert(CharacterDao.isOwner(account.id, guid))
 
       val ref = context.actorOf(Character.props(guid, networkWorker), Character.PreferredName(guid))
       context.watch(ref)

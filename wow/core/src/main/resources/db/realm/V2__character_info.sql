@@ -9,7 +9,7 @@ create type classes as enum ('Warrior', 'Paladin', 'Hunter', 'Rogue', 'Priest', 
 create table character_info
 (
   guid        serial primary key,
-  account_id  int references auth.account (id),
+  account_id  int references ${authSchemaName}.account (id),
   name        varchar(12) not null unique,
   race        races       not null,
   clazz       classes     not null,

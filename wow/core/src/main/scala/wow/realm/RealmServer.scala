@@ -13,7 +13,7 @@ import wow.common.database._
 import wow.common.network.TCPServer
 import wow.realm.RealmServer.{CreateSession, GetCharacterCount, GetPopulation}
 import wow.realm.database.RealmDB
-import wow.realm.entities.{CharacterDAO, CharacterInfoDAO}
+import wow.realm.entities.{CharacterDao, CharacterInfoDao}
 import wow.realm.session.{NetworkWorkerFactory, Session}
 import wow.realm.world.WorldState
 
@@ -25,7 +25,7 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
     id,
     new EventStream(context.system, context.system.settings.DebugEventStream),
     self,
-    CharacterInfoDAO(id)
+    CharacterInfoDao(id)
   )
 
   override def supervisorStrategy: SupervisorStrategy = SupervisorStrategy.stoppingStrategy
@@ -48,12 +48,12 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
       sender ! ref
 
     case GetPopulation =>
-      val population = CharacterDAO.count().toFloat / config.capacity
+      val population = CharacterDao.count().toFloat / config.capacity
 
       sender ! AuthServer.UpdatePopulation(population)
 
     case GetCharacterCount(accountId) =>
-      val characterCount = CharacterDAO.countByAccount(accountId)
+      val characterCount = CharacterDao.countByAccount(accountId)
 
       sender ! AuthSession.SetCharacterCount(id, characterCount)
   }
@@ -70,7 +70,8 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
   private def initializeDatabase(): Unit = {
     val dbConfig = config.database
 
-    DatabaseHelpers.migrate("realm", dbConfig)
+
+    DatabaseHelpers.migrate("realm", dbConfig, RealmPlaceHolders(AuthDB.conn.getSchema))
 
     Databases.registerRealm(realm.id)
     DatabaseHelpers.connect(Databases.RealmServer(id), dbConfig)

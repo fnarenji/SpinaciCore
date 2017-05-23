@@ -7,6 +7,11 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 
 package object database {
   /**
+    * Provides the names of the current database connections
+    */
+  var Databases: DatabaseNameProvider = DefaultDatabases
+
+  /**
     * Authentication database connection token
     */
   val AuthDB = NamedDB(Databases.AuthServer)
