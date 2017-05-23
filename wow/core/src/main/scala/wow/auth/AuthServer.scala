@@ -48,7 +48,7 @@ class AuthServer extends Actor with ActorLogging {
       realms(id).flags = realms(id).flags + RealmFlags.Offline
 
     case RequestPopulationUpdate =>
-      realmsByActor.keys.foreach(realm => realm ! GetPopulation)
+      realmsByActor.keys.foreach(_ ! GetPopulation)
 
     case UpdatePopulation(population) =>
       val id = realmsByActor(sender)
