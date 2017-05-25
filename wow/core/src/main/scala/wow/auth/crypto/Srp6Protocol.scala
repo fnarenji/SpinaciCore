@@ -129,12 +129,11 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     * @param challenge   challenge which this proofs answers
     * @return None if the verification failed, an Srp6Proof object containing the results of the exchange otherwise
     */
-  def verify(
-    login: String,
-    clientKey: BigInt,
-    clientProof: BigInt,
-    identity: Srp6Identity,
-    challenge: Srp6Challenge): Option[Srp6Proof] = {
+  def verify(login: String,
+             clientKey: BigInt,
+             clientProof: BigInt,
+             identity: Srp6Identity,
+             challenge: Srp6Challenge): Option[Srp6Proof] = {
     val clientKeyBytes = clientKey.toUnsignedLBytes()
     val serverKeyBytes = challenge.serverKey.toUnsignedLBytes()
 
@@ -146,9 +145,6 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
 
     val sharedKeyBytes = computeSharedKey(sessionKey)
     val sharedKey = BigInt.fromUnsignedLBytes(sharedKeyBytes)
-
-    println(s"Server - Session key: $sessionKey")
-    println(s"Server - Shared key: $sharedKey")
 
     val loginDigest = messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
 
@@ -200,9 +196,9 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     * @return server proof as a byte array
     */
   private def computeServerProof(
-    clientKeyBytes: Array[Byte],
-    sharedKeyBytes: Array[Byte],
-    clientProofBytes: Array[Byte]): Array[Byte] = {
+                                  clientKeyBytes: Array[Byte],
+                                  sharedKeyBytes: Array[Byte],
+                                  clientProofBytes: Array[Byte]): Array[Byte] = {
     messageDigest.update(clientKeyBytes)
     messageDigest.update(clientProofBytes)
     messageDigest.update(sharedKeyBytes)
@@ -222,11 +218,11 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     * @return expect proof as byte array
     */
   private def computeExpectedProof(
-    salt: BigInt,
-    clientKeyBytes: Array[Byte],
-    serverKeyBytes: Array[Byte],
-    sharedKeyBytes: Array[Byte],
-    loginDigest: Array[Byte]): Array[Byte] = {
+                                    salt: BigInt,
+                                    clientKeyBytes: Array[Byte],
+                                    serverKeyBytes: Array[Byte],
+                                    sharedKeyBytes: Array[Byte],
+                                    loginDigest: Array[Byte]): Array[Byte] = {
     messageDigest.update(Srp6Constants.gDigestXorNDigest)
     messageDigest.update(loginDigest)
     messageDigest.update(salt.toUnsignedLBytes())
@@ -275,11 +271,11 @@ class Srp6Protocol(val randomBigInt: RandomBigInt = new DefaultRandomBigInt) {
     * @return session key
     */
   private def computeSessionKey(
-    serverPrivateKey: BigInt,
-    verifier: BigInt,
-    clientKey: BigInt,
-    clientKeyBytes: Array[Byte],
-    serverKeyBytes: Array[Byte]): BigInt = {
+                                 serverPrivateKey: BigInt,
+                                 verifier: BigInt,
+                                 clientKey: BigInt,
+                                 clientKeyBytes: Array[Byte],
+                                 serverKeyBytes: Array[Byte]): BigInt = {
     messageDigest.update(clientKeyBytes)
     messageDigest.update(serverKeyBytes)
     val shaDigest = messageDigest.digest

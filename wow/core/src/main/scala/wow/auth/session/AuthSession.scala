@@ -20,11 +20,11 @@ import scala.language.postfixOps
   * Handles an auth session
   */
 class AuthSession(override val connection: ActorRef) extends TCPSession
-                                                             with FSM[AuthSessionState, AuthSessionData]
-                                                             with LogonChallengeHandler
-                                                             with LogonProofHandler
-                                                             with ReconnectChallengeHandler
-                                                             with ReconnectProofHandler {
+  with FSM[AuthSessionState, AuthSessionData]
+  with LogonChallengeHandler
+  with LogonProofHandler
+  with ReconnectChallengeHandler
+  with ReconnectProofHandler {
   val srp6: Srp6Protocol = new Srp6Protocol()
 
   // First packet that we expect from client is logon challenge

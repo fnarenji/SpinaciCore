@@ -4,32 +4,22 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
 import wow.auth.crypto.{DefaultRandomBigInt, RandomBigInt, Srp6Constants}
-import wow.auth.protocol.packets.{ClientChallenge, ClientLogonProof, ServerLogonChallengeSuccess}
-import wow.common.VersionInfo
+import wow.auth.protocol.packets.{ClientLogonProof, ServerLogonChallengeSuccess}
+import AccountEntry
 import wow.utils.BigIntExtensions._
 
+case class AuthClientConfig(ip: Vector[Int], login: String, password: String) {
+  login.toUpperCase
+}
 
 /**
   * This utility object implements the client side of the SRP6 authentication protocol
   */
 object Srp6Client {
 
-  val login = "t"
-  val password = "t"
-
   /**
     * A standard logon challenge request
     */
-  val challengeRequest = ClientChallenge(
-    error = 8,
-    size = 31,
-    VersionInfo.SupportedVersionInfo,
-    platform = "x86",
-    os = "OSX",
-    country = "enUS",
-    timezoneBias = 120,
-    ip = Vector(127, 0, 0, 1),
-    login = login.toUpperCase)
 
 
   private val ClientPrivateKeyBitCount = 19 * 8
@@ -41,11 +31,11 @@ object Srp6Client {
     * @param challenge the server's response to the challenge request
     * @return the proof packet
     */
-  def computeProof(challenge: ServerLogonChallengeSuccess): ClientLogonProof = {
+  def computeProof(account: AccountEntry, challenge: ServerLogonChallengeSuccess): ClientLogonProof = {
 
     val messageDigest = MessageDigest.getInstance("SHA-1")
 
-    val authString = s"${login.toUpperCase}:${password.toUpperCase}"
+    val authString = s"${account.login.toUpperCase}:${account.password.toUpperCase}"
     val authBytes = authString.getBytes(StandardCharsets.US_ASCII)
     val authDigest = messageDigest.digest(authBytes)
 
@@ -72,7 +62,7 @@ object Srp6Client {
       clientKey.toUnsignedLBytes(),
       challenge.serverKey.toUnsignedLBytes(),
       sharedKeyBytes,
-      messageDigest.digest(login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
+      messageDigest.digest(account.login.toUpperCase().getBytes(StandardCharsets.US_ASCII))
     )
 
     ClientLogonProof(clientKey, BigInt.fromUnsignedLBytes(clientProof), BigInt(0))

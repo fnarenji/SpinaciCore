@@ -1,8 +1,6 @@
 package wow.auth
 
-import java.net.InetSocketAddress
-
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import org.flywaydb.core.Flyway
 import scalikejdbc._
 import scodec.bits.BitVector
@@ -11,7 +9,6 @@ import wow.auth.AuthServer.RegisterRealm
 import wow.auth.protocol.packets.{ServerRealmlist, ServerRealmlistEntry}
 import wow.auth.session.AuthSession
 import wow.auth.utils.PacketSerializer
-import wow.client.Client
 import wow.common.VersionInfo
 import wow.common.database.{DatabaseConfiguration, Databases, _}
 import wow.common.network.TCPServer
@@ -26,14 +23,13 @@ import scala.collection.mutable
   * It holds ownership of the stateless packet handlers.
   */
 class AuthServer extends Actor with ActorLogging {
-  val config = Application.configuration.auth
+  val config: AuthServerConfiguration = Application.configuration.auth
 
   log.info(s"startup, supporting version ${VersionInfo.SupportedVersionInfo}")
 
   initializeDatabase()
 
   context.actorOf(TCPServer.props(AuthSession, config.host, config.port), TCPServer.PreferredName)
-  val client: ActorRef = context.actorOf(Client.props(new InetSocketAddress(config.host, config.port)), Client.PreferredName)
 
   private val realms = mutable.HashMap[Int, ServerRealmlistEntry]()
 
