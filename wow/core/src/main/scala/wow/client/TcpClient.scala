@@ -13,6 +13,11 @@ import wow.client.auth.AuthClient
 
 import scala.concurrent.duration._
 
+/**
+  * A TcpClient instance is the interface between the tested client with the servers
+  * @param target the client to be tested
+  * @tparam A the provided clients must implement the trait TestTarget
+  */
 class TcpClient[A <: TestTarget[A]](target: A) extends Actor with ActorLogging {
 
   implicit val timeout = new Timeout(5 seconds)

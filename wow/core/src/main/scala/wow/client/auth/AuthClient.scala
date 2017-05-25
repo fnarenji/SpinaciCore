@@ -12,6 +12,9 @@ case class AccountEntry(login: String, password: String) {
   login.toUpperCase
 }
 
+/**
+  * A client that should mimic a real authentication client
+  */
 class AuthClient extends TestTarget[AuthClient] {
 
   var challenge: ServerLogonChallengeSuccess = _
@@ -33,18 +36,32 @@ class AuthClient extends TestTarget[AuthClient] {
 }
 
 
+/**
+  * From the server's challenge, computes a proof that confirms the identity of the client to the
+  * server
+  * @param account the player's login and password
+  * @param challenge the server's challenge
+  */
 class SendProof(account: AccountEntry, challenge: ServerLogonChallengeSuccess) extends Operation[AuthClient] {
   override def apply(tcpClient: ActorRef): Unit = {
     tcpClient ! writePacket(Srp6Client.computeProof(account, challenge))
   }
 }
 
+/**
+  * Sends a realmlist request
+  */
 class SendRealmlistRequest extends Operation[AuthClient] {
   override def apply(tcpClient: ActorRef): Unit = {
     tcpClient ! writePacket(ClientRealmlist())
   }
 }
 
+/**
+  * Sends a challenge
+  * @param ip the client's ip
+  * @param login the player's login
+  */
 class SendChallenge(ip: Vector[Int], login: String) extends Operation[AuthClient] {
   override def apply(tcpClient: ActorRef): Unit =
     tcpClient ! writePacket(challengeRequest)(ClientChallenge.logonChallengeCodec)

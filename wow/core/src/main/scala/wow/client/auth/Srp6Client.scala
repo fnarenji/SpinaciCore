@@ -5,7 +5,6 @@ import java.security.MessageDigest
 
 import wow.auth.crypto.{DefaultRandomBigInt, RandomBigInt, Srp6Constants}
 import wow.auth.protocol.packets.{ClientLogonProof, ServerLogonChallengeSuccess}
-import AccountEntry
 import wow.utils.BigIntExtensions._
 
 case class AuthClientConfig(ip: Vector[Int], login: String, password: String) {
