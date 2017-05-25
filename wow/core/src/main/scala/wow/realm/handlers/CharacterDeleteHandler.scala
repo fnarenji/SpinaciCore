@@ -1,7 +1,7 @@
 package wow.realm.handlers
 
 import org.joda.time.DateTime
-import wow.realm.entities.CharacterDao
+import wow.realm.objects.characters.CharacterDao
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ClientCharacterDelete, ServerCharacterDelete}
 import wow.realm.session.Session

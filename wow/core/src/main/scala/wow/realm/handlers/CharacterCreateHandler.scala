@@ -1,6 +1,7 @@
 package wow.realm.handlers
 
-import wow.realm.entities.{CharacterDao, Position}
+import wow.realm.objects.Position
+import wow.realm.objects.characters.CharacterDao
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{CharacterDescription, ClientCharacterCreate, ServerCharacterCreate}
 import wow.realm.session.Session

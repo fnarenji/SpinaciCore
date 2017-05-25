@@ -2,7 +2,8 @@ package wow.realm.session
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import wow.common.database.AsyncDB
-import wow.realm.entities.{CharacterDao, Guid}
+import wow.realm.objects.Guid
+import wow.realm.objects.characters.CharacterDao
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, PlayerMoved}
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ServerLoginVerifyWorld, ServerTimeSyncRequest, ServerUpdateBlock,
@@ -13,12 +14,12 @@ import wow.realm.{RealmContext, RealmContextData, RealmServer}
 import scala.concurrent.duration._
 
 /**
-  * Represents a Session's current character
+  * Represents a Session's current player
   *
   * @param guid          guid of character
   * @param networkWorker network worker associated to session
   */
-class Character(guid: Guid, override val networkWorker: ActorRef)(override implicit val realm: RealmContextData)
+class Player(guid: Guid, override val networkWorker: ActorRef)(override implicit val realm: RealmContextData)
   extends Actor
           with ActorLogging
           with RealmContext
@@ -109,10 +110,10 @@ class Character(guid: Guid, override val networkWorker: ActorRef)(override impli
   }
 }
 
-object Character {
+object Player {
   def props(guid: Guid, networkWorker: ActorRef)(implicit realm: RealmContextData): Props =
-    Props(new Character(guid, networkWorker)(realm))
+    Props(new Player(guid, networkWorker)(realm))
 
-  def PreferredName(guid: Guid) = s"character-${guid.id}"
+  def PreferredName(guid: Guid) = s"player-${guid.id}"
 }
 

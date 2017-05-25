@@ -4,7 +4,7 @@ import scodec.bits.ByteVector
 import scodec.codecs._
 import scodec.{Codec, _}
 import wow.common.codecs._
-import wow.realm.entities.{Guid, Position}
+import wow.realm.objects.{Guid, Position}
 import wow.realm.protocol._
 
 import scala.collection.immutable

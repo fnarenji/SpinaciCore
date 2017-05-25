@@ -1,4 +1,4 @@
-package wow.realm.entities
+package wow.realm.objects
 
 import scodec.Codec
 import scodec.codecs._

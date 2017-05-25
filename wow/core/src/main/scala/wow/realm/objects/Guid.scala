@@ -1,4 +1,4 @@
-package wow.realm.entities
+package wow.realm.objects
 
 import java.sql.{PreparedStatement, ResultSet}
 

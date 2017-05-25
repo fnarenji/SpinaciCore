@@ -5,7 +5,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.ClientPlayerLogin
-import wow.realm.session.{NetworkWorker, Session}
+import wow.realm.session.Session
+import wow.realm.session.network.NetworkWorker
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

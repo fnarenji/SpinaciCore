@@ -1,7 +1,7 @@
 package wow.realm.events
 
 import scodec.bits.BitVector
-import wow.realm.entities.CharacterRef
+import wow.realm.objects.characters.CharacterRef
 import wow.realm.protocol.payloads.ClientMovement
 
 import scala.collection.mutable

@@ -3,7 +3,7 @@ package wow.realm.protocol.payloads
 import scodec.Codec
 import scodec.codecs._
 import wow.common.database.databasecomponent
-import wow.realm.entities.{Classes, Genders, Races}
+import wow.realm.objects.{Classes, Genders, Races}
 
 /**
   * Physical aspects of a character

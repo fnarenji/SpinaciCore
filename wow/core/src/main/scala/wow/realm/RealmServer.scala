@@ -13,8 +13,9 @@ import wow.common.database._
 import wow.common.network.TCPServer
 import wow.realm.RealmServer.{CreateSession, GetCharacterCount, GetPopulation}
 import wow.realm.database.RealmDB
-import wow.realm.entities.{CharacterDao, CharacterInfoDao}
-import wow.realm.session.{NetworkWorkerFactory, Session}
+import wow.realm.objects.characters.CharacterDao
+import wow.realm.session.Session
+import wow.realm.session.network.NetworkWorkerFactory
 import wow.realm.world.WorldState
 
 /**
@@ -25,7 +26,7 @@ class RealmServer(id: Int) extends Actor with ActorLogging with RealmContext {
     id,
     new EventStream(context.system, context.system.settings.DebugEventStream),
     self,
-    CharacterInfoDao(id)
+    new CharacterDao(id)
   )
 
   override def supervisorStrategy: SupervisorStrategy = SupervisorStrategy.stoppingStrategy
@@ -94,6 +95,7 @@ object RealmServer {
   case object GetPopulation
 
   case class GetCharacterCount(accountId: Int)
+
 }
 
 

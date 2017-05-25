@@ -1,4 +1,4 @@
-package wow.realm.session
+package wow.realm.session.network
 
 import java.util.concurrent.ThreadLocalRandom
 

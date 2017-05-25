@@ -1,9 +1,9 @@
-package wow.realm.session
+package wow.realm.session.network
 
 import wow.realm.protocol.PacketSerialization
 
 /**
-  * Sends packets to client that come from other actors (e.g. Session/SessionPlayer)
+  * Sends packets to client that come from other actors (e.g. Session/Player)
   * Applies cipher if applicable.
   */
 private[session] trait SendForwardedPackets {

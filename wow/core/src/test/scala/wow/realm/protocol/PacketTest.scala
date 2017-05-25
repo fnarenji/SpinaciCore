@@ -1,7 +1,7 @@
 package wow.realm.protocol
 
 import wow.common.codecs.CodecTestUtils
-import wow.realm.entities._
+import wow.realm.objects._
 import wow.realm.protocol.objectupdates.{UpdateFlags, UpdateType}
 import wow.realm.protocol.payloads._
 import org.scalatest.{FlatSpec, Matchers}
@@ -103,7 +103,7 @@ class ServerUpdateObjectTest extends PacketTest(
       ServerUpdateBlock(
         UpdateType.CreateObject2,
         Guid(1, GuidType.Character),
-        EntityType.Player,
+        ObjectType.Player,
         MovementInfo(
           UpdateFlags.Living + UpdateFlags.Self + UpdateFlags.StationaryPosition,
           0,

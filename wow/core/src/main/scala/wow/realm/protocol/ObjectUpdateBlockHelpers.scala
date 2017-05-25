@@ -1,7 +1,8 @@
 package wow.realm.protocol
 
 import wow.Application
-import wow.realm.entities.{CharacterRef, EntityType}
+import wow.realm.objects.ObjectType
+import wow.realm.objects.characters.CharacterRef
 import wow.realm.protocol.objectupdates.{UpdateFlags, UpdateType}
 import wow.realm.protocol.payloads.{MoveSpeeds, MovementInfo, ServerUpdateBlock}
 
@@ -26,7 +27,7 @@ object ObjectUpdateBlockHelpers {
       val block = ServerUpdateBlock(
         UpdateType.CreateObject2,
         guid,
-        EntityType.Player,
+        ObjectType.Player,
         MovementInfo(
           updateFlags,
           0,

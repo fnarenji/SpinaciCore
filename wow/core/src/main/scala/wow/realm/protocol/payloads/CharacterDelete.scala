@@ -1,6 +1,6 @@
 package wow.realm.protocol.payloads
 
-import wow.realm.entities.Guid
+import wow.realm.objects.Guid
 import wow.realm.protocol._
 import scodec.Codec
 import scodec.codecs._

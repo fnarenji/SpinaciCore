@@ -4,7 +4,7 @@ import wow.Application
 import wow.realm.events.PlayerMoved
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.ClientMovement
-import wow.realm.session.NetworkWorker
+import wow.realm.session.network.NetworkWorker
 
 /**
   * Movement packet handler

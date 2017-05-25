@@ -14,7 +14,7 @@ import wow.auth.data.Account
 import wow.realm.RealmServer.CreateSession
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ClientAuthSession, ServerAuthResponse, ServerAuthResponseSuccess}
-import wow.realm.session.NetworkWorker
+import wow.realm.session.network.NetworkWorker
 import wow.utils.BigIntExtensions._
 
 import scala.concurrent.Await

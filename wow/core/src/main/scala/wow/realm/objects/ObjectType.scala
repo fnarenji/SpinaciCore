@@ -1,4 +1,4 @@
-package wow.realm.entities
+package wow.realm.objects
 
 import scodec.Codec
 import scodec.codecs._
@@ -6,7 +6,7 @@ import scodec.codecs._
 /**
   * Entity types
   */
-object EntityType extends Enumeration {
+object ObjectType extends Enumeration {
   implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)
 
   val Object = Value(0)

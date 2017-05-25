@@ -1,7 +1,7 @@
 package wow.realm.protocol.payloads
 
 import wow.common.codecs._
-import wow.realm.entities.{EntityType, Guid, Position}
+import wow.realm.objects.{ObjectType, Guid, Position}
 import wow.realm.protocol.objectupdates.{UpdateFlags, UpdateType}
 import wow.realm.protocol._
 import scodec.Codec
@@ -94,7 +94,7 @@ object MovementInfo {
 case class ServerUpdateBlock(
   updateType: UpdateType.Value,
   guid: Guid,
-  entityType: EntityType.Value,
+  entityType: ObjectType.Value,
   movementInfo: MovementInfo,
   moveSpeeds: MoveSpeeds,
   fields: ByteVector
@@ -104,7 +104,7 @@ object ServerUpdateBlock {
   implicit val codec: Codec[ServerUpdateBlock] = (
     ("updateType" | Codec[UpdateType.Value]) ::
       ("guid" | Guid.packedCodec) ::
-      ("entityType" | Codec[EntityType.Value]) ::
+      ("entityType" | Codec[ObjectType.Value]) ::
       ("movementInfo" | Codec[MovementInfo]) ::
       ("moveSpeeds" | Codec[MoveSpeeds]) ::
       ("fields" | bytes)

@@ -4,9 +4,8 @@ import org.scalatest.{BeforeAndAfterAll, Suites}
 import pureconfig.loadConfigOrThrow
 import scalikejdbc._
 import wow.auth.data.AccountDaoTest
-import wow.common.database.{AuthPlaceHolders, Database, DatabaseConfiguration, DatabaseHelpers, Databases,
-RealmPlaceHolders, UnitTestDatabases}
-import wow.realm.entities.CharacterDaoTest
+import wow.common.database.{AuthPlaceHolders, Database, DatabaseConfiguration, DatabaseHelpers, Databases, RealmPlaceHolders, UnitTestDatabases}
+import wow.realm.objects.characters.CharacterDaoTest
 
 /**
   * This test suite aggregates all database tests.

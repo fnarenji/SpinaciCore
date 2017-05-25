@@ -2,8 +2,9 @@ package wow.realm.world
 
 import akka.actor.{Actor, ActorLogging, Props}
 import wow.Application
-import wow.realm.entities.{CharacterRef, Guid}
+import wow.realm.objects.Guid
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, Tick, WorldEvent}
+import wow.realm.objects.characters.CharacterRef
 import wow.realm.world.WorldState.{GetState, State}
 import wow.realm.{RealmContext, RealmContextData}
 

@@ -1,6 +1,7 @@
 package wow.realm.handlers
 
-import wow.realm.entities.{CharacterDao, CharacterInfo}
+import wow.realm.objects.characters.CharacterDao
+import wow.realm.objects.characters.Character
 import wow.realm.protocol._
 import wow.realm.protocol.payloads._
 import wow.realm.session.Session
@@ -15,7 +16,7 @@ object CharacterEnumHandler extends IgnorePayloadHandler[Session] {
     * @param char partial information of a character
     * @return packet chunk containing the full description of a character
     */
-  def completeDescription(char: CharacterInfo): ServerCharacterEnumEntry = {
+  def completeDescription(char: Character): ServerCharacterEnumEntry = {
     ServerCharacterEnumEntry(guid = char.guid,
       characterDescription = char.description,
       level = 1,

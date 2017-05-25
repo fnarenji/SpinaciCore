@@ -1,10 +1,11 @@
-package wow.realm.entities
+package wow.realm.objects.characters
 
 import org.joda.time.DateTime
 import scalikejdbc._
 import scodec.bits._
 import scodec.codecs._
 import wow.common.database.{RichColumn, _}
+import wow.realm.objects._
 import wow.realm.protocol.payloads.CharacterDescription
 
 /**
@@ -16,7 +17,7 @@ import wow.realm.protocol.payloads.CharacterDescription
   * @param _position   character position
   * @param deletedAt   when was character deleted
   */
-case class CharacterInfo(
+case class Character(
   guid: Guid,
   accountId: Int,
   description: CharacterDescription,
@@ -45,11 +46,11 @@ case class CharacterInfo(
 }
 
 /**
-  * DAO of CharacterInfo. Access using shortcut [[wow.realm.entities.CharacterDAO]], as it per-realm.
+  * DAO of Character. Access using shortcut [[wow.realm.objects.characters.CharacterDao]], as it per-realm.
   *
   * @param realmId realm id
   */
-case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo] with RichColumn[CharacterInfo] {
+class CharacterDao(realmId: Int) extends SQLSyntaxSupport[Character] with RichColumn[Character] {
   override def tableName: String = "character_info"
 
   override def connectionPoolName: Any = Databases.RealmServer(realmId)
@@ -59,10 +60,10 @@ case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
     */
   private implicit val guidBinder = Guid.typeBinder(GuidType.Character)
 
-  def apply(s: SyntaxProvider[CharacterInfo])(rs: WrappedResultSet): CharacterInfo = apply(s.resultName)(rs)
+  def apply(s: SyntaxProvider[Character])(rs: WrappedResultSet): Character = apply(s.resultName)(rs)
 
-  def apply(rn: ResultName[CharacterInfo])(rs: WrappedResultSet): CharacterInfo = {
-    CharacterInfo(
+  def apply(rn: ResultName[Character])(rs: WrappedResultSet): Character = {
+    Character(
       guid = rs.get[Guid](c.guid),
       accountId = rs.int(c.accountId),
       description = CharacterDescription(
@@ -128,7 +129,7 @@ case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
     * @param character character to save
     * @param session   database session
     */
-  def save(character: CharacterInfo)(implicit session: DBSession = autoSession): Unit = assert(withSQL {
+  def save(character: Character)(implicit session: DBSession = autoSession): Unit = assert(withSQL {
     update(this)
       .set(
         c.accountId -> character.accountId,
@@ -159,7 +160,7 @@ case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
     * @param condition condition to be matched
     * @return found character if exists
     */
-  private def find(condition: SQLSyntax): SQL[CharacterInfo, HasExtractor] =
+  private def find(condition: SQLSyntax): SQL[Character, HasExtractor] =
     withSQL {
       select(column.*)
         .from(this as syntax)
@@ -177,7 +178,7 @@ case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
     * @param session database session
     * @return found character if exists
     */
-  def findByGuid(guid: Guid)(implicit session: DBSession = autoSession): Option[CharacterInfo] =
+  def findByGuid(guid: Guid)(implicit session: DBSession = autoSession): Option[Character] =
     find(sqls.eq(c.guid, guid)).single().apply()
 
 
@@ -189,7 +190,7 @@ case class CharacterInfoDao(realmId: Int) extends SQLSyntaxSupport[CharacterInfo
     * @param session   database session
     * @return collection of characters
     */
-  def findByAccount(accountId: Int)(implicit session: DBSession = autoSession): Seq[CharacterInfo] =
+  def findByAccount(accountId: Int)(implicit session: DBSession = autoSession): Seq[Character] =
     find(sqls.eq(c.accountId, accountId)).collection.apply()
 
   /**

@@ -4,9 +4,11 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import wow.auth.AccountsState
 import wow.auth.AccountsState.NotifyAccountOnline
 import wow.auth.data.Account
-import wow.realm.entities.{CharacterDao, Guid}
+import wow.realm.objects.Guid
+import wow.realm.objects.characters.CharacterDao
 import wow.realm.protocol._
 import wow.realm.session.Session.CreatePlayer
+import wow.realm.session.network.NetworkWorker
 import wow.realm.{RealmContext, RealmContextData}
 
 /**
@@ -26,7 +28,7 @@ class Session(val account: Account, override val networkWorker: ActorRef)(overri
     case CreatePlayer(guid: Guid) =>
       assert(CharacterDao.isOwner(account.id, guid))
 
-      val ref = context.actorOf(Character.props(guid, networkWorker), Character.PreferredName(guid))
+      val ref = context.actorOf(Player.props(guid, networkWorker), Player.PreferredName(guid))
       context.watch(ref)
       player = Some(ref)
       sender() ! ref

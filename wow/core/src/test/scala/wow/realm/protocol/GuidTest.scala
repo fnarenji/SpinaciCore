@@ -1,7 +1,7 @@
 package wow.realm.protocol
 
 import wow.common.codecs.CodecTestUtils
-import wow.realm.entities.{Guid, GuidType}
+import wow.realm.objects.{Guid, GuidType}
 import org.scalatest.{FlatSpec, Matchers}
 import scodec.Codec
 import scodec.bits._

@@ -1,6 +1,6 @@
 package wow.realm.protocol.payloads
 
-import wow.realm.entities.Position
+import wow.realm.objects.Position
 import wow.realm.protocol._
 import scodec.Codec
 import scodec.codecs._

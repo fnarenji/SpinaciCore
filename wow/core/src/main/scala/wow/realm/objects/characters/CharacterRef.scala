@@ -1,20 +1,21 @@
-package wow.realm.entities
+package wow.realm.objects.characters
 
 import scodec.bits.ByteVector
+import wow.realm.objects.{Guid, Position}
 
 /**
   * This a concurrentlly readable version of CharacterInfo.
   * Not much use right now, still need to think more about this.
   * Right now it is used as a way to fast access an entity's position (i.e. without using a message)
   */
-class CharacterRef(private val characterInfo: CharacterInfo) {
-  def guid: Guid = characterInfo.guid
+class CharacterRef(private val character: Character) {
+  def guid: Guid = character.guid
 
-  def position: Position = characterInfo.position
+  def position: Position = character.position
 
-  def selfBytes: ByteVector = characterInfo.selfBytes
+  def selfBytes: ByteVector = character.selfBytes
 
-  def otherBytes: ByteVector = characterInfo.otherBytes
+  def otherBytes: ByteVector = character.otherBytes
 }
 
 object CharacterRef {

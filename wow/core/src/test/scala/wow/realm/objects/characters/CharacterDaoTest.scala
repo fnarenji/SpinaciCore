@@ -1,4 +1,4 @@
-package wow.realm.entities
+package wow.realm.objects.characters
 
 import java.sql.SQLException
 
@@ -7,6 +7,7 @@ import org.scalatest.{DoNotDiscover, FlatSpec, Matchers}
 import wow.auth.crypto.Srp6Identity
 import wow.auth.data.Account
 import wow.common.database.AutoRollbackAfterSuite
+import wow.realm.objects._
 import wow.realm.protocol.payloads.CharacterDescription
 
 /**
@@ -14,7 +15,7 @@ import wow.realm.protocol.payloads.CharacterDescription
   */
 @DoNotDiscover
 class CharacterDaoTest extends FlatSpec with Matchers with AutoRollbackAfterSuite {
-  val CharacterDao = CharacterInfoDao(1)
+  val CharacterDao = new CharacterDao(1)
 
   var accountId: Int = _
 
@@ -24,7 +25,7 @@ class CharacterDaoTest extends FlatSpec with Matchers with AutoRollbackAfterSuit
 
   val expectedPosition: Position = Position.mxyzo(1, 1f, 2f, 3f, 4f)
   val expectedDescription = CharacterDescription("Test", Races.Troll, Classes.Shaman, Genders.Male, 1, 2, 3, 4, 5)
-  var expectedCharacter: CharacterInfo = _
+  var expectedCharacter: Character = _
 
   behavior of "CharacterDao"
 
@@ -36,7 +37,7 @@ class CharacterDaoTest extends FlatSpec with Matchers with AutoRollbackAfterSuit
 
     assert(guid.id >= 0)
 
-    expectedCharacter = CharacterInfo(guid, accountId, expectedDescription, expectedPosition)
+    expectedCharacter = Character(guid, accountId, expectedDescription, expectedPosition)
   }
 
   it should "fetch by guid" in {

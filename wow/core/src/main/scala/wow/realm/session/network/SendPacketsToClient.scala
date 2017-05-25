@@ -1,8 +1,9 @@
-package wow.realm.session
+package wow.realm.session.network
 
 import scodec.Codec
 import scodec.bits.BitVector
 import wow.realm.protocol._
+import wow.realm.session.CanSendPackets
 
 import scala.concurrent.duration._
 

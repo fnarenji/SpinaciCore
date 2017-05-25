@@ -1,10 +1,10 @@
-package wow.realm.session
+package wow.realm.session.network
 
 import akka.actor.{Actor, ActorLogging}
 import scodec.Codec
 import scodec.bits.BitVector
 import wow.realm.protocol._
-import wow.realm.session.NetworkWorker.HandlePacket
+import wow.realm.session.network.NetworkWorker.HandlePacket
 
 /**
   * Buffers incoming TCP packets and extract game packets from those
