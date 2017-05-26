@@ -1,45 +1,69 @@
 package wow.client.auth
 
-import akka.actor.ActorRef
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import scodec.bits.BitVector
+import wow.auth.protocol.ServerPacket
 import wow.auth.protocol.packets._
-import wow.auth.protocol.{OpCodes, ServerPacket}
-import wow.client.{Operation, TestTarget}
+import wow.client.{NewPacket, Operation, TestTarget}
 import wow.common.VersionInfo
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.immutable.HashMap
+import scala.collection.parallel.immutable.ParVector
+import scala.concurrent.{Future, Promise}
 
 case class AccountEntry(login: String, password: String) {
   login.toUpperCase
 }
 
+object AuthOpCodes extends Enumeration {
+  val ServerLogonChallenge, ServerLogonProof, ServerRealmlist = Value
+}
+
 /**
   * A client that should mimic a real authentication client
   */
-class AuthClient extends TestTarget[AuthClient] {
+class AuthClient(system: ActorSystem) extends TestTarget[AuthClient] {
 
   var challenge: ServerLogonChallengeSuccess = _
 
-  override def await(opCode: OpCodes.Value): Future[ServerPacket] = {
-    implicit val ec = ExecutionContext.Implicits.global
-    Future {
-      Thread.sleep(2000)
-      println(s"Buffer size: ${buffer.length}, opCode: $opCode")
-      val packet = opCode match {
-        case OpCodes.LogonChallenge => PacketSerializer.deserialize(buffer.head)(ServerLogonChallenge.codec)
-        case OpCodes.LogonProof => PacketSerializer.deserialize(buffer.head)(ServerLogonProof.codec)
-        case OpCodes.RealmList => PacketSerializer.deserialize(buffer.head)(ServerRealmlist.codec)
-      }
-      buffer = buffer.drop(1)
-      packet
-    }
+  import AuthOpCodes._
+  val promises = HashMap(
+    ServerLogonChallenge -> Promise[ServerPacket],
+    ServerLogonProof -> Promise[ServerPacket],
+    ServerRealmlist -> Promise[ServerPacket])
+
+  var buffer: ParVector[BitVector] = new ParVector
+
+  val pool = HashMap(
+    ServerLogonChallenge -> system.actorOf(Consumer.props(buffer, promises(ServerLogonChallenge))),
+    ServerLogonProof -> system.actorOf(Consumer.props(buffer, promises(ServerLogonProof))),
+    ServerRealmlist -> system.actorOf(Consumer.props(buffer, promises(ServerRealmlist))))
+
+  override def await(opCode: AuthOpCodes.Value): Future[ServerPacket] = {
+    promises(opCode).future
   }
+}
+
+class Consumer(var buffer: ParVector[BitVector], p: Promise[ServerPacket]) extends Actor with ActorLogging {
+  var slot: BitVector = _
+
+  override def receive: Receive = {
+    case NewPacket(challenge) =>
+      log.debug("Consumer received NewPacket notification")
+      p success challenge
+  }
+}
+
+object Consumer {
+  def props(buffer: ParVector[BitVector], p: Promise[ServerPacket]) = Props(new Consumer(buffer, p))
 }
 
 
 /**
   * From the server's challenge, computes a proof that confirms the identity of the client to the
   * server
-  * @param account the player's login and password
+  *
+  * @param account   the player's login and password
   * @param challenge the server's challenge
   */
 class SendProof(account: AccountEntry, challenge: ServerLogonChallengeSuccess) extends Operation[AuthClient] {
@@ -59,7 +83,8 @@ class SendRealmlistRequest extends Operation[AuthClient] {
 
 /**
   * Sends a challenge
-  * @param ip the client's ip
+  *
+  * @param ip    the client's ip
   * @param login the player's login
   */
 class SendChallenge(ip: Vector[Int], login: String) extends Operation[AuthClient] {

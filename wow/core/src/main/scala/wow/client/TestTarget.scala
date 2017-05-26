@@ -3,15 +3,11 @@ package wow.client
 import akka.actor.ActorRef
 import akka.io.Tcp.Write
 import akka.util.ByteString
-
 import scodec.interop.akka._
 import scodec.Codec
-import scodec.bits.BitVector
+import wow.auth.protocol.{ClientPacket, ServerPacket}
+import wow.client.auth.{AuthOpCodes, PacketSerializer}
 
-import wow.auth.protocol.{ClientPacket, OpCodes, ServerPacket}
-import wow.client.auth.PacketSerializer
-
-import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.Future
 
 /**
@@ -44,15 +40,10 @@ trait TestTarget[A <: TestTarget[A]] {
 
   /**
     * When triggered, the method waits for a specific type of packet
-    * @param opCode it defines the type of packet
     * @return a future of the received packet
     */
-  def await(opCode: OpCodes.Value): Future[ServerPacket]
+  def await(opCode: AuthOpCodes.Value): Future[ServerPacket]
 
-  /**
-    * stores the incoming packets
-    */
-  var buffer: ParVector[BitVector] = new ParVector
 }
 
 /**
