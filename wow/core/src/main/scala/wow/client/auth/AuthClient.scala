@@ -1,15 +1,14 @@
 package wow.client.auth
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import scodec.bits.BitVector
+import akka.actor.{ActorRef, ActorSystem}
 import wow.auth.protocol.ServerPacket
 import wow.auth.protocol.packets._
-import wow.client.{NewPacket, Operation, TestTarget}
+import wow.client.{Consumer, Operation, TestTarget}
 import wow.common.VersionInfo
 
 import scala.collection.immutable.HashMap
-import scala.collection.parallel.immutable.ParVector
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 case class AccountEntry(login: String, password: String) {
   login.toUpperCase
@@ -22,40 +21,16 @@ object AuthOpCodes extends Enumeration {
 /**
   * A client that should mimic a real authentication client
   */
-class AuthClient(system: ActorSystem) extends TestTarget[AuthClient] {
+class AuthClient(system: ActorSystem, promises: HashMap[AuthOpCodes.Value, Promise[ServerPacket]]) extends TestTarget[AuthClient] {
 
   var challenge: ServerLogonChallengeSuccess = _
 
-  import AuthOpCodes._
-  val promises = HashMap(
-    ServerLogonChallenge -> Promise[ServerPacket],
-    ServerLogonProof -> Promise[ServerPacket],
-    ServerRealmlist -> Promise[ServerPacket])
-
-  var buffer: ParVector[BitVector] = new ParVector
-
-  val pool = HashMap(
-    ServerLogonChallenge -> system.actorOf(Consumer.props(buffer, promises(ServerLogonChallenge))),
-    ServerLogonProof -> system.actorOf(Consumer.props(buffer, promises(ServerLogonProof))),
-    ServerRealmlist -> system.actorOf(Consumer.props(buffer, promises(ServerRealmlist))))
+  var pool: Map[AuthOpCodes.Value, ActorRef] = Map()
+  AuthOpCodes.values foreach (op => pool = pool + (op -> system.actorOf(Consumer.props(promises(op)))))
 
   override def await(opCode: AuthOpCodes.Value): Future[ServerPacket] = {
     promises(opCode).future
   }
-}
-
-class Consumer(var buffer: ParVector[BitVector], p: Promise[ServerPacket]) extends Actor with ActorLogging {
-  var slot: BitVector = _
-
-  override def receive: Receive = {
-    case NewPacket(challenge) =>
-      log.debug("Consumer received NewPacket notification")
-      p success challenge
-  }
-}
-
-object Consumer {
-  def props(buffer: ParVector[BitVector], p: Promise[ServerPacket]) = Props(new Consumer(buffer, p))
 }
 
 
@@ -63,12 +38,24 @@ object Consumer {
   * From the server's challenge, computes a proof that confirms the identity of the client to the
   * server
   *
-  * @param account   the player's login and password
-  * @param challenge the server's challenge
+  * @param account the player's login and password
   */
-class SendProof(account: AccountEntry, challenge: ServerLogonChallengeSuccess) extends Operation[AuthClient] {
-  override def apply(tcpClient: ActorRef): Unit = {
-    tcpClient ! writePacket(Srp6Client.computeProof(account, challenge))
+class SendProof(account: AccountEntry) extends Operation[AuthClient] {
+
+  /**
+    * Execute the specific operation
+    *
+    * @param tcpClient the actor through which the client is able to communicate with the server
+    */
+  override def apply[B <: ServerPacket](tcpClient: ActorRef, future: Option[Future[B]]): Unit = {
+    implicit val ec = ExecutionContext.Implicits.global
+    future foreach (_ onComplete {
+      case Success(ServerLogonChallenge(_, Some(challenge))) =>
+        tcpClient ! writePacket(Srp6Client.computeProof(account, challenge))
+      case Success(_: ServerLogonChallenge) => println("Challenge generation failed")
+      case Success(p: ServerPacket) => println(s"Got an unexpected packet: $p")
+      case Failure(t) => println(s"Something went wrong: $t")
+    })
   }
 }
 
@@ -76,9 +63,14 @@ class SendProof(account: AccountEntry, challenge: ServerLogonChallengeSuccess) e
   * Sends a realmlist request
   */
 class SendRealmlistRequest extends Operation[AuthClient] {
-  override def apply(tcpClient: ActorRef): Unit = {
+
+  /**
+    * Execute the specific operation
+    *
+    * @param tcpClient the actor through which the client is able to communicate with the server
+    */
+  override def apply[B <: ServerPacket](tcpClient: ActorRef, future: Option[Future[B]] = None): Unit =
     tcpClient ! writePacket(ClientRealmlist())
-  }
 }
 
 /**
@@ -88,7 +80,13 @@ class SendRealmlistRequest extends Operation[AuthClient] {
   * @param login the player's login
   */
 class SendChallenge(ip: Vector[Int], login: String) extends Operation[AuthClient] {
-  override def apply(tcpClient: ActorRef): Unit =
+
+  /**
+    * Execute the specific operation
+    *
+    * @param tcpClient the actor through which the client is able to communicate with the server
+    */
+  override def apply[B <: ServerPacket](tcpClient: ActorRef, future: Option[Future[B]] = None): Unit =
     tcpClient ! writePacket(challengeRequest)(ClientChallenge.logonChallengeCodec)
 
   val challengeRequest = ClientChallenge(

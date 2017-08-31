@@ -8,7 +8,7 @@ import scodec.Codec
 import wow.auth.protocol.{ClientPacket, ServerPacket}
 import wow.client.auth.{AuthOpCodes, PacketSerializer}
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 
 /**
   * A tested entity, such as the authentication client or the world client has
@@ -19,14 +19,19 @@ import scala.concurrent.Future
   *           defined for a specific subclass of TestTarget
   */
 trait TestTarget[A <: TestTarget[A]] {
+
   /**
     * Executes all the operations provided
     *
     * @param operations the list of operations
     * @param tcpClient  the tcp client through which the client communicates with the server
     */
-  def execute(operations: List[Operation[A]], tcpClient: ActorRef): Unit = {
-    operations foreach (o => o(tcpClient))
+  def execute(operations: List[(Operation[A], Promise[ServerPacket])], tcpClient: ActorRef): Unit = {
+    var tmp: Option[Future[ServerPacket]] = None
+    for ((o, p) <- operations) {
+      o(tcpClient, tmp)
+      tmp = Some(p.future)
+    }
   }
 
   /**
@@ -34,8 +39,8 @@ trait TestTarget[A <: TestTarget[A]] {
     * @param o the operation to be executed
     * @param tcpClient the tcp client through which the client communicates with the server
     */
-  def execute(o: Operation[A], tcpClient: ActorRef): Unit = {
-    o(tcpClient)
+  def execute[B <: ServerPacket](o: Operation[A], tcpClient: ActorRef, prevPacket: Option[Future[B]] = None): Unit = {
+    o(tcpClient, prevPacket)
   }
 
   /**
@@ -55,7 +60,7 @@ trait Operation[A <: TestTarget[A]] {
     * Execute the specific operation
     * @param tcpClient the actor through which the client is able to communicate with the server
     */
-  def apply(tcpClient: ActorRef): Unit
+  def apply[B <: ServerPacket](tcpClient: ActorRef, future: Option[Future[B]]): Unit
 
   /**
     * From a client packet, it generates an object that can directly be sent to the server

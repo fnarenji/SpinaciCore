@@ -8,7 +8,6 @@ import akka.io.{IO, Tcp}
 import akka.util.Timeout
 import scodec.Attempt.{Failure, Successful}
 import scodec.{Codec, DecodeResult}
-import scodec.bits.BitVector
 import scodec.interop.akka._
 import wow.Application
 import wow.auth.AuthServerConfiguration
@@ -17,14 +16,13 @@ import wow.auth.protocol.{OpCodes, ServerPacket}
 import wow.auth.utils.MalformedPacketHeaderException
 import wow.client.auth.{AuthOpCodes, PacketSerializer}
 
-import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration._
 
 case class NewPacket[A <: ServerPacket](packet: A)
 /**
   * A TcpClient instance is the interface between the tested client with the servers
   */
-class TcpClient(pool: Map[AuthOpCodes.Value, ActorRef], var buffer: ParVector[BitVector]) extends Actor with ActorLogging {
+class TcpClient(pool: Map[AuthOpCodes.Value, ActorRef]) extends Actor with ActorLogging {
 
   implicit val timeout = new Timeout(5 seconds)
   val authConfig: AuthServerConfiguration = Application.configuration.auth
@@ -40,19 +38,20 @@ class TcpClient(pool: Map[AuthOpCodes.Value, ActorRef], var buffer: ParVector[Bi
       connection ! Register(self)
       context become {
         case Received(data) =>
-          log.debug(s"Got a message from the server: $data")
           val bits = data.toByteVector.bits
-          buffer = buffer.+:(bits)
           Codec[OpCodes.Value].decode(bits) match {
             case Successful(DecodeResult(OpCodes.LogonChallenge, _)) =>
-              log.debug("Got a logon challenge")
-              pool(AuthOpCodes.ServerLogonChallenge) ! NewPacket(PacketSerializer.deserialize(bits)(ServerLogonChallenge.codec))
+              val packet = PacketSerializer.deserialize(bits)(ServerLogonChallenge.codec)
+              pool(AuthOpCodes.ServerLogonChallenge) ! NewPacket(packet)
+
             case Successful(DecodeResult(OpCodes.RealmList, _)) =>
-              log.debug("Got a realmlist packet")
-              pool(AuthOpCodes.ServerRealmlist) ! NewPacket(PacketSerializer.deserialize(bits)(ServerRealmlist.codec))
+              val packet = PacketSerializer.deserialize(bits)(ServerRealmlist.codec)
+              pool(AuthOpCodes.ServerRealmlist) ! NewPacket(packet)
+
             case Successful(DecodeResult(OpCodes.LogonProof, _)) =>
-              log.debug("Got a proof packet")
-              pool(AuthOpCodes.ServerLogonProof) ! NewPacket(PacketSerializer.deserialize(bits)(ServerLogonProof.codec))
+              val packet = PacketSerializer.deserialize(bits)(ServerLogonProof.codec)
+              pool(AuthOpCodes.ServerLogonProof) ! NewPacket(packet)
+
             case Failure(err) => throw MalformedPacketHeaderException(err)
             case _ => log.debug("Malformed packet")
           }
@@ -66,7 +65,7 @@ class TcpClient(pool: Map[AuthOpCodes.Value, ActorRef], var buffer: ParVector[Bi
 }
 
 object TcpClient {
-  def props(pool: Map[AuthOpCodes.Value, ActorRef], buffer: ParVector[BitVector]) = Props(new TcpClient(pool, buffer))
+  def props(pool: Map[AuthOpCodes.Value, ActorRef]) = Props(new TcpClient(pool))
 
   val PreferredNamed = "tcpClient"
 }
