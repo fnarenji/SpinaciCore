@@ -720,3 +720,6 @@ project/boot/
 
 # Visio autosave temporary files
 *.~vsdx
+
+# macOS
+.DS_Store
