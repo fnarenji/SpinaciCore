@@ -73,6 +73,8 @@ class AuthSession(override val connection: ActorRef) extends TCPSession
   }
 
   onTransition {
+    // On first transition to StateRealmlist, ask every realm actor for the user's character count
+    // Received values will be cached afterwards
     case p -> StateRealmlist if p != StateRealmlist =>
       val id = nextStateData.asInstanceOf[RealmsListData].account.id
 
