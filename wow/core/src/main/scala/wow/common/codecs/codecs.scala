@@ -389,4 +389,19 @@ package object codecs {
 
     override def sizeBound: SizeBound = SizeBound.bounded(size, (size + 1) * 8)
   })
+
+  def uint64L: Codec[Long] = int64L.exmapc { x =>
+    if (x < 0) {
+      Attempt.failure(Err("Negative value"))
+    } else {
+      Attempt.successful(x)
+    }
+  } { x =>
+    if (x < 0) {
+      Attempt.failure(Err("Negative value"))
+    } else {
+      Attempt.successful(x)
+    }
+  }
 }
+
