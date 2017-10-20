@@ -14,7 +14,7 @@ MMORPGs are exclusively online video games: without a network connection, the ga
 In these games, the server is authoritative: in real time, each player tells of its actions to the server, which authorizes them and then sends out the information to the other players (for example, players will be informed when a nearby players attack a creature). In terms of network topology, this model is known as the star model, in which every communication goes through a central server.
 On a non-technical note, for the players of such game, the goals are often about creating a character and making it stronger, e.g. by fighting creatures and gaining equipment.
 
-## Stated Objectives
+## Stated objectives
 This project was done as a part of the Ensimag’s module named ‘Specialty project’. With World of Warcraft’s development budget numbering in millions of dollars and a single semester of classes at our disposal, it was obvious that only a minimal subset of features from the original game server could be implemented.
 The features to be implemented are:
 * Authentication
