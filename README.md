@@ -28,5 +28,5 @@ While all these features are extremely basic and are all-together insufficient f
 ## Future
 While the previous features have already been developed, some aspects, such as database integration, still need to be fully completed before moving to the next challenges.
 
-For more information, please check the [full report](https://ensiwiki.ensimag.fr/images/f/f3/Light_report.pdf)
+For more information, please check the [full report](https://ensiwiki.ensimag.fr/images/f/f3/Light_report.pdf).
 
