@@ -2,7 +2,7 @@ import sbt.Keys._
 import sbt._
 
 object Common {
-  val _scalaVersion = "2.12.2"
+  val _scalaVersion = "2.12.4"
 
   val _scalacOptions = Seq(
     "-feature",
