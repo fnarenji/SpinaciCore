@@ -6,6 +6,11 @@ jdk:
 version:
     - 2.12.1
 
+before_script:
+    - psql -c 'CREATE USER wow;'  -U postgres
+    - psql -c 'CREATE DATABASE wow;' -U postgres
+    - psql -c 'GRANT ALL PRIVILEGES ON DATABASE wow TO wow;' -U postgres
+
 script: cd wow && sbt test
 
 notifications:

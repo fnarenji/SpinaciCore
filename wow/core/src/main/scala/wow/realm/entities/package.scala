@@ -13,7 +13,7 @@ package object entities {
     * @param realm current realm
     * @return character DAO
     */
-  def CharacterDAO(implicit realm: RealmContextData): CharacterInfoDAO = realm.characterDAO
+  def CharacterDao(implicit realm: RealmContextData): CharacterInfoDao = realm.characterDao
 
   object Genders extends Enumeration with DatabaseSerializableEnumeration {
     implicit lazy val codec: Codec[Value] = enumerated(uint8L, this)

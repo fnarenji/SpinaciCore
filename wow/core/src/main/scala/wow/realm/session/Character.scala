@@ -2,7 +2,7 @@ package wow.realm.session
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import wow.common.database.AsyncDB
-import wow.realm.entities.{CharacterDAO, Guid}
+import wow.realm.entities.{CharacterDao, Guid}
 import wow.realm.events.{DispatchWorldUpdate, PlayerJoined, PlayerMoved}
 import wow.realm.protocol._
 import wow.realm.protocol.payloads.{ServerLoginVerifyWorld, ServerTimeSyncRequest, ServerUpdateBlock,
@@ -32,7 +32,7 @@ class Character(guid: Guid, override val networkWorker: ActorRef)(override impli
   private val worldState = context.actorSelection(RealmServer.WorldStatePath)
   private var updateBlocks = Vector.newBuilder[ServerUpdateBlock]
 
-  private val currentCharacter = CharacterDAO.findByGuid(guid).getOrElse(
+  private val currentCharacter = CharacterDao.findByGuid(guid).getOrElse(
     throw new IllegalStateException(s"Character $guid not found in database, but player still selected it"))
 
   val loginVerifyWorld = ServerLoginVerifyWorld(currentCharacter.position)
@@ -54,7 +54,7 @@ class Character(guid: Guid, override val networkWorker: ActorRef)(override impli
     timeSyncSenderToken.cancel()
     databaseSaveToken.cancel()
 
-    CharacterDAO.save(currentCharacter)
+    CharacterDao.save(currentCharacter)
 
     super.postStop()
   }
@@ -93,7 +93,7 @@ class Character(guid: Guid, override val networkWorker: ActorRef)(override impli
     case SaveCharacterToDatabase =>
       val copy = currentCharacter.copy()
       AsyncDB {
-        CharacterDAO.save(copy)
+        CharacterDao.save(copy)
       }
   }
 

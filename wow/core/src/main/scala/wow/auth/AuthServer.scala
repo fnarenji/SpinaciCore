@@ -72,7 +72,7 @@ object AuthServer {
   def initializeDatabase(): Unit = {
     val dbConfig = Application.configuration.auth.database
 
-    DatabaseHelpers.migrate("auth", dbConfig)
+    DatabaseHelpers.migrate("auth", dbConfig, AuthPlaceHolders)
     DatabaseHelpers.connect(Databases.AuthServer, dbConfig)
   }
 
