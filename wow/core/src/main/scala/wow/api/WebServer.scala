@@ -18,7 +18,7 @@ object WebServer extends HttpApp {
   /**
     * Retrieves a list of objects implementing the trait API.
     */
-  override val route: Route = {
+  override val routes: Route = {
     apis map (_.route) reduce (_ ~ _)
   }
 }

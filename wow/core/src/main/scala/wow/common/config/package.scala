@@ -47,7 +47,7 @@ package object config {
           }
 
         case other =>
-          fail(WrongType(other.valueType, Set(ConfigValueType.OBJECT), ConfigValueLocation(other), None))
+          fail(WrongType(other.valueType, Set(ConfigValueType.OBJECT), ConfigValueLocation(other), other.origin().description()))
       }
     }
   }
@@ -85,7 +85,7 @@ package object config {
               combineResults(acc, valueConvert.from(value)) { case (a, b) => a += e(b.id) }
           }.right.map(_.result())
         case other =>
-          fail(WrongType(other.valueType, Set(ConfigValueType.LIST), ConfigValueLocation(other), None))
+          fail(WrongType(other.valueType, Set(ConfigValueType.LIST), ConfigValueLocation(other), other.origin().description()))
       }
     }
   }

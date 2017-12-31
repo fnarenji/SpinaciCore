@@ -78,7 +78,7 @@ object AuthServer {
 
   private val PreferredNameChild = "authserver"
 
-  def props: Props = Props(new AutoRestartSupervisor(Props(classOf[AuthServer]), PreferredNameChild))
+  def props: Props = Props(new AutoRestartSupervisor(Props(new AuthServer()), PreferredNameChild))
 
   val PreferredName = "authsuperv"
   val ActorPath = s"${Application.ActorPath}/$PreferredName/$PreferredNameChild"

@@ -26,8 +26,9 @@ case class UnitFields private(
   health: VariableValueField[Long],
   powers: VariableValueField[Sized[Vector[Long], _7]],
   maxPowers: VariableValueField[Sized[Vector[Long], _7]],
+
   powerRegenerationFlatModifiers: VariableValueField[Sized[Vector[Float], _7]],
-  powerRegenerationLongerruptedFlatModifiers: VariableValueField[Sized[Vector[Float], _7]],
+ powerRegenerationLongerruptedFlatModifiers: VariableValueField[Sized[Vector[Float], _7]],
   level: VariableValueField[Long],
   factionTemplate: VariableValueField[Long],
   virtualItemSlotId: VariableValueField[Sized[Vector[Long], _3]],

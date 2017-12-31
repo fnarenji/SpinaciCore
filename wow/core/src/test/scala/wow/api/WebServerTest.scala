@@ -20,17 +20,17 @@ class WebServerTest extends WordSpec with Matchers with ScalatestRouteTest {
 
   "The service" should {
     "return a creation success code when an account is create" in {
-      Post("/account/create", AccountReq("myName", "myPass")) ~> WebServer.route ~> check {
+      Post("/account/create", AccountReq("myName", "myPass")) ~> WebServer.routes ~> check {
         status shouldEqual StatusCodes.Created
       }
     }
     "return a success code when an account is deleted" in {
-      Post("/account/delete", "myName") ~> WebServer.route ~> check {
+      Post("/account/delete", "myName") ~> WebServer.routes ~> check {
         status shouldEqual StatusCodes.OK
       }
     }
     "return a success code when a password is reinitialized" in {
-      Put("/account/reinitialize", AccountReq("myName", "myPass")) ~> WebServer.route ~> check {
+      Put("/account/reinitialize", AccountReq("myName", "myPass")) ~> WebServer.routes ~> check {
         status shouldEqual StatusCodes.OK
       }
     }

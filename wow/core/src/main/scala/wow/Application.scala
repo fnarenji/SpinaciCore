@@ -12,6 +12,8 @@ import wow.realm.RealmServer
 import wow.utils.Reflection
 
 class Application extends Actor with ActorLogging {
+  override def supervisorStrategy: SupervisorStrategy = SupervisorStrategy.stoppingStrategy
+
   Reflection.eagerLoadClasses()
 
   Database.configure()
@@ -25,8 +27,6 @@ class Application extends Actor with ActorLogging {
   for (id <- Application.configuration.realms.keys) {
     context.actorOf(RealmServer.props(id), RealmServer.PreferredName(id))
   }
-
-  override def supervisorStrategy: SupervisorStrategy = SupervisorStrategy.stoppingStrategy
 
   override def postStop(): Unit = {
     // In case any latent connections remain, close them
