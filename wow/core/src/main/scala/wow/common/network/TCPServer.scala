@@ -36,10 +36,8 @@ class TCPServer[A <: TCPSessionFactory](val factory: A, val address: String, val
 }
 
 object TCPServer {
-  def props[A <: TCPSessionFactory](companion: A, address: String, port: Int): Props = Props(classOf[TCPServer[A]],
-    companion,
-    address,
-    port)
+  def props[A <: TCPSessionFactory](companion: A, address: String, port: Int): Props =
+    Props(new TCPServer(companion, address, port))
 
   val PreferredName = "tcp"
 }

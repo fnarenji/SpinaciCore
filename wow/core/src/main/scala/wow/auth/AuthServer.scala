@@ -7,7 +7,7 @@ import wow.auth.AuthServer.{NotifyRealmOnline, UpdatePopulation}
 import wow.auth.protocol.RealmFlags
 import wow.auth.session.AuthSession
 import wow.common.VersionInfo
-import wow.common.database.{DatabaseConfiguration, Databases, _}
+import wow.common.database._
 import wow.common.network.TCPServer
 import wow.realm.RealmServer.GetPopulation
 import wow.utils.AutoRestartSupervisor

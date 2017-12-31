@@ -1,10 +1,8 @@
 package wow
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props, SupervisorStrategy}
-import akka.http.scaladsl.settings.ServerSettings
 import pureconfig._
 import scalikejdbc.ConnectionPool
-import wow.api.WebServer
 import wow.auth.{AccountsState, AuthServer}
 import wow.common.config.deriveIntMap
 import wow.common.database.Database
@@ -50,7 +48,6 @@ object Application {
     system.actorOf(Props(new Application), "app")
 
     startTime = System.currentTimeMillis()
-    WebServer.startServer(configuration.webServer.host, configuration.webServer.port, ServerSettings(system), system)
 
     system.terminate()
   }

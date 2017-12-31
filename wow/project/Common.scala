@@ -9,7 +9,8 @@ object Common {
     "-deprecation",
     "-language:postfixOps",
     "-language:implicitConversions",
-    "-Xcheckinit", // Should be removed for production use
+    // TODO: re-enable this on scalac fixes this issue
+//    "-Xcheckinit", // Should be removed for production use
     // Found this list on tpolecat's github site
     "-deprecation",
     "-encoding", "UTF-8", // yes, this is 2 args

@@ -6,9 +6,6 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor" % "2.5.8",
     "com.typesafe.akka" %% "akka-slf4j" % "2.5.8",
     "com.typesafe.akka" %% "akka-testkit" % "2.5.8",
-    "com.typesafe.akka" %% "akka-http" % "10.0.11",
-    "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.11",
-    "com.typesafe.akka" %% "akka-http-testkit" % "10.0.11",
 
     // Unit tests
     "org.scalactic" %% "scalactic" % "3.0.4",
@@ -17,7 +14,6 @@ object Dependencies {
     // Serialization
     "org.scodec" %% "scodec-bits" % "1.1.5",
     "org.scodec" %% "scodec-core" % "1.10.3",
-    "org.scodec" %% "scodec-akka" % "0.3.0",
 
     // Cryptography
     "org.bouncycastle" % "bcprov-jdk15on" % "1.58",

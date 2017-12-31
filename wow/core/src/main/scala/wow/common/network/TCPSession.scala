@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.io.Tcp.{Close, ConnectionClosed, Received, Write}
 import akka.util.ByteString
 import scodec.bits.BitVector
-import scodec.interop.akka._
+import wow.utils.AkkaScodecInterop._
 
 /**
   * Handles an open TCP connection.
